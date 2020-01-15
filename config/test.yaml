@@ -1,4 +1,0 @@
-env: test
-
-http:
-  port: 3000
