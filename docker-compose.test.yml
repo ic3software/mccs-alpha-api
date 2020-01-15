@@ -1,0 +1,11 @@
+version: '3'
+services:
+  test:
+    container_name: mccs_api_test
+    build:
+      context: .
+      dockerfile: dockerfile.test
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - 3000:3000

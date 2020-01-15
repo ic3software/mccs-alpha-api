@@ -1,0 +1,11 @@
+version: '3'
+services:
+  dev:
+    container_name: mccs_api_dev
+    build:
+      context: .
+      dockerfile: dockerfile.dev
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - 3000:3000

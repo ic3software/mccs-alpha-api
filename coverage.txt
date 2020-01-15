@@ -1,0 +1,2 @@
+mode: atomic
+github.com/ic3network/mccs-alpha-api/internal/pkg/sum/sum.go:3.24,5.2 1 1
