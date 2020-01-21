@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/internal/app/service"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/cookie"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
@@ -46,7 +47,7 @@ func (u *userHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	u.once.Do(func() {
-		public.Path("/signup").HandlerFunc(u.registerHandler()).Methods("POST")
+		public.Path("/signup").HandlerFunc(u.signup()).Methods("POST")
 		public.Path("/login").HandlerFunc(u.loginPage()).Methods("GET")
 		public.Path("/login").HandlerFunc(u.loginHandler()).Methods("POST")
 		public.Path("/lost-password").HandlerFunc(u.lostPasswordPage()).Methods("GET")
@@ -86,9 +87,27 @@ func (u *userHandler) FindByBusinessID(id string) (*types.User, error) {
 }
 
 // RegisterHandler handles the creation of the business, user, and tags.
-func (u *userHandler) registerHandler() func(http.ResponseWriter, *http.Request) {
+func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
+	type request struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	type data struct {
+		Token string `json:"token"`
+	}
+	type response struct {
+		Data data `json:"data"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
+		var req request
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&req)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.signup failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
 		d := helper.GetRegisterData(r)
 		d.RecaptchaSitekey = viper.GetString("recaptcha.site_key")
 
@@ -97,44 +116,23 @@ func (u *userHandler) registerHandler() func(http.ResponseWriter, *http.Request)
 			errorMessages = append(errorMessages, "Email address is already registered.")
 		}
 
-		if viper.GetString("env") == "production" {
-			isValid := recaptcha.Verify(*r)
-			if !isValid {
-				errorMessages = append(errorMessages, recaptcha.Error()...)
-			}
-		}
-
 		if len(errorMessages) > 0 {
-			l.Logger.Info("RegisterHandler failed", zap.Strings("input invalid", errorMessages))
+			l.Logger.Info("[ERROR] UserHandler.signup failed", zap.Strings("input invalid", errorMessages))
 			return
 		}
 
-		bID, err := service.Business.Create(d.Business)
-		if err != nil {
-			l.Logger.Error("RegisterHandler failed", zap.Error(err))
-			return
-		}
-
-		d.User.CompanyID = bID
 		err = service.User.Create(d.User)
 		if err != nil {
-			l.Logger.Error("RegisterHandler failed", zap.Error(err))
-			return
-		}
-
-		err = service.Account.Create(bID.Hex())
-		if err != nil {
-			l.Logger.Error("RegisterHandler failed", zap.Error(err))
+			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			return
 		}
 
 		token, err := jwt.GenerateToken(d.User.ID.Hex(), false)
 		if err != nil {
-			l.Logger.Error("RegisterHandler failed", zap.Error(err))
+			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
-		http.SetCookie(w, cookie.CreateCookie(token))
 
 		go func() {
 			err := service.User.UpdateLoginInfo(d.User.ID, ip.FromRequest(r))
@@ -164,7 +162,7 @@ func (u *userHandler) registerHandler() func(http.ResponseWriter, *http.Request)
 			}
 		}()
 
-		http.Redirect(w, r, "/", http.StatusFound)
+		api.Respond(w, r, http.StatusOK, response{Data: data{Token: token}})
 	}
 }
 
