@@ -10,7 +10,7 @@ import (
 
 // Respond return an object with specific status as JSON.
 func Respond(w http.ResponseWriter, r *http.Request, status int, data ...interface{}) {
-	if isWithoutData(data) {
+	if len(data) == 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		return
@@ -28,10 +28,6 @@ func Respond(w http.ResponseWriter, r *http.Request, status int, data ...interfa
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write(js)
-}
-
-func isWithoutData(data ...interface{}) bool {
-	return len(data) == 0
 }
 
 func evaluateData(data interface{}) interface{} {

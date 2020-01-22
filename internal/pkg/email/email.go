@@ -166,7 +166,7 @@ func SendResetEmail(receiver string, email string, token string) error {
 	return e.sendResetEmail(receiver, email, token)
 }
 func (e *Email) sendResetEmail(receiver string, email string, token string) error {
-	text := "Your password reset link is: " + e.serverAddr + "/password-resets/" + token
+	text := "Your password reset link is: " + e.serverAddr + "/password-reset/" + token
 	d := emailData{
 		receiver:      receiver,
 		receiverEmail: email,

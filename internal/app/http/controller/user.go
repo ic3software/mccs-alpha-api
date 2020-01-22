@@ -14,14 +14,9 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/cookie"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/flash"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/recaptcha"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
@@ -45,13 +40,11 @@ func (u *userHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	u.once.Do(func() {
-		public.Path("/lost-password").HandlerFunc(u.lostPassword()).Methods("POST")
-		public.Path("/password-resets/{token}").HandlerFunc(u.passwordResetPage()).Methods("GET")
-		public.Path("/password-resets/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
-
 		public.Path("/api/v1/login").HandlerFunc(u.login()).Methods("POST")
 		public.Path("/api/v1/signup").HandlerFunc(u.signup()).Methods("POST")
 		private.Path("/api/v1/logout").HandlerFunc(u.logout()).Methods("POST")
+		public.Path("/api/v1/password-reset").HandlerFunc(u.requestPasswordReset()).Methods("POST")
+		public.Path("/api/v1/password-reset/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
 
 		private.Path("/api/v1/users/removeFromFavoriteBusinesses").HandlerFunc(u.removeFromFavoriteBusinesses()).Methods("POST")
 		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
@@ -93,14 +86,14 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
-			l.Logger.Error("[ERROR] UserHandler.login failed:", zap.Error(err))
+			l.Logger.Info("[INFO] UserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
 		user, err := logic.User.Login(req.Email, req.Password)
 		if err != nil {
-			l.Logger.Info("[ERROR] UserHandler.login failed", zap.Error(err))
+			l.Logger.Info("[INFO] UserHandler.login failed", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -122,7 +115,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
-			l.Logger.Error("[ERROR] UserHandler.signup failed:", zap.Error(err))
+			l.Logger.Info("[INFO] UserHandler.signup failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -132,7 +125,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			errs = append(errs, errors.New("Email address is already registered."))
 		}
 		if len(errs) > 0 {
-			l.Logger.Info("[ERROR] UserHandler.signup failed", zap.Errors("input invalid", errs))
+			l.Logger.Info("[INFO] UserHandler.signup failed", zap.Errors("input invalid", errs))
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
@@ -156,7 +149,6 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-// LogoutHandler logs out the user.
 func (u *userHandler) logout() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, cookie.ResetCookie())
@@ -164,162 +156,98 @@ func (u *userHandler) logout() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-// LostPassword sends the reset password email.
-func (u *userHandler) lostPassword() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("lost-password")
-	type formData struct {
-		Email            string
-		Success          bool
-		RecaptchaSitekey string
+func (u *userHandler) requestPasswordReset() func(http.ResponseWriter, *http.Request) {
+	type request struct {
+		Email string `json:"email"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
-		f := formData{
-			Email:            r.FormValue("email"),
-			RecaptchaSitekey: viper.GetString("recaptcha.site_key"),
-		}
-
-		if viper.GetString("env") == "production" {
-			isValid := recaptcha.Verify(*r)
-			if !isValid {
-				l.Logger.Info("LostPassword failed", zap.Strings("errs", recaptcha.Error()))
-				t.Render(w, r, f, recaptcha.Error())
-				return
-			}
-		}
-
-		user, err := logic.User.FindByEmail(f.Email)
+		var req request
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&req)
 		if err != nil {
-			l.Logger.Info("LostPassword failed", zap.Error(err))
-			t.Error(w, r, f, err)
+			l.Logger.Info("[INFO] UserHandler.requestPasswordReset failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		user, err := logic.User.FindByEmail(req.Email)
+		if err != nil {
+			l.Logger.Info("[INFO] UserHandler.requestPasswordReset failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
 		receiver := user.FirstName + " " + user.LastName
-		lostPassword, err := logic.Lostpassword.FindByEmail(f.Email)
-		if err == nil && !logic.Lostpassword.TokenInvalid(lostPassword) {
-			email.SendResetEmail(receiver, f.Email, lostPassword.Token)
-			f.Success = true
-			t.Render(w, r, f, nil)
+
+		lostPassword, err := logic.Lostpassword.FindByEmail(req.Email)
+		if err == nil && logic.Lostpassword.IsTokenValid(lostPassword) {
+			email.SendResetEmail(receiver, req.Email, lostPassword.Token)
+			api.Respond(w, r, http.StatusOK)
 			return
-		}
-
-		uid, err := uuid.NewV4()
-		if err != nil {
-			l.Logger.Error("LostPassword failed", zap.Error(err))
-			t.Error(w, r, f, err)
-			return
-		}
-
-		lostPassword = &types.LostPassword{
-			Email: user.Email,
-			Token: uid.String(),
-		}
-		err = logic.Lostpassword.Create(lostPassword)
-		if err != nil {
-			l.Logger.Error("LostPassword failed", zap.Error(err))
-			t.Error(w, r, f, err)
-			return
-		}
-
-		email.SendResetEmail(receiver, f.Email, uid.String())
-
-		go func() {
-			err := logic.UserAction.Log(log.User.LostPassword(user))
+		} else {
+			uid, err := uuid.NewV4()
 			if err != nil {
-				l.Logger.Error("log.User.LostPassword failed", zap.Error(err))
-			}
-		}()
-
-		f.Success = true
-		t.Render(w, r, f, nil)
-	}
-}
-
-// PasswordResetPage renders the lost password page.
-func (u *userHandler) passwordResetPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("password-resets")
-	type formData struct {
-		Token string
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		token := vars["token"]
-		lostPassword, err := logic.Lostpassword.FindByToken(token)
-		if err != nil {
-			l.Logger.Error("PasswordResetPage failed", zap.Error(err))
-			http.Redirect(w, r, "/lost-password", http.StatusFound)
-			return
-		}
-		if logic.Lostpassword.TokenInvalid(lostPassword) {
-			l.Logger.Info("PasswordResetPage failed: token expired \n")
-			http.Redirect(w, r, "/lost-password", http.StatusFound)
-			return
-		}
-
-		t.Render(w, r, formData{Token: token}, nil)
-	}
-}
-
-// PasswordReset resets the password for a user.
-func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("password-resets")
-	type formData struct {
-		Token           string
-		Password        string
-		ConfirmPassword string
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
-		vars := mux.Vars(r)
-		f := formData{
-			Token:           vars["token"],
-			Password:        r.FormValue("password"),
-			ConfirmPassword: r.FormValue("confirm_password"),
-		}
-
-		errorMessages := validate.ValidatePassword(f.Password, f.ConfirmPassword)
-		if len(errorMessages) > 0 {
-			l.Logger.Error("PasswordReset failed", zap.Strings("input invalid", errorMessages))
-			t.Render(w, r, f, errorMessages)
-			return
-		}
-
-		lost, err := logic.Lostpassword.FindByToken(f.Token)
-		if err != nil {
-			l.Logger.Error("PasswordReset failed", zap.Error(err))
-			t.Error(w, r, f, err)
-			return
-		}
-
-		err = logic.User.ResetPassword(lost.Email, f.Password)
-		if err != nil {
-			l.Logger.Error("PasswordReset failed", zap.Error(err))
-			t.Error(w, r, f, err)
-			return
-		}
-
-		go func() {
-			err := logic.Lostpassword.SetTokenUsed(f.Token)
-			if err != nil {
-				l.Logger.Error("SetTokenUsed failed", zap.Error(err))
-			}
-		}()
-
-		go func() {
-			user, err := logic.User.FindByEmail(lost.Email)
-			if err != nil {
-				l.Logger.Error("BuildChangePasswordAction failed", zap.Error(err))
+				l.Logger.Error("[ERROR] UserHandler.requestPasswordReset failed:", zap.Error(err))
+				api.Respond(w, r, http.StatusInternalServerError, err)
 				return
 			}
-			logic.UserAction.Log(log.User.ChangePassword(user))
+
+			err = logic.Lostpassword.Create(&types.LostPassword{Email: user.Email, Token: uid.String()})
 			if err != nil {
-				l.Logger.Error("log.User.ChangePassword failed", zap.Error(err))
+				l.Logger.Error("[ERROR] UserHandler.requestPasswordReset failed:", zap.Error(err))
+				api.Respond(w, r, http.StatusInternalServerError, err)
+				return
+			}
+
+			email.SendResetEmail(receiver, req.Email, uid.String())
+			api.Respond(w, r, http.StatusOK)
+		}
+	}
+}
+
+func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
+	type request struct {
+		Password string `json:"password"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		var req request
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&req)
+		if err != nil {
+			l.Logger.Error("[INFO] UserHandler.passwordReset failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		errs := validate.ResetPassword(req.Password)
+		if len(errs) > 0 {
+			l.Logger.Info("[INFO] UserHandler.passwordReset failed", zap.Errors("input invalid", errs))
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		lostPassword, err := logic.Lostpassword.FindByToken(vars["token"])
+		if err != nil || logic.Lostpassword.IsTokenInvalid(lostPassword) {
+			api.Respond(w, r, http.StatusBadRequest, errors.New("token invalid."))
+			return
+		}
+
+		err = logic.User.ResetPassword(lostPassword.Email, req.Password)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.passwordReset failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		go func() {
+			err := logic.Lostpassword.SetTokenUsed(vars["token"])
+			if err != nil {
+				l.Logger.Error("[ERROR] SetTokenUsed failed:", zap.Error(err))
 			}
 		}()
 
-		flash.Success(w, "Your password has been reset successfully!")
-		http.Redirect(w, r, "/login", http.StatusFound)
+		api.Respond(w, r, http.StatusOK)
 	}
 }
 

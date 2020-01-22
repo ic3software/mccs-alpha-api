@@ -24,7 +24,7 @@ func (s *lostpassword) Create(l *types.LostPassword) error {
 func (s *lostpassword) FindByToken(token string) (*types.LostPassword, error) {
 	lostPassword, err := mongo.LostPassword.FindByToken(token)
 	if err != nil {
-		return nil, e.Wrap(err, "FindByToken failed")
+		return nil, err
 	}
 	return lostPassword, nil
 }
@@ -45,7 +45,14 @@ func (s *lostpassword) SetTokenUsed(token string) error {
 	return nil
 }
 
-func (s *lostpassword) TokenInvalid(l *types.LostPassword) bool {
+func (s *lostpassword) IsTokenValid(l *types.LostPassword) bool {
+	if time.Now().Sub(l.CreatedAt).Seconds() >= viper.GetFloat64("reset_password_timeout") || l.TokenUsed == true {
+		return false
+	}
+	return true
+}
+
+func (s *lostpassword) IsTokenInvalid(l *types.LostPassword) bool {
 	if time.Now().Sub(l.CreatedAt).Seconds() >= viper.GetFloat64("reset_password_timeout") || l.TokenUsed == true {
 		return true
 	}

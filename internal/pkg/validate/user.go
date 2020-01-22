@@ -21,3 +21,15 @@ func SignUp(email, password string) []error {
 
 	return errs
 }
+
+func ResetPassword(password string) []error {
+	errs := []error{}
+
+	if password == "" {
+		errs = append(errs, errors.New("Password is missing."))
+	} else {
+		errs = append(errs, validatePassword(password)...)
+	}
+
+	return errs
+}
