@@ -16,7 +16,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/validator"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 
@@ -94,7 +94,7 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		}
 		d.Business.ID = bID
 
-		errorMessages := validator.UpdateBusiness(d.Business)
+		errorMessages := validate.UpdateBusiness(d.Business)
 		maxPosBal, err := strconv.ParseFloat(r.FormValue("max_pos_bal"), 64)
 		if err != nil {
 			errorMessages = append(errorMessages, "Max pos balance should be a number")

@@ -1,4 +1,4 @@
-package validator
+package validate
 
 import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -7,7 +7,6 @@ import (
 func Register(d *types.RegisterData) []string {
 	errorMessages := []string{}
 	errorMessages = append(errorMessages, ValidateBusiness(d.Business)...)
-	errorMessages = append(errorMessages, ValidateUser(d.User)...)
 	errorMessages = append(errorMessages, ValidatePassword(d.User.Password, d.ConfirmPassword)...)
 
 	if d.User.Email != d.ConfirmEmail {
@@ -22,7 +21,6 @@ func Register(d *types.RegisterData) []string {
 func Account(d *types.UpdateAccountData) []string {
 	errorMessages := []string{}
 	errorMessages = append(errorMessages, ValidateBusiness(d.Business)...)
-	errorMessages = append(errorMessages, ValidateUser(d.User)...)
 	errorMessages = append(errorMessages, validateUpdatePassword(d.CurrentPassword, d.User.Password, d.ConfirmPassword)...)
 	return errorMessages
 }

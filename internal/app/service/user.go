@@ -40,27 +40,28 @@ func (u *user) FindByBusinessID(id primitive.ObjectID) (*types.User, error) {
 	return user, nil
 }
 
-func (u *user) Create(user *types.User) error {
-	_, err := mongo.User.FindByEmail(user.Email)
+func (u *user) Create(email, password string) (string, error) {
+	_, err := mongo.User.FindByEmail(email)
 	if err == nil {
-		return e.New(e.EmailExisted, "email existed")
+		return "", e.New(e.EmailExisted, "email existed")
 	}
 
-	hashedPassword, err := bcrypt.Hash(user.Password)
+	hashedPassword, err := bcrypt.Hash(password)
 	if err != nil {
-		return e.Wrap(err, "create user failed")
+		return "", e.Wrap(err, "create user failed")
 	}
 
-	user.Password = hashedPassword
-	err = mongo.User.Create(user)
+	userID, err := mongo.User.Create(email, hashedPassword)
 	if err != nil {
-		return e.Wrap(err, "create user failed")
+		return "", e.Wrap(err, "create user failed")
 	}
-	err = es.User.Create(user)
+
+	err = es.User.Create(userID, email)
 	if err != nil {
-		return e.Wrap(err, "create user failed")
+		return "", e.Wrap(err, "create user failed")
 	}
-	return nil
+
+	return userID, nil
 }
 
 func (u *user) Login(email string, password string) (*types.User, error) {

@@ -88,24 +88,19 @@ func (u *user) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegis
 }
 
 // Create creates a user record in the table
-func (u *user) Create(user *types.User) error {
-	user.Email = strings.ToLower(user.Email)
-
+func (u *user) Create(email, password string) (string, error) {
 	doc := bson.M{
-		"firstName": user.FirstName,
-		"lastName":  user.LastName,
-		"email":     user.Email,
-		"password":  user.Password,
-		"telephone": user.Telephone,
-		"companyID": user.CompanyID,
+		"email":     strings.ToLower(email),
+		"password":  password,
 		"createdAt": time.Now(),
 	}
+
 	res, err := u.c.InsertOne(context.Background(), doc)
 	if err != nil {
-		return err
+		return "", err
 	}
-	user.ID = res.InsertedID.(primitive.ObjectID)
-	return nil
+
+	return res.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
 func (u *user) FindByDailyNotification() ([]*types.User, error) {

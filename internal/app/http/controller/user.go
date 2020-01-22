@@ -14,7 +14,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/flash"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/ip"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
@@ -22,7 +21,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/recaptcha"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/validator"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -47,18 +46,17 @@ func (u *userHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	u.once.Do(func() {
-		public.Path("/signup").HandlerFunc(u.signup()).Methods("POST")
-		public.Path("/login").HandlerFunc(u.loginPage()).Methods("GET")
-		public.Path("/login").HandlerFunc(u.loginHandler()).Methods("POST")
 		public.Path("/lost-password").HandlerFunc(u.lostPasswordPage()).Methods("GET")
 		public.Path("/lost-password").HandlerFunc(u.lostPassword()).Methods("POST")
 		public.Path("/password-resets/{token}").HandlerFunc(u.passwordResetPage()).Methods("GET")
 		public.Path("/password-resets/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
-		private.Path("/logout").HandlerFunc(u.logoutHandler()).Methods("GET")
 
-		private.Path("/api/users/removeFromFavoriteBusinesses").HandlerFunc(u.removeFromFavoriteBusinesses()).Methods("POST")
-		private.Path("/api/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
-		private.Path("/api/users/addToFavoriteBusinesses").HandlerFunc(u.addToFavoriteBusinesses()).Methods("POST")
+		public.Path("/api/v1/signup").HandlerFunc(u.signup()).Methods("POST")
+		public.Path("/api/v1/login").HandlerFunc(u.login()).Methods("POST")
+		private.Path("/api/v1/logout").HandlerFunc(u.logout()).Methods("GET")
+		private.Path("/api/v1/users/removeFromFavoriteBusinesses").HandlerFunc(u.removeFromFavoriteBusinesses()).Methods("POST")
+		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
+		private.Path("/api/v1/users/addToFavoriteBusinesses").HandlerFunc(u.addToFavoriteBusinesses()).Methods("POST")
 	})
 }
 
@@ -86,7 +84,6 @@ func (u *userHandler) FindByBusinessID(id string) (*types.User, error) {
 	return user, nil
 }
 
-// RegisterHandler handles the creation of the business, user, and tags.
 func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		Email    string `json:"email"`
@@ -108,83 +105,37 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		d := helper.GetRegisterData(r)
-		d.RecaptchaSitekey = viper.GetString("recaptcha.site_key")
-
-		errorMessages := validator.Register(d)
-		if service.User.UserEmailExists(d.User.Email) {
-			errorMessages = append(errorMessages, "Email address is already registered.")
+		errs := validate.SignUp(req.Email, req.Password)
+		if service.User.UserEmailExists(req.Email) {
+			errs = append(errs, "Email address is already registered.")
 		}
-
-		if len(errorMessages) > 0 {
-			l.Logger.Info("[ERROR] UserHandler.signup failed", zap.Strings("input invalid", errorMessages))
+		if len(errs) > 0 {
+			l.Logger.Info("[ERROR] UserHandler.signup failed", zap.Strings("input invalid", errs))
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		err = service.User.Create(d.User)
+		userID, err := service.User.Create(req.Email, req.Password)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		token, err := jwt.GenerateToken(d.User.ID.Hex(), false)
+		token, err := jwt.GenerateToken(userID, false)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
-			http.Redirect(w, r, "/login", http.StatusFound)
+			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
+		http.SetCookie(w, cookie.CreateCookie(token))
 
-		go func() {
-			err := service.User.UpdateLoginInfo(d.User.ID, ip.FromRequest(r))
-			if err != nil {
-				l.Logger.Error("UpdateLoginInfo failed", zap.Error(err))
-			}
-		}()
-		go func() {
-			err := service.UserAction.Log(log.User.Signup(d.User, d.Business))
-			if err != nil {
-				l.Logger.Error("log.User.Signup failed", zap.Error(err))
-			}
-		}()
-		go func() {
-			if !viper.GetBool("receive_signup_notifications") {
-				return
-			}
-			err := email.SendSignupNotification(d.Business.BusinessName, d.User.Email)
-			if err != nil {
-				l.Logger.Error("email.SendSignupNotification failed", zap.Error(err))
-			}
-		}()
-		go func() {
-			err := email.SendWelcomeEmail(d.Business.BusinessName, d.User)
-			if err != nil {
-				l.Logger.Error("email.SendWelcomeEmail failed", zap.Error(err))
-			}
-		}()
-
-		api.Respond(w, r, http.StatusOK, response{Data: data{Token: token}})
+		api.Respond(w, r, http.StatusOK)
 	}
 }
 
-// LoginPage renders the login page.
-func (u *userHandler) loginPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("login")
-	type formData struct {
-		Email            string
-		Password         string
-		RecaptchaSitekey string
-		RedirectURL      string
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		t.Render(w, r, formData{
-			RecaptchaSitekey: viper.GetString("recaptcha.site_key"),
-			RedirectURL:      r.URL.Query().Get("redirect_login"),
-		}, nil)
-	}
-}
-
-func (u *userHandler) loginHandler() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("login")
+func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
+	t := template.NewView("account")
 	type formData struct {
 		Email            string
 		Password         string
@@ -199,15 +150,6 @@ func (u *userHandler) loginHandler() func(http.ResponseWriter, *http.Request) {
 			Password:         r.FormValue("password"),
 			RecaptchaSitekey: viper.GetString("recaptcha.site_key"),
 			RedirectURL:      r.URL.Query().Get("redirect_login"),
-		}
-
-		if viper.GetString("env") == "production" {
-			isValid := recaptcha.Verify(*r)
-			if !isValid {
-				l.Logger.Error("UpdateLoginAttempts failed", zap.Strings("errs", recaptcha.Error()))
-				t.Render(w, r, f, recaptcha.Error())
-				return
-			}
 		}
 
 		user, err := service.User.Login(f.Email, f.Password)
@@ -265,10 +207,10 @@ func (u *userHandler) loginHandler() func(http.ResponseWriter, *http.Request) {
 }
 
 // LogoutHandler logs out the user.
-func (u *userHandler) logoutHandler() func(http.ResponseWriter, *http.Request) {
+func (u *userHandler) logout() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, cookie.ResetCookie())
-		http.Redirect(w, r, "/login", http.StatusFound)
+		api.Respond(w, r, http.StatusOK)
 	}
 }
 
@@ -399,7 +341,7 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 			ConfirmPassword: r.FormValue("confirm_password"),
 		}
 
-		errorMessages := validator.ValidatePassword(f.Password, f.ConfirmPassword)
+		errorMessages := validate.ValidatePassword(f.Password, f.ConfirmPassword)
 		if len(errorMessages) > 0 {
 			l.Logger.Error("PasswordReset failed", zap.Strings("input invalid", errorMessages))
 			t.Render(w, r, f, errorMessages)

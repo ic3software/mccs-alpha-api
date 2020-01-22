@@ -1,10 +1,9 @@
-package validator
+package validate
 
 import (
 	"strings"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 )
 
 // ValidateBusiness validates
@@ -23,19 +22,4 @@ func ValidateBusiness(b *types.BusinessData) []string {
 	}
 	errs = append(errs, validateTagsLimit(b)...)
 	return errs
-}
-
-// ValidateUser validates
-// FirstName, LastName, Email and Email
-func ValidateUser(u *types.User) []string {
-	errorMessages := []string{}
-	u.Email = strings.ToLower(u.Email)
-	if u.Email == "" {
-		errorMessages = append(errorMessages, "Email is missing.")
-	} else if !util.IsValidEmail(u.Email) {
-		errorMessages = append(errorMessages, "Email is invalid.")
-	} else if len(u.Email) > 100 {
-		errorMessages = append(errorMessages, "Email cannot exceed 100 characters.")
-	}
-	return errorMessages
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/validator"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
 	"go.uber.org/zap"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -291,7 +291,7 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 				return
 			}
 		}
-		errorMessages = validator.Account(formData)
+		errorMessages = validate.Account(formData)
 		if oldBusiness.Status == constant.Trading.Accepted {
 			// Additional validation if the business status is "tradingAccepted".
 			data := helper.Trading.GetUpdateData(r)
