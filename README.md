@@ -1,4 +1,4 @@
-# MCCS Alpha
+# MCCS Alpha API
 
 Looking to try it out? See the [getting started](#how-to-start) instructions.
 
@@ -24,7 +24,7 @@ There are four main functions that the MCCS web application provides:
 3. **Transfer mutual credits** - create and complete/cancel mutual credit (MC) transfers between businesses
 4. **Review transfer activity** - view pending and completed MC transfers
 
-Users access MCCS through either a desktop or mobile web browser. 
+Users access MCCS through either a desktop or mobile web browser.
 
 ### Manage Accounts
 
@@ -63,7 +63,7 @@ The following rules will be enforced by MCCS:
 
 #### Initiating Debits or Credits
 
-Users will be able to initiate transfers that result in either a **debit from** or a **credit to** their account. This is unusual given that most online payment systems only allow the former. A practical application of this ability to initiate a credit to one's account is that a supplier could setup the payment from their customer within MCCS. The customer would login, see the invoice link in the payment description and if they agrees, confirm the debit of funds from their account. 
+Users will be able to initiate transfers that result in either a **debit from** or a **credit to** their account. This is unusual given that most online payment systems only allow the former. A practical application of this ability to initiate a credit to one's account is that a supplier could setup the payment from their customer within MCCS. The customer would login, see the invoice link in the payment description and if they agrees, confirm the debit of funds from their account.
 
 #### Two-Step Transfers
 
@@ -85,19 +85,19 @@ Initiated transfers are presented to the users. If users created a transfer, the
 
 ## Demo Site
 
-A demo site of MCCS is available at:  
+A demo site of MCCS is available at:
 https://alpha.ic3.dev
 
-You can create a new account by signing up:  
+You can create a new account by signing up:
 https://alpha.ic3.dev/signup
 
-Or just login and use one of the demo accounts:  
-user =jdoe1@dev.null (or jdoe2, jdoe3 ... up to jdoe5)  
+Or just login and use one of the demo accounts:
+user =jdoe1@dev.null (or jdoe2, jdoe3 ... up to jdoe5)
 pass = password (all lower case)
 
-And if you want to see the admin side, here's the login:   
-https://alpha.ic3.dev/admin/login  
-user = admin1@dev.null or admin2@dev.null  
+And if you want to see the admin side, here's the login:
+https://alpha.ic3.dev/admin/login
+user = admin1@dev.null or admin2@dev.null
 pass = password
 
 There are 200 businesses made up of dummy data in the database already.
@@ -112,7 +112,7 @@ Basic requirements: Go version 1.13+, Docker and Docker Compose ([see all requir
 1. Use the [example file](configs/seed.yaml) to create `configs/development.yaml` and change the following parameters
     ```
     env: development
-    
+
     psql:
       host: postgres
 
