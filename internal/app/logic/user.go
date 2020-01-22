@@ -68,7 +68,7 @@ func (u *user) Create(email, password string) (string, error) {
 func (u *user) Login(email string, password string) (*types.User, error) {
 	user, err := mongo.User.FindByEmail(email)
 	if err != nil {
-		return nil, e.Wrap(err, "login user failed")
+		return nil, e.Wrap(err, "User login failed")
 	}
 
 	if time.Now().Sub(user.LastLoginFailDate).Seconds() <= viper.GetFloat64("login_attempts_timeout") {

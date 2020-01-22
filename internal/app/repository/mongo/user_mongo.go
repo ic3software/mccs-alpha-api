@@ -40,7 +40,7 @@ func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 func (u *user) FindByEmail(email string) (*types.User, error) {
 	email = strings.ToLower(email)
 	if email == "" {
-		return &types.User{}, e.New(e.UserNotFound, "user not found")
+		return &types.User{}, e.New(e.UserNotFound, "Please specify an email address.")
 	}
 
 	user := types.User{}
@@ -50,7 +50,7 @@ func (u *user) FindByEmail(email string) (*types.User, error) {
 	}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
-		return nil, e.New(e.UserNotFound, "user not found")
+		return nil, e.New(e.UserNotFound, "The specified user could not be found.")
 	}
 
 	return &user, nil
