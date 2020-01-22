@@ -1,22 +1,23 @@
 package validate
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 )
 
-func SignUp(email, password string) []string {
-	errorMessages := []string{}
+func SignUp(email, password string) []error {
+	errs := []error{}
 
 	email = strings.ToLower(email)
 	if email == "" {
-		errorMessages = append(errorMessages, "Email is missing.")
+		errs = append(errs, errors.New("Email is missing."))
 	} else if !util.IsValidEmail(email) {
-		errorMessages = append(errorMessages, "Email is invalid.")
+		errs = append(errs, errors.New("Email is invalid."))
 	} else if len(email) > 100 {
-		errorMessages = append(errorMessages, "Email cannot exceed 100 characters.")
+		errs = append(errs, errors.New("Email cannot exceed 100 characters."))
 	}
 
-	return errorMessages
+	return errs
 }

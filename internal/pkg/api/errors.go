@@ -1,6 +1,9 @@
 package api
 
-// HTTPError happens when there's an error for the inputs or operations.
-type HTTPError struct {
+type httpError struct {
 	Message string `json:"message"`
+}
+
+type httpErrors struct {
+	Errors []httpError `json:"errors"`
 }

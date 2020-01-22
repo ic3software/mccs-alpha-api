@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sync"
 
@@ -48,9 +49,10 @@ func (u *userHandler) RegisterRoutes(
 		public.Path("/password-resets/{token}").HandlerFunc(u.passwordResetPage()).Methods("GET")
 		public.Path("/password-resets/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
 
-		public.Path("/api/v1/signup").HandlerFunc(u.signup()).Methods("POST")
 		public.Path("/api/v1/login").HandlerFunc(u.login()).Methods("POST")
-		private.Path("/api/v1/logout").HandlerFunc(u.logout()).Methods("GET")
+		public.Path("/api/v1/signup").HandlerFunc(u.signup()).Methods("POST")
+		private.Path("/api/v1/logout").HandlerFunc(u.logout()).Methods("POST")
+
 		private.Path("/api/v1/users/removeFromFavoriteBusinesses").HandlerFunc(u.removeFromFavoriteBusinesses()).Methods("POST")
 		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
 		private.Path("/api/v1/users/addToFavoriteBusinesses").HandlerFunc(u.addToFavoriteBusinesses()).Methods("POST")
@@ -81,50 +83,6 @@ func (u *userHandler) FindByBusinessID(id string) (*types.User, error) {
 	return user, nil
 }
 
-func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
-		if err != nil {
-			l.Logger.Error("[ERROR] UserHandler.signup failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		errs := validate.SignUp(req.Email, req.Password)
-		if logic.User.UserEmailExists(req.Email) {
-			errs = append(errs, "Email address is already registered.")
-		}
-		if len(errs) > 0 {
-			l.Logger.Info("[ERROR] UserHandler.signup failed", zap.Strings("input invalid", errs))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		userID, err := logic.User.Create(req.Email, req.Password)
-		if err != nil {
-			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
-			api.Respond(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		token, err := jwt.GenerateToken(userID, false)
-		if err != nil {
-			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
-			api.Respond(w, r, http.StatusInternalServerError, err)
-			return
-		}
-		http.SetCookie(w, cookie.CreateCookie(token))
-
-		api.Respond(w, r, http.StatusOK)
-	}
-}
-
 func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		Email    string `json:"email"`
@@ -148,6 +106,50 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		}
 
 		token, err := jwt.GenerateToken(user.ID.Hex(), false)
+		http.SetCookie(w, cookie.CreateCookie(token))
+
+		api.Respond(w, r, http.StatusOK)
+	}
+}
+
+func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
+	type request struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req request
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&req)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.signup failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		errs := validate.SignUp(req.Email, req.Password)
+		if logic.User.UserEmailExists(req.Email) {
+			errs = append(errs, errors.New("Email address is already registered."))
+		}
+		if len(errs) > 0 {
+			l.Logger.Info("[ERROR] UserHandler.signup failed", zap.Errors("input invalid", errs))
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		userID, err := logic.User.Create(req.Email, req.Password)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		token, err := jwt.GenerateToken(userID, false)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
 		http.SetCookie(w, cookie.CreateCookie(token))
 
 		api.Respond(w, r, http.StatusOK)
