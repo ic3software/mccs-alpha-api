@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
@@ -65,7 +65,7 @@ func (a *adminBusinessHandler) adminBusinessPage() func(http.ResponseWriter, *ht
 			t.Error(w, r, nil, err)
 			return
 		}
-		balance, err := service.BalanceLimit.FindByBusinessID(id)
+		balance, err := logic.BalanceLimit.FindByBusinessID(id)
 		if err != nil {
 			l.Logger.Error("AdminBusinessPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -111,7 +111,7 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		}
 
 		// Check if the current balance has exceeded the input balances.
-		account, err := service.Account.FindByBusinessID(bID.Hex())
+		account, err := logic.Account.FindByBusinessID(bID.Hex())
 		if err != nil {
 			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
 			t.Error(w, r, d, err)
@@ -130,7 +130,7 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		}
 
 		// Update Business
-		oldBusiness, err := service.Business.FindByID(bID)
+		oldBusiness, err := logic.Business.FindByID(bID)
 		if err != nil {
 			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
 			t.Error(w, r, d, err)
@@ -142,7 +142,7 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		wantsAdded, wantsRemoved := helper.TagDifference(d.Business.Wants, oldBusiness.Wants)
 		d.Business.WantsAdded = wantsAdded
 		d.Business.WantsRemoved = wantsRemoved
-		err = service.Business.UpdateBusiness(bID, d.Business, true)
+		err = logic.Business.UpdateBusiness(bID, d.Business, true)
 		if err != nil {
 			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
 			t.Error(w, r, d, err)
@@ -150,13 +150,13 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		}
 
 		// Update BalanceLimit
-		oldBalance, err := service.BalanceLimit.FindByAccountID(account.ID)
+		oldBalance, err := logic.BalanceLimit.FindByAccountID(account.ID)
 		if err != nil {
 			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
 			t.Error(w, r, d, err)
 			return
 		}
-		err = service.BalanceLimit.Update(account.ID, d.Balance.MaxPosBal, d.Balance.MaxNegBal)
+		err = logic.BalanceLimit.Update(account.ID, d.Balance.MaxPosBal, d.Balance.MaxNegBal)
 		if err != nil {
 			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
 			t.Error(w, r, d, err)
@@ -172,13 +172,13 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		}()
 		go func() {
 			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-			adminUser, err := service.AdminUser.FindByID(objID)
-			user, err := service.User.FindByBusinessID(bID)
+			adminUser, err := logic.AdminUser.FindByID(objID)
+			user, err := logic.User.FindByBusinessID(bID)
 			if err != nil {
 				l.Logger.Error("log.Admin.ModifyBusiness failed", zap.Error(err))
 				return
 			}
-			err = service.UserAction.Log(log.Admin.ModifyBusiness(adminUser, user, oldBusiness, d.Business, oldBalance, d.Balance))
+			err = logic.UserAction.Log(log.Admin.ModifyBusiness(adminUser, user, oldBusiness, d.Business, oldBalance, d.Balance))
 			if err != nil {
 				l.Logger.Error("log.Admin.ModifyBusiness failed", zap.Error(err))
 			}
@@ -191,7 +191,7 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		//	   - only update added tags.
 		go func() {
 			if !util.IsAcceptedStatus(oldBusiness.Status) && util.IsAcceptedStatus(d.Business.Status) {
-				err := service.Business.UpdateAllTagsCreatedAt(oldBusiness.ID, time.Now())
+				err := logic.Business.UpdateAllTagsCreatedAt(oldBusiness.ID, time.Now())
 				if err != nil {
 					l.Logger.Error("UpdateAllTagsCreatedAt failed", zap.Error(err))
 				}
@@ -218,7 +218,7 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		go func() {
 			// Set timestamp when first trading status applied.
 			if oldBusiness.MemberStartedAt.IsZero() && (oldBusiness.Status == constant.Business.Accepted) && (d.Business.Status == constant.Trading.Accepted) {
-				service.Business.SetMemberStartedAt(bID)
+				logic.Business.SetMemberStartedAt(bID)
 			}
 		}()
 
@@ -237,21 +237,21 @@ func (a *adminBusinessHandler) deleteBusiness() func(http.ResponseWriter, *http.
 			return
 		}
 
-		err = service.Business.DeleteByID(bsID)
+		err = logic.Business.DeleteByID(bsID)
 		if err != nil {
 			l.Logger.Error("DeleteBusiness failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		user, err := service.User.FindByBusinessID(bsID)
+		user, err := logic.User.FindByBusinessID(bsID)
 		if err != nil {
 			l.Logger.Error("DeleteBusiness failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		err = service.User.DeleteByID(user.ID)
+		err = logic.User.DeleteByID(user.ID)
 		if err != nil {
 			l.Logger.Error("DeleteBusiness failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)

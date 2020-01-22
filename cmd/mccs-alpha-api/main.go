@@ -7,8 +7,8 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/global"
 	"github.com/ic3network/mccs-alpha-api/internal/app/http"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service/balancecheck"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service/dailyemail"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic/balancecheck"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic/dailyemail"
 	"github.com/ic3network/mccs-alpha-api/internal/migration"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/version"

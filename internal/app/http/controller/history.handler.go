@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
@@ -89,7 +89,7 @@ func (h *historyHandler) searchHistory() func(http.ResponseWriter, *http.Request
 		}
 
 		// Get the account balance.
-		account, err := service.Account.FindByBusinessID(user.CompanyID.Hex())
+		account, err := logic.Account.FindByBusinessID(user.CompanyID.Hex())
 		if err != nil {
 			l.Logger.Error("controller.History.HistoryPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -98,7 +98,7 @@ func (h *historyHandler) searchHistory() func(http.ResponseWriter, *http.Request
 		res.Balance = account.Balance
 
 		// Get the recent transactions.
-		transactions, totalPages, err := service.Transaction.FindInRange(
+		transactions, totalPages, err := logic.Transaction.FindInRange(
 			account.ID,
 			util.ParseTime(f.DateFrom),
 			util.ParseTime(f.DateTo),

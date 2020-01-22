@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
@@ -78,7 +78,7 @@ func (h *adminHistoryHandler) historyPage() func(http.ResponseWriter, *http.Requ
 		res := response{FormData: f, BusinessID: bID, Email: user.Email}
 
 		// Get the account balance.
-		account, err := service.Account.FindByBusinessID(bID)
+		account, err := logic.Account.FindByBusinessID(bID)
 		if err != nil {
 			l.Logger.Error("controller.AdminHistory.HistoryPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -87,7 +87,7 @@ func (h *adminHistoryHandler) historyPage() func(http.ResponseWriter, *http.Requ
 		res.Balance = account.Balance
 
 		// Get the recent transactions.
-		transactions, totalPages, err := service.Transaction.FindInRange(
+		transactions, totalPages, err := logic.Transaction.FindInRange(
 			account.ID,
 			util.ParseTime(f.DateFrom),
 			util.ParseTime(f.DateTo),

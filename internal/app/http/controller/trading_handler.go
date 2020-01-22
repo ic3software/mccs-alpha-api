@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
@@ -108,7 +108,7 @@ func (th *tradingHandler) signup() func(http.ResponseWriter, *http.Request) {
 			t.Error(w, r, data, err)
 			return
 		}
-		err = service.Trading.UpdateBusiness(business.ID, data)
+		err = logic.Trading.UpdateBusiness(business.ID, data)
 		if err != nil {
 			l.Logger.Info("TradingHandler.Signup failed", zap.Error(err))
 			t.Error(w, r, data, err)
@@ -122,7 +122,7 @@ func (th *tradingHandler) signup() func(http.ResponseWriter, *http.Request) {
 			t.Error(w, r, data, err)
 			return
 		}
-		err = service.Trading.UpdateUser(user.ID, data)
+		err = logic.Trading.UpdateUser(user.ID, data)
 		if err != nil {
 			l.Logger.Info("TradingHandler.Signup failed", zap.Error(err))
 			t.Error(w, r, data, err)

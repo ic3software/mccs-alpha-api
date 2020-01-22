@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
@@ -82,7 +82,7 @@ type sreachResponse struct {
 func (a *accountHandler) searchAccountPage() func(http.ResponseWriter, *http.Request) {
 	t := template.NewView("admin/accounts")
 	return func(w http.ResponseWriter, r *http.Request) {
-		adminTags, err := service.AdminTag.GetAll()
+		adminTags, err := logic.AdminTag.GetAll()
 		if err != nil {
 			l.Logger.Error("SearchAccountPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -126,7 +126,7 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		adminTags, err := service.AdminTag.GetAll()
+		adminTags, err := logic.AdminTag.GetAll()
 		if err != nil {
 			l.Logger.Error("SearchAccount failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -161,7 +161,7 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 				LocationCountry:  f.LocationCountry,
 				AdminTag:         f.Category,
 			}
-			findResult, err = service.Business.FindBusiness(&c, int64(f.Page))
+			findResult, err = logic.Business.FindBusiness(&c, int64(f.Page))
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
@@ -174,13 +174,13 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 		accounts := make([]account, 0)
 		// Find the user and account balance using business id.
 		for _, business := range findResult.Businesses {
-			user, err := service.User.FindByBusinessID(business.ID)
+			user, err := logic.User.FindByBusinessID(business.ID)
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
 				return
 			}
-			acc, err := service.Account.FindByBusinessID(business.ID.Hex())
+			acc, err := logic.Account.FindByBusinessID(business.ID.Hex())
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
@@ -204,7 +204,7 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 			LastName: f.LastName,
 			Email:    f.Email,
 		}
-		findUserResult, err := service.User.FindUsers(&u, int64(f.Page))
+		findUserResult, err := logic.User.FindUsers(&u, int64(f.Page))
 		if err != nil {
 			l.Logger.Error("SearchAccount failed", zap.Error(err))
 			t.Error(w, r, res, err)
@@ -215,13 +215,13 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 
 		// Find the business and account balance.
 		for _, user := range findUserResult.Users {
-			business, err := service.Business.FindByID(user.CompanyID)
+			business, err := logic.Business.FindByID(user.CompanyID)
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
 				return
 			}
-			acc, err := service.Account.FindByBusinessID(business.ID.Hex())
+			acc, err := logic.Account.FindByBusinessID(business.ID.Hex())
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
@@ -252,7 +252,7 @@ func (a *accountHandler) accountPage() func(http.ResponseWriter, *http.Request) 
 			t.Error(w, r, nil, err)
 			return
 		}
-		business, err := service.Business.FindByID(user.CompanyID)
+		business, err := logic.Business.FindByID(user.CompanyID)
 		if err != nil {
 			l.Logger.Error("AccountPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -269,13 +269,13 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		formData := helper.GetUpdateData(r)
 
 		// Find the user and he's business.
-		user, err := service.User.FindByEmail(formData.User.Email)
+		user, err := logic.User.FindByEmail(formData.User.Email)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 			t.Error(w, r, formData, err)
 			return
 		}
-		oldBusiness, err := service.Business.FindByID(user.CompanyID)
+		oldBusiness, err := logic.Business.FindByID(user.CompanyID)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 			return
@@ -284,7 +284,7 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		// Validate the user inputs.
 		errorMessages := []string{}
 		if formData.CurrentPassword != "" {
-			_, err := service.User.Login(formData.User.Email, formData.CurrentPassword)
+			_, err := logic.User.Login(formData.User.Email, formData.CurrentPassword)
 			if err != nil {
 				l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 				t.Error(w, r, formData, err)
@@ -304,7 +304,7 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		}
 
 		formData.User.ID = user.ID
-		err = service.User.UpdateUserInfo(formData.User)
+		err = logic.User.UpdateUserInfo(formData.User)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 			t.Error(w, r, formData, err)
@@ -318,7 +318,7 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		formData.Business.WantsAdded = wantsAdded
 		formData.Business.WantsRemoved = wantsRemoved
 
-		err = service.Business.UpdateBusiness(user.CompanyID, formData.Business, false)
+		err = logic.Business.UpdateBusiness(user.CompanyID, formData.Business, false)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 			t.Error(w, r, formData, err)
@@ -326,7 +326,7 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		}
 
 		if formData.CurrentPassword != "" && formData.ConfirmPassword != "" {
-			err = service.User.ResetPassword(user.Email, formData.ConfirmPassword)
+			err = logic.User.ResetPassword(user.Email, formData.ConfirmPassword)
 			if err != nil {
 				l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 				t.Error(w, r, formData, err)
@@ -335,7 +335,7 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		}
 
 		go func() {
-			err := service.UserAction.Log(log.User.ModifyAccount(user, formData.User, oldBusiness, formData.Business))
+			err := logic.UserAction.Log(log.User.ModifyAccount(user, formData.User, oldBusiness, formData.Business))
 			if err != nil {
 				l.Logger.Error("BuildModifyAccountAction failed", zap.Error(err))
 			}
@@ -365,7 +365,7 @@ func (a *accountHandler) FindByUserID(uID string) (*types.Account, error) {
 	if err != nil {
 		return nil, e.Wrap(err, "controller.Business.FindByUserID failed")
 	}
-	account, err := service.Account.FindByBusinessID(business.ID.Hex())
+	account, err := logic.Account.FindByBusinessID(business.ID.Hex())
 	if err != nil {
 		return nil, e.Wrap(err, "controller.Business.FindByUserID failed")
 	}

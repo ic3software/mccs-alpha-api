@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/flash"
@@ -65,7 +65,7 @@ func (tr *transactionHandler) getMaxNegBal(r *http.Request, res *response) error
 	if err != nil {
 		return err
 	}
-	maxNegBalance, err := service.BalanceLimit.GetMaxNegBalance(account.ID)
+	maxNegBalance, err := logic.BalanceLimit.GetMaxNegBalance(account.ID)
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func (tr *transactionHandler) proposeTransaction() func(http.ResponseWriter, *ht
 			return
 		}
 		// Decide the initiator and receiver.
-		initiatorBusiness, err := service.Business.FindByID(initiator.CompanyID)
+		initiatorBusiness, err := logic.Business.FindByID(initiator.CompanyID)
 		if err != nil {
 			l.Logger.Info("Transfer failed", zap.Error(err))
 			t.Error(w, r, res, err)
@@ -245,7 +245,7 @@ func (tr *transactionHandler) proposeTransaction() func(http.ResponseWriter, *ht
 			return
 		}
 
-		transaction, err := service.Transaction.Propose(
+		transaction, err := logic.Transaction.Propose(
 			initiator.CompanyID.Hex(),
 			proposeInfo.FromID,
 			proposeInfo.FromEmail,
@@ -265,7 +265,7 @@ func (tr *transactionHandler) proposeTransaction() func(http.ResponseWriter, *ht
 		http.Redirect(w, r, "/#transactions", http.StatusFound)
 
 		go func() {
-			err := service.UserAction.Log(log.User.ProposeTransfer(
+			err := logic.UserAction.Log(log.User.ProposeTransfer(
 				initiator,
 				proposeInfo.FromEmail,
 				proposeInfo.ToEmail,
@@ -314,7 +314,7 @@ func (tr *transactionHandler) pendingTransactions() func(http.ResponseWriter, *h
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		transactions, err := service.Transaction.FindPendings(account.ID)
+		transactions, err := logic.Transaction.FindPendings(account.ID)
 		if err != nil {
 			l.Logger.Error("TransferHandler.pendingTransactions failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -338,7 +338,7 @@ func (tr *transactionHandler) recentTransactions() func(http.ResponseWriter, *ht
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		transactions, err := service.Transaction.FindRecent(account.ID)
+		transactions, err := logic.Transaction.FindRecent(account.ID)
 		if err != nil {
 			l.Logger.Error("TransferHandler.recentTransactions failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -398,7 +398,7 @@ func (tr *transactionHandler) cancelTransaction() func(http.ResponseWriter, *htt
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		transaction, err := service.Transaction.Find(req.TransactionID)
+		transaction, err := logic.Transaction.Find(req.TransactionID)
 		if err != nil {
 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -420,7 +420,7 @@ func (tr *transactionHandler) cancelTransaction() func(http.ResponseWriter, *htt
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		err = service.Transaction.Cancel(req.TransactionID, req.Reason)
+		err = logic.Transaction.Cancel(req.TransactionID, req.Reason)
 		if err != nil {
 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -452,7 +452,7 @@ func (tr *transactionHandler) rejectTransaction() func(http.ResponseWriter, *htt
 			return
 		}
 
-		transaction, err := service.Transaction.Find(req.TransactionID)
+		transaction, err := logic.Transaction.Find(req.TransactionID)
 		if err != nil {
 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -469,7 +469,7 @@ func (tr *transactionHandler) rejectTransaction() func(http.ResponseWriter, *htt
 			return
 		}
 
-		err = service.Transaction.Cancel(req.TransactionID, req.Reason)
+		err = logic.Transaction.Cancel(req.TransactionID, req.Reason)
 		if err != nil {
 			l.Logger.Error("TransferHandler.rejectTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -500,7 +500,7 @@ func (tr *transactionHandler) acceptTransaction() func(http.ResponseWriter, *htt
 			return
 		}
 
-		transaction, err := service.Transaction.Find(req.TransactionID)
+		transaction, err := logic.Transaction.Find(req.TransactionID)
 		if err != nil {
 			l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -517,13 +517,13 @@ func (tr *transactionHandler) acceptTransaction() func(http.ResponseWriter, *htt
 			return
 		}
 
-		from, err := service.Account.FindByID(transaction.FromID)
+		from, err := logic.Account.FindByID(transaction.FromID)
 		if err != nil {
 			l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		to, err := service.Account.FindByID(transaction.ToID)
+		to, err := logic.Account.FindByID(transaction.ToID)
 		if err != nil {
 			l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -531,7 +531,7 @@ func (tr *transactionHandler) acceptTransaction() func(http.ResponseWriter, *htt
 		}
 
 		// Check the account balance.
-		exceed, err := service.BalanceLimit.IsExceedLimit(from.ID, from.Balance-transaction.Amount)
+		exceed, err := logic.BalanceLimit.IsExceedLimit(from.ID, from.Balance-transaction.Amount)
 		if err != nil {
 			l.Logger.Info("TransferHandler.acceptTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -539,7 +539,7 @@ func (tr *transactionHandler) acceptTransaction() func(http.ResponseWriter, *htt
 		}
 		if exceed {
 			reason := "The sender will exceed its credit limit so this transaction has been cancelled."
-			err = service.Transaction.Cancel(req.TransactionID, reason)
+			err = logic.Transaction.Cancel(req.TransactionID, reason)
 			if err != nil {
 				l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -555,7 +555,7 @@ func (tr *transactionHandler) acceptTransaction() func(http.ResponseWriter, *htt
 			}()
 			return
 		}
-		exceed, err = service.BalanceLimit.IsExceedLimit(to.ID, to.Balance+transaction.Amount)
+		exceed, err = logic.BalanceLimit.IsExceedLimit(to.ID, to.Balance+transaction.Amount)
 		if err != nil {
 			l.Logger.Info("TransferHandler.acceptTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -563,7 +563,7 @@ func (tr *transactionHandler) acceptTransaction() func(http.ResponseWriter, *htt
 		}
 		if exceed {
 			reason := "The recipient will exceed its maximum positive balance threshold so this transaction has been cancelled."
-			err = service.Transaction.Cancel(req.TransactionID, reason)
+			err = logic.Transaction.Cancel(req.TransactionID, reason)
 			if err != nil {
 				l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -580,7 +580,7 @@ func (tr *transactionHandler) acceptTransaction() func(http.ResponseWriter, *htt
 			return
 		}
 
-		err = service.Transaction.Accept(transaction.ID, from.ID, to.ID, transaction.Amount)
+		err = logic.Transaction.Accept(transaction.ID, from.ID, to.ID, transaction.Amount)
 		if err != nil {
 			l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)

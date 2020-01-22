@@ -9,7 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/flash"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
@@ -133,7 +133,7 @@ func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http
 			return
 		}
 
-		err = service.AdminTransaction.Create(
+		err = logic.AdminTransaction.Create(
 			from.ID.Hex(),
 			f.FromEmail,
 			from.BusinessName,
@@ -151,12 +151,12 @@ func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http
 
 		go func() {
 			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-			adminUser, err := service.AdminUser.FindByID(objID)
+			adminUser, err := logic.AdminUser.FindByID(objID)
 			if err != nil {
 				l.Logger.Error("log.Admin.Transaction failed", zap.Error(err))
 				return
 			}
-			err = service.UserAction.Log(
+			err = logic.UserAction.Log(
 				log.Admin.Transfer(adminUser, f.FromEmail, f.ToEmail, f.Amount, f.Description),
 			)
 			if err != nil {
@@ -188,7 +188,7 @@ func (tr *adminTransactionHandler) pendingTransactions() func(http.ResponseWrite
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		transactions, err := service.Transaction.FindPendings(account.ID)
+		transactions, err := logic.Transaction.FindPendings(account.ID)
 		if err != nil {
 			l.Logger.Error("AdminTransactionHandler.pendingTransactions failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -243,7 +243,7 @@ func (tr *adminTransactionHandler) cancelTransaction() func(http.ResponseWriter,
 			return
 		}
 
-		transaction, err := service.Transaction.Find(req.TransactionID)
+		transaction, err := logic.Transaction.Find(req.TransactionID)
 		if err != nil {
 			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -260,7 +260,7 @@ func (tr *adminTransactionHandler) cancelTransaction() func(http.ResponseWriter,
 			return
 		}
 
-		err = service.Transaction.Cancel(req.TransactionID, req.Reason)
+		err = logic.Transaction.Cancel(req.TransactionID, req.Reason)
 		if err != nil {
 			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)

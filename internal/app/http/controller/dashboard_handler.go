@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
@@ -55,7 +55,7 @@ func (d *dashBoardHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 			return
 		}
 
-		business, err := service.Business.FindByID(user.CompanyID)
+		business, err := logic.Business.FindByID(user.CompanyID)
 		if err != nil {
 			l.Logger.Error("DashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -67,13 +67,13 @@ func (d *dashBoardHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 			lastLoginDate = user.LastLoginDate
 		}
 
-		matchedOffers, err := service.Tag.MatchOffers(helper.GetTagNames(business.Offers), lastLoginDate)
+		matchedOffers, err := logic.Tag.MatchOffers(helper.GetTagNames(business.Offers), lastLoginDate)
 		if err != nil {
 			l.Logger.Error("DashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
-		matchedWants, err := service.Tag.MatchWants(helper.GetTagNames(business.Wants), lastLoginDate)
+		matchedWants, err := logic.Tag.MatchWants(helper.GetTagNames(business.Wants), lastLoginDate)
 		if err != nil {
 			l.Logger.Error("DashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -88,7 +88,7 @@ func (d *dashBoardHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 		}
 
 		// Get the account balance.
-		account, err := service.Account.FindByBusinessID(user.CompanyID.Hex())
+		account, err := logic.Account.FindByBusinessID(user.CompanyID.Hex())
 		if err != nil {
 			l.Logger.Error("DashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 
 	"github.com/gorilla/mux"
@@ -50,7 +50,7 @@ func (h *tagHandler) RegisterRoutes(
 func (h *tagHandler) SaveOfferTags(added []string) error {
 	for _, tagName := range added {
 		// TODO: UpdateOffers
-		err := service.Tag.UpdateOffer(tagName)
+		err := logic.Tag.UpdateOffer(tagName)
 		if err != nil {
 			return err
 		}
@@ -61,7 +61,7 @@ func (h *tagHandler) SaveOfferTags(added []string) error {
 func (h *tagHandler) SaveWantTags(added []string) error {
 	for _, tagName := range added {
 		// TODO: UpdateWants
-		err := service.Tag.UpdateWant(tagName)
+		err := logic.Tag.UpdateWant(tagName)
 		if err != nil {
 			return err
 		}
@@ -90,7 +90,7 @@ func (h *tagHandler) getTagSuggestions() func(http.ResponseWriter, *http.Request
 		vars := mux.Vars(r)
 		tagName := vars["tagName"]
 
-		findResult, err := service.Tag.FindTags(tagName, int64(1))
+		findResult, err := logic.Tag.FindTags(tagName, int64(1))
 		if err != nil {
 			l.Logger.Error("GetTagSuggestions failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -152,7 +152,7 @@ func (h *tagHandler) createTag() func(http.ResponseWriter, *http.Request) {
 		}
 
 		tagName := tagNames[0].Name
-		_, err = service.Tag.FindByName(tagName)
+		_, err = logic.Tag.FindByName(tagName)
 		if err == nil {
 			l.Logger.Info("[CreateTag] failed: Tag already exists")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -160,7 +160,7 @@ func (h *tagHandler) createTag() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		err = service.Tag.Create(tagName)
+		err = logic.Tag.Create(tagName)
 		if err != nil {
 			l.Logger.Error("CreateTag failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -170,12 +170,12 @@ func (h *tagHandler) createTag() func(http.ResponseWriter, *http.Request) {
 
 		go func() {
 			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-			adminUser, err := service.AdminUser.FindByID(objID)
+			adminUser, err := logic.AdminUser.FindByID(objID)
 			if err != nil {
 				l.Logger.Error("log.Admin.CreateTag failed", zap.Error(err))
 				return
 			}
-			err = service.UserAction.Log(log.Admin.CreateTag(adminUser, tagName))
+			err = logic.UserAction.Log(log.Admin.CreateTag(adminUser, tagName))
 			if err != nil {
 				l.Logger.Error("log.Admin.CreateTag failed", zap.Error(err))
 			}
@@ -214,7 +214,7 @@ func (h *tagHandler) searchTags() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		findResult, err := service.Tag.FindTags(f.Name, int64(f.Page))
+		findResult, err := logic.Tag.FindTags(f.Name, int64(f.Page))
 		if err != nil {
 			l.Logger.Error("SearchTags failed", zap.Error(err))
 			t.Error(w, r, res, err)
@@ -249,7 +249,7 @@ func (h *tagHandler) renameTag() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		_, err = service.Tag.FindByName(req.Name)
+		_, err = logic.Tag.FindByName(req.Name)
 		if err == nil {
 			l.Logger.Info("[RenameTag] failed: Tag already exists")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -265,7 +265,7 @@ func (h *tagHandler) renameTag() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		tag, err := service.Tag.FindByID(tagID)
+		tag, err := logic.Tag.FindByID(tagID)
 		if err != nil {
 			l.Logger.Error("RenameTag failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -275,7 +275,7 @@ func (h *tagHandler) renameTag() func(http.ResponseWriter, *http.Request) {
 		oldName := tag.Name
 
 		go func() {
-			err := service.Business.RenameTag(oldName, req.Name)
+			err := logic.Business.RenameTag(oldName, req.Name)
 			if err != nil {
 				l.Logger.Error("RenameTag failed", zap.Error(err))
 			}
@@ -285,7 +285,7 @@ func (h *tagHandler) renameTag() func(http.ResponseWriter, *http.Request) {
 			ID:   tagID,
 			Name: req.Name,
 		}
-		err = service.Tag.Rename(tag)
+		err = logic.Tag.Rename(tag)
 		if err != nil {
 			l.Logger.Error("RenameTag failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -295,12 +295,12 @@ func (h *tagHandler) renameTag() func(http.ResponseWriter, *http.Request) {
 
 		go func() {
 			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-			adminUser, err := service.AdminUser.FindByID(objID)
+			adminUser, err := logic.AdminUser.FindByID(objID)
 			if err != nil {
 				l.Logger.Error("log.Admin.ModifyTag failed", zap.Error(err))
 				return
 			}
-			err = service.UserAction.Log(log.Admin.ModifyTag(adminUser, oldName, req.Name))
+			err = logic.UserAction.Log(log.Admin.ModifyTag(adminUser, oldName, req.Name))
 			if err != nil {
 				l.Logger.Error("log.Admin.ModifyTag failed", zap.Error(err))
 			}
@@ -321,14 +321,14 @@ func (h *tagHandler) deleteTag() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		tag, err := service.Tag.FindByID(tagID)
+		tag, err := logic.Tag.FindByID(tagID)
 		if err != nil {
 			l.Logger.Error("DeleteTag failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		err = service.Tag.DeleteByID(tagID)
+		err = logic.Tag.DeleteByID(tagID)
 		if err != nil {
 			l.Logger.Error("DeleteTag failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -336,19 +336,19 @@ func (h *tagHandler) deleteTag() func(http.ResponseWriter, *http.Request) {
 		}
 
 		go func() {
-			err := service.Business.DeleteTag(tag.Name)
+			err := logic.Business.DeleteTag(tag.Name)
 			if err != nil {
 				l.Logger.Error("DeleteTag failed", zap.Error(err))
 			}
 		}()
 		go func() {
 			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-			adminUser, err := service.AdminUser.FindByID(objID)
+			adminUser, err := logic.AdminUser.FindByID(objID)
 			if err != nil {
 				l.Logger.Error("log.Admin.DeleteTag failed", zap.Error(err))
 				return
 			}
-			err = service.UserAction.Log(log.Admin.DeleteTag(adminUser, tag.Name))
+			err = logic.UserAction.Log(log.Admin.DeleteTag(adminUser, tag.Name))
 			if err != nil {
 				l.Logger.Error("log.Admin.DeleteTag failed", zap.Error(err))
 			}

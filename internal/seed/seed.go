@@ -9,7 +9,7 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/es"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/mongo"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -102,7 +102,7 @@ func Run() {
 		}
 
 		// PostgresSQL - Create account from business.
-		err = service.Account.Create(b.ID.Hex())
+		err = logic.Account.Create(b.ID.Hex())
 		if err != nil {
 			log.Fatal(err)
 		}

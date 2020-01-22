@@ -1,4 +1,4 @@
-package service
+package logic
 
 import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/pg"

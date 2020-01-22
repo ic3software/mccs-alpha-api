@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
@@ -85,7 +85,7 @@ func (lh *logHandler) searchLog() func(http.ResponseWriter, *http.Request) {
 			DateTo:   util.ParseTime(f.DateTo),
 		}
 
-		userAction, totalPages, err := service.UserAction.Find(&c, int64(f.Page))
+		userAction, totalPages, err := logic.UserAction.Find(&c, int64(f.Page))
 		res.TotalPages = totalPages
 		res.UserActions = userAction
 		if err != nil {

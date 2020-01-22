@@ -9,7 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
@@ -57,7 +57,7 @@ func (b *businessHandler) FindByID(businessID string) (*types.Business, error) {
 	if err != nil {
 		return nil, err
 	}
-	business, err := service.Business.FindByID(objID)
+	business, err := logic.Business.FindByID(objID)
 	if err != nil {
 		return nil, err
 	}
@@ -65,11 +65,11 @@ func (b *businessHandler) FindByID(businessID string) (*types.Business, error) {
 }
 
 func (b *businessHandler) FindByEmail(email string) (*types.Business, error) {
-	user, err := service.User.FindByEmail(email)
+	user, err := logic.User.FindByEmail(email)
 	if err != nil {
 		return nil, err
 	}
-	bs, err := service.Business.FindByID(user.CompanyID)
+	bs, err := logic.Business.FindByID(user.CompanyID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (b *businessHandler) FindByUserID(uID string) (*types.Business, error) {
 	if err != nil {
 		return nil, err
 	}
-	bs, err := service.Business.FindByID(user.CompanyID)
+	bs, err := logic.Business.FindByID(user.CompanyID)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ type searchBusinessResponse struct {
 func (b *businessHandler) searchBusinessPage() func(http.ResponseWriter, *http.Request) {
 	t := template.NewView("businesses")
 	return func(w http.ResponseWriter, r *http.Request) {
-		adminTags, err := service.AdminTag.GetAll()
+		adminTags, err := logic.AdminTag.GetAll()
 		if err != nil {
 			l.Logger.Error("SearchBusinessPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -169,7 +169,7 @@ func (b *businessHandler) searchBusiness() func(http.ResponseWriter, *http.Reque
 			ShowUserFavoritesOnly: f.ShowUserFavoritesOnly,
 			FavoriteBusinesses:    res.FavoriteBusinesses,
 		}
-		findResult, err := service.Business.FindBusiness(&c, int64(f.Page))
+		findResult, err := logic.Business.FindBusiness(&c, int64(f.Page))
 		res.Result = findResult
 		if err != nil {
 			l.Logger.Error("SearchBusiness failed", zap.Error(err))
@@ -177,7 +177,7 @@ func (b *businessHandler) searchBusiness() func(http.ResponseWriter, *http.Reque
 			return
 		}
 
-		adminTags, err := service.AdminTag.GetAll()
+		adminTags, err := logic.AdminTag.GetAll()
 		if err != nil {
 			l.Logger.Error("SearchBusiness failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -301,7 +301,7 @@ func (b *businessHandler) businessStatus() func(http.ResponseWriter, *http.Reque
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			business, err = service.Business.FindByID(objID)
+			business, err = logic.Business.FindByID(objID)
 			if err != nil {
 				l.Logger.Error("BusinessHandler.businessStatus failed", zap.Error(err))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -336,14 +336,14 @@ func (b *businessHandler) getBusinessName() func(http.ResponseWriter, *http.Requ
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 
-		user, err := service.User.FindByEmail(q.Get("email"))
+		user, err := logic.User.FindByEmail(q.Get("email"))
 		if err != nil {
 			l.Logger.Error("BusinessHandler.getBusinessName failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		business, err := service.Business.FindByID(user.CompanyID)
+		business, err := logic.Business.FindByID(user.CompanyID)
 		if err != nil {
 			l.Logger.Error("BusinessHandler.getBusinessName failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -378,7 +378,7 @@ func (b *businessHandler) tradingMemberStatus() func(http.ResponseWriter, *http.
 			return
 		}
 
-		other, err := service.Business.FindByID(objID)
+		other, err := logic.Business.FindByID(objID)
 		if err != nil {
 			l.Logger.Error("BusinessHandler.tradingMemberStatus failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)

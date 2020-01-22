@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/mongo"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -40,7 +40,7 @@ func setUpAccount() {
 			log.Fatal(err)
 		}
 		// Create account from business.
-		err = service.Account.Create(b.ID.Hex())
+		err = logic.Account.Create(b.ID.Hex())
 		if err != nil {
 			log.Fatal(err)
 		}

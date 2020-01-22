@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/cookie"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
@@ -56,7 +56,7 @@ func (a *adminUserHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 			t.Error(w, r, nil, err)
 			return
 		}
-		adminUser, err := service.AdminUser.FindByID(objID)
+		adminUser, err := logic.AdminUser.FindByID(objID)
 		if err != nil {
 			l.Logger.Error("AdminDashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -103,19 +103,19 @@ func (a *adminUserHandler) loginHandler() func(http.ResponseWriter, *http.Reques
 			}
 		}
 
-		user, err := service.AdminUser.Login(f.Email, f.Password)
+		user, err := logic.AdminUser.Login(f.Email, f.Password)
 		if err != nil {
 			l.Logger.Info("AdminLoginHandler failed", zap.Error(err))
 			t.Error(w, r, f, err)
 			go func() {
-				user, err := service.AdminUser.FindByEmail(f.Email)
+				user, err := logic.AdminUser.FindByEmail(f.Email)
 				if err != nil {
 					if !e.IsUserNotFound(err) {
 						l.Logger.Error("BuildLoginFailureAction failed", zap.Error(err))
 					}
 					return
 				}
-				err = service.UserAction.Log(log.Admin.LoginFailure(user, ip.FromRequest(r)))
+				err = logic.UserAction.Log(log.Admin.LoginFailure(user, ip.FromRequest(r)))
 				if err != nil {
 					l.Logger.Error("BuildLoginFailureAction failed", zap.Error(err))
 				}
@@ -127,13 +127,13 @@ func (a *adminUserHandler) loginHandler() func(http.ResponseWriter, *http.Reques
 		http.SetCookie(w, cookie.CreateCookie(token))
 
 		go func() {
-			err := service.AdminUser.UpdateLoginInfo(user.ID, ip.FromRequest(r))
+			err := logic.AdminUser.UpdateLoginInfo(user.ID, ip.FromRequest(r))
 			if err != nil {
 				l.Logger.Error("AdminLoginHandler failed", zap.Error(err))
 			}
 		}()
 		go func() {
-			err := service.UserAction.Log(log.Admin.LoginSuccess(user, ip.FromRequest(r)))
+			err := logic.UserAction.Log(log.Admin.LoginSuccess(user, ip.FromRequest(r)))
 			if err != nil {
 				l.Logger.Error("log.Admin.LoginSuccess failed", zap.Error(err))
 			}

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
-	"github.com/ic3network/mccs-alpha-api/internal/app/service"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/cookie"
@@ -65,7 +65,7 @@ func (u *userHandler) FindByID(id string) (*types.User, error) {
 	if err != nil {
 		return nil, e.Wrap(err, "controller.User.FindByID failed")
 	}
-	user, err := service.User.FindByID(objID)
+	user, err := logic.User.FindByID(objID)
 	if err != nil {
 		return nil, e.Wrap(err, "controller.User.FindByID failed")
 	}
@@ -77,7 +77,7 @@ func (u *userHandler) FindByBusinessID(id string) (*types.User, error) {
 	if err != nil {
 		return nil, e.Wrap(err, "controller.User.FindByBusinessID failed")
 	}
-	user, err := service.User.FindByBusinessID(objID)
+	user, err := logic.User.FindByBusinessID(objID)
 	if err != nil {
 		return nil, e.Wrap(err, "controller.User.FindByBusinessID failed")
 	}
@@ -106,7 +106,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		}
 
 		errs := validate.SignUp(req.Email, req.Password)
-		if service.User.UserEmailExists(req.Email) {
+		if logic.User.UserEmailExists(req.Email) {
 			errs = append(errs, "Email address is already registered.")
 		}
 		if len(errs) > 0 {
@@ -115,7 +115,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		userID, err := service.User.Create(req.Email, req.Password)
+		userID, err := logic.User.Create(req.Email, req.Password)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
@@ -152,14 +152,14 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 			RedirectURL:      r.URL.Query().Get("redirect_login"),
 		}
 
-		user, err := service.User.Login(f.Email, f.Password)
+		user, err := logic.User.Login(f.Email, f.Password)
 		if err != nil {
 			l.Logger.Info("LoginHandler failed", zap.Error(err))
 
 			// Logic to update user login attempts.
 			passwordInvalid := e.IsPasswordInvalid(err)
 			if passwordInvalid {
-				err := service.User.UpdateLoginAttempts(f.Email)
+				err := logic.User.UpdateLoginAttempts(f.Email)
 				if err != nil {
 					l.Logger.Error("UpdateLoginAttempts failed", zap.Error(err))
 				}
@@ -168,14 +168,14 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 			t.Error(w, r, f, err)
 
 			go func() {
-				user, err := service.User.FindByEmail(f.Email)
+				user, err := logic.User.FindByEmail(f.Email)
 				if err != nil {
 					if !e.IsUserNotFound(err) {
 						l.Logger.Error("log.User.LoginFailure failed", zap.Error(err))
 					}
 					return
 				}
-				err = service.UserAction.Log(log.User.LoginFailure(user, ip.FromRequest(r)))
+				err = logic.UserAction.Log(log.User.LoginFailure(user, ip.FromRequest(r)))
 				if err != nil {
 					l.Logger.Error("log.User.LoginFailure failed", zap.Error(err))
 				}
@@ -190,13 +190,13 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		flash.Info(w, "You last logged in on "+util.FormatTime(user.CurrentLoginDate)+" from "+user.CurrentLoginIP)
 
 		go func() {
-			err := service.User.UpdateLoginInfo(user.ID, ip.FromRequest(r))
+			err := logic.User.UpdateLoginInfo(user.ID, ip.FromRequest(r))
 			if err != nil {
 				l.Logger.Error("UpdateLoginInfo failed", zap.Error(err))
 			}
 		}()
 		go func() {
-			err := service.UserAction.Log(log.User.LoginSuccess(user, ip.FromRequest(r)))
+			err := logic.UserAction.Log(log.User.LoginSuccess(user, ip.FromRequest(r)))
 			if err != nil {
 				l.Logger.Error("log.User.LoginSuccess failed", zap.Error(err))
 			}
@@ -251,7 +251,7 @@ func (u *userHandler) lostPassword() func(http.ResponseWriter, *http.Request) {
 			}
 		}
 
-		user, err := service.User.FindByEmail(f.Email)
+		user, err := logic.User.FindByEmail(f.Email)
 		if err != nil {
 			l.Logger.Info("LostPassword failed", zap.Error(err))
 			t.Error(w, r, f, err)
@@ -259,8 +259,8 @@ func (u *userHandler) lostPassword() func(http.ResponseWriter, *http.Request) {
 		}
 
 		receiver := user.FirstName + " " + user.LastName
-		lostPassword, err := service.Lostpassword.FindByEmail(f.Email)
-		if err == nil && !service.Lostpassword.TokenInvalid(lostPassword) {
+		lostPassword, err := logic.Lostpassword.FindByEmail(f.Email)
+		if err == nil && !logic.Lostpassword.TokenInvalid(lostPassword) {
 			email.SendResetEmail(receiver, f.Email, lostPassword.Token)
 			f.Success = true
 			t.Render(w, r, f, nil)
@@ -278,7 +278,7 @@ func (u *userHandler) lostPassword() func(http.ResponseWriter, *http.Request) {
 			Email: user.Email,
 			Token: uid.String(),
 		}
-		err = service.Lostpassword.Create(lostPassword)
+		err = logic.Lostpassword.Create(lostPassword)
 		if err != nil {
 			l.Logger.Error("LostPassword failed", zap.Error(err))
 			t.Error(w, r, f, err)
@@ -288,7 +288,7 @@ func (u *userHandler) lostPassword() func(http.ResponseWriter, *http.Request) {
 		email.SendResetEmail(receiver, f.Email, uid.String())
 
 		go func() {
-			err := service.UserAction.Log(log.User.LostPassword(user))
+			err := logic.UserAction.Log(log.User.LostPassword(user))
 			if err != nil {
 				l.Logger.Error("log.User.LostPassword failed", zap.Error(err))
 			}
@@ -308,13 +308,13 @@ func (u *userHandler) passwordResetPage() func(http.ResponseWriter, *http.Reques
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		token := vars["token"]
-		lostPassword, err := service.Lostpassword.FindByToken(token)
+		lostPassword, err := logic.Lostpassword.FindByToken(token)
 		if err != nil {
 			l.Logger.Error("PasswordResetPage failed", zap.Error(err))
 			http.Redirect(w, r, "/lost-password", http.StatusFound)
 			return
 		}
-		if service.Lostpassword.TokenInvalid(lostPassword) {
+		if logic.Lostpassword.TokenInvalid(lostPassword) {
 			l.Logger.Info("PasswordResetPage failed: token expired \n")
 			http.Redirect(w, r, "/lost-password", http.StatusFound)
 			return
@@ -348,14 +348,14 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		lost, err := service.Lostpassword.FindByToken(f.Token)
+		lost, err := logic.Lostpassword.FindByToken(f.Token)
 		if err != nil {
 			l.Logger.Error("PasswordReset failed", zap.Error(err))
 			t.Error(w, r, f, err)
 			return
 		}
 
-		err = service.User.ResetPassword(lost.Email, f.Password)
+		err = logic.User.ResetPassword(lost.Email, f.Password)
 		if err != nil {
 			l.Logger.Error("PasswordReset failed", zap.Error(err))
 			t.Error(w, r, f, err)
@@ -363,19 +363,19 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 		}
 
 		go func() {
-			err := service.Lostpassword.SetTokenUsed(f.Token)
+			err := logic.Lostpassword.SetTokenUsed(f.Token)
 			if err != nil {
 				l.Logger.Error("SetTokenUsed failed", zap.Error(err))
 			}
 		}()
 
 		go func() {
-			user, err := service.User.FindByEmail(lost.Email)
+			user, err := logic.User.FindByEmail(lost.Email)
 			if err != nil {
 				l.Logger.Error("BuildChangePasswordAction failed", zap.Error(err))
 				return
 			}
-			service.UserAction.Log(log.User.ChangePassword(user))
+			logic.UserAction.Log(log.User.ChangePassword(user))
 			if err != nil {
 				l.Logger.Error("log.User.ChangePassword failed", zap.Error(err))
 			}
@@ -394,7 +394,7 @@ func (u *userHandler) toggleShowRecentMatchedTags() func(http.ResponseWriter, *h
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		err = service.User.ToggleShowRecentMatchedTags(objID)
+		err = logic.User.ToggleShowRecentMatchedTags(objID)
 		if err != nil {
 			l.Logger.Error("ToggleShowRecentMatchedTags failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -438,7 +438,7 @@ func (u *userHandler) addToFavoriteBusinesses() func(http.ResponseWriter, *http.
 			return
 		}
 
-		err = service.User.AddToFavoriteBusinesses(uID, bID)
+		err = logic.User.AddToFavoriteBusinesses(uID, bID)
 		if err != nil {
 			l.Logger.Error("AppServer AddToFavoriteBusinesses failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -484,7 +484,7 @@ func (u *userHandler) removeFromFavoriteBusinesses() func(http.ResponseWriter, *
 			return
 		}
 
-		err = service.User.RemoveFromFavoriteBusinesses(uID, bID)
+		err = logic.User.RemoveFromFavoriteBusinesses(uID, bID)
 		if err != nil {
 			l.Logger.Error("AppServer RemoveFromFavoriteBusinesses failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
