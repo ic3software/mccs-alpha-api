@@ -81,6 +81,12 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
+	type data struct {
+		Token string `json:"token"`
+	}
+	type respond struct {
+		Data data `json:"data"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request
 		decoder := json.NewDecoder(r.Body)
@@ -88,6 +94,12 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		errs := validate.Login(req.Password)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
@@ -99,9 +111,8 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		}
 
 		token, err := jwt.GenerateToken(user.ID.Hex(), false)
-		http.SetCookie(w, cookie.CreateCookie(token))
 
-		api.Respond(w, r, http.StatusOK)
+		api.Respond(w, r, http.StatusOK, respond{Data: data{Token: token}})
 	}
 }
 
@@ -109,6 +120,12 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
+	}
+	type data struct {
+		Token string `json:"token"`
+	}
+	type respond struct {
+		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request
@@ -125,7 +142,6 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			errs = append(errs, errors.New("Email address is already registered."))
 		}
 		if len(errs) > 0 {
-			l.Logger.Info("[INFO] UserHandler.signup failed", zap.Errors("input invalid", errs))
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
@@ -143,9 +159,8 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		http.SetCookie(w, cookie.CreateCookie(token))
 
-		api.Respond(w, r, http.StatusOK)
+		api.Respond(w, r, http.StatusOK, respond{Data: data{Token: token}})
 	}
 }
 
@@ -222,7 +237,6 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 
 		errs := validate.ResetPassword(req.Password)
 		if len(errs) > 0 {
-			l.Logger.Info("[INFO] UserHandler.passwordReset failed", zap.Errors("input invalid", errs))
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}

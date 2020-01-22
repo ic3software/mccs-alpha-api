@@ -13,10 +13,26 @@ func SignUp(email, password string) []error {
 	email = strings.ToLower(email)
 	if email == "" {
 		errs = append(errs, errors.New("Email is missing."))
-	} else if !util.IsValidEmail(email) {
+	} else if util.IsInValidEmail(email) {
 		errs = append(errs, errors.New("Email is invalid."))
 	} else if len(email) > 100 {
 		errs = append(errs, errors.New("Email cannot exceed 100 characters."))
+	}
+
+	if password == "" {
+		errs = append(errs, errors.New("Password is missing."))
+	} else {
+		errs = append(errs, validatePassword(password)...)
+	}
+
+	return errs
+}
+
+func Login(password string) []error {
+	errs := []error{}
+
+	if password == "" {
+		errs = append(errs, errors.New("Password is missing."))
 	}
 
 	return errs
