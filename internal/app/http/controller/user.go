@@ -14,13 +14,11 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/flash"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/ip"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/recaptcha"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -46,7 +44,6 @@ func (u *userHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	u.once.Do(func() {
-		public.Path("/lost-password").HandlerFunc(u.lostPasswordPage()).Methods("GET")
 		public.Path("/lost-password").HandlerFunc(u.lostPassword()).Methods("POST")
 		public.Path("/password-resets/{token}").HandlerFunc(u.passwordResetPage()).Methods("GET")
 		public.Path("/password-resets/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
@@ -89,12 +86,6 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-	type data struct {
-		Token string `json:"token"`
-	}
-	type response struct {
-		Data data `json:"data"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request
 		decoder := json.NewDecoder(r.Body)
@@ -135,74 +126,31 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 }
 
 func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("account")
-	type formData struct {
-		Email            string
-		Password         string
-		RecaptchaSitekey string
-		RedirectURL      string
+	type request struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
-
-		f := formData{
-			Email:            r.FormValue("email"),
-			Password:         r.FormValue("password"),
-			RecaptchaSitekey: viper.GetString("recaptcha.site_key"),
-			RedirectURL:      r.URL.Query().Get("redirect_login"),
+		var req request
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&req)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.login failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
 		}
 
-		user, err := logic.User.Login(f.Email, f.Password)
+		user, err := logic.User.Login(req.Email, req.Password)
 		if err != nil {
-			l.Logger.Info("LoginHandler failed", zap.Error(err))
-
-			// Logic to update user login attempts.
-			passwordInvalid := e.IsPasswordInvalid(err)
-			if passwordInvalid {
-				err := logic.User.UpdateLoginAttempts(f.Email)
-				if err != nil {
-					l.Logger.Error("UpdateLoginAttempts failed", zap.Error(err))
-				}
-			}
-
-			t.Error(w, r, f, err)
-
-			go func() {
-				user, err := logic.User.FindByEmail(f.Email)
-				if err != nil {
-					if !e.IsUserNotFound(err) {
-						l.Logger.Error("log.User.LoginFailure failed", zap.Error(err))
-					}
-					return
-				}
-				err = logic.UserAction.Log(log.User.LoginFailure(user, ip.FromRequest(r)))
-				if err != nil {
-					l.Logger.Error("log.User.LoginFailure failed", zap.Error(err))
-				}
-			}()
+			l.Logger.Info("[ERROR] UserHandler.login failed", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
 		token, err := jwt.GenerateToken(user.ID.Hex(), false)
 		http.SetCookie(w, cookie.CreateCookie(token))
 
-		// CurrentLoginDate and CurrentLoginIP are the previous informations.
-		flash.Info(w, "You last logged in on "+util.FormatTime(user.CurrentLoginDate)+" from "+user.CurrentLoginIP)
-
-		go func() {
-			err := logic.User.UpdateLoginInfo(user.ID, ip.FromRequest(r))
-			if err != nil {
-				l.Logger.Error("UpdateLoginInfo failed", zap.Error(err))
-			}
-		}()
-		go func() {
-			err := logic.UserAction.Log(log.User.LoginSuccess(user, ip.FromRequest(r)))
-			if err != nil {
-				l.Logger.Error("log.User.LoginSuccess failed", zap.Error(err))
-			}
-		}()
-
-		http.Redirect(w, r, r.URL.Query().Get("redirect_login"), http.StatusFound)
+		api.Respond(w, r, http.StatusOK)
 	}
 }
 
@@ -211,19 +159,6 @@ func (u *userHandler) logout() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, cookie.ResetCookie())
 		api.Respond(w, r, http.StatusOK)
-	}
-}
-
-// LostPasswordPage renders the lost password page.
-func (u *userHandler) lostPasswordPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("lost-password")
-	type formData struct {
-		Email            string
-		Success          bool
-		RecaptchaSitekey string
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		t.Render(w, r, formData{RecaptchaSitekey: viper.GetString("recaptcha.site_key")}, nil)
 	}
 }
 

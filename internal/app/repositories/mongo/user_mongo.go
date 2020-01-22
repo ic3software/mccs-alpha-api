@@ -42,8 +42,8 @@ func (u *user) FindByEmail(email string) (*types.User, error) {
 	if email == "" {
 		return &types.User{}, e.New(e.UserNotFound, "user not found")
 	}
-	user := types.User{}
 
+	user := types.User{}
 	filter := bson.M{
 		"email":     email,
 		"deletedAt": bson.M{"$exists": false},
@@ -52,6 +52,7 @@ func (u *user) FindByEmail(email string) (*types.User, error) {
 	if err != nil {
 		return nil, e.New(e.UserNotFound, "user not found")
 	}
+
 	return &user, nil
 }
 
