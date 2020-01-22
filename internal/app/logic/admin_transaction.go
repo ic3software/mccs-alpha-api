@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/pg"
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/pg"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 )
 

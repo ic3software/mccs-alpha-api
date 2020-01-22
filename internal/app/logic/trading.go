@@ -1,8 +1,8 @@
 package logic
 
 import (
-	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/es"
-	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/mongo"
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

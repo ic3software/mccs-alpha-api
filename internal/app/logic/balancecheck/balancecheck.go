@@ -3,7 +3,7 @@ package balancecheck
 import (
 	"time"
 
-	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/pg"
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/pg"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"go.uber.org/zap"

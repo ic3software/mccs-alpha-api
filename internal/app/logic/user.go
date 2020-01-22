@@ -3,8 +3,8 @@ package logic
 import (
 	"time"
 
-	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/es"
-	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/mongo"
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"

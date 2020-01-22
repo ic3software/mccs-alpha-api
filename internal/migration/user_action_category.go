@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/mongo"
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

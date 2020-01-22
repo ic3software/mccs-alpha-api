@@ -5,7 +5,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/ic3network/mccs-alpha-api/internal/app/repositories/pg"
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/pg"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 )
