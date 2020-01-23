@@ -2,23 +2,29 @@ package middleware
 
 import (
 	"net/http"
-	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 )
 
+const (
+	BEARER_SCHEMA string = "Bearer "
+)
+
+// GetLoggedInUser extracts the auth token from req.
 func GetLoggedInUser() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cookie, err := r.Cookie("mccsToken")
-			if err != nil {
+			// Grab the raw Authoirzation header
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" || !strings.HasPrefix(authHeader, BEARER_SCHEMA) {
 				next.ServeHTTP(w, r)
 				return
 			}
-			mccsToken := cookie.Value
-			claims, err := jwt.ValidateToken(mccsToken)
+			claims, err := jwt.ValidateToken(authHeader[len(BEARER_SCHEMA):])
 			if err != nil {
 				next.ServeHTTP(w, r)
 				return
@@ -34,15 +40,8 @@ func RequireUser() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			userID := r.Header.Get("userID")
-			// When user is not logged in.
-			// 	1. If it's on the root page, redirect to find businesses page.
-			// 	2. If it's on the other page, redirect to the targeting page after logging in.
 			if userID == "" {
-				if url.QueryEscape(r.URL.String()) == url.QueryEscape("/") {
-					http.Redirect(w, r, "/businesses/search?page=1", http.StatusFound)
-				} else {
-					http.Redirect(w, r, "/login?redirect_login="+url.QueryEscape(r.URL.String()), http.StatusFound)
-				}
+				api.Respond(w, r, http.StatusUnauthorized, api.ErrUnauthorized)
 				return
 			}
 			admin, _ := strconv.ParseBool(r.Header.Get("admin"))
