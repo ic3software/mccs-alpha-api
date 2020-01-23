@@ -77,7 +77,7 @@ func (u *user) Login(email string, password string) (*types.User, error) {
 
 	err = bcrypt.CompareHash(user.Password, password)
 	if err != nil {
-		return nil, errors.New("Invalid password.")
+		return nil, errors.New("User login failed: Invalid password.")
 	}
 
 	return user, nil

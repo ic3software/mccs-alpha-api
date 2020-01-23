@@ -12,15 +12,15 @@ func SignUp(email, password string) []error {
 
 	email = strings.ToLower(email)
 	if email == "" {
-		errs = append(errs, errors.New("Email is missing."))
+		errs = append(errs, errors.New("User signup failed: Email is missing."))
 	} else if util.IsInValidEmail(email) {
-		errs = append(errs, errors.New("Email is invalid."))
+		errs = append(errs, errors.New("User signup failed: Email is invalid."))
 	} else if len(email) > 100 {
-		errs = append(errs, errors.New("Email cannot exceed 100 characters."))
+		errs = append(errs, errors.New("User signup failed: Email cannot exceed 100 characters."))
 	}
 
 	if password == "" {
-		errs = append(errs, errors.New("Password is missing."))
+		errs = append(errs, errors.New("User signup failed: Password is missing."))
 	} else {
 		errs = append(errs, validatePassword(password)...)
 	}
@@ -32,7 +32,7 @@ func Login(password string) []error {
 	errs := []error{}
 
 	if password == "" {
-		errs = append(errs, errors.New("Password is missing."))
+		errs = append(errs, errors.New("User login failed: Password is missing."))
 	}
 
 	return errs
@@ -42,7 +42,7 @@ func ResetPassword(password string) []error {
 	errs := []error{}
 
 	if password == "" {
-		errs = append(errs, errors.New("Password is missing."))
+		errs = append(errs, errors.New("Reset password failed: Password is missing."))
 	} else {
 		errs = append(errs, validatePassword(password)...)
 	}

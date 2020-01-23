@@ -139,7 +139,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 
 		errs := validate.SignUp(req.Email, req.Password)
 		if logic.User.UserEmailExists(req.Email) {
-			errs = append(errs, errors.New("Email address is already registered."))
+			errs = append(errs, errors.New("User signup failed: Email address is already registered."))
 		}
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
