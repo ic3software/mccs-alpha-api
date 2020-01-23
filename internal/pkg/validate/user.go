@@ -13,10 +13,10 @@ func SignUp(email, password string) []error {
 	email = strings.ToLower(email)
 	if email == "" {
 		errs = append(errs, errors.New("User signup failed: Email is missing."))
+	} else if len(email) > 100 {
+		errs = append(errs, errors.New("User signup failed: Email address length cannot exceed 100 characters."))
 	} else if util.IsInValidEmail(email) {
 		errs = append(errs, errors.New("User signup failed: Email is invalid."))
-	} else if len(email) > 100 {
-		errs = append(errs, errors.New("User signup failed: Email cannot exceed 100 characters."))
 	}
 
 	if password == "" {
