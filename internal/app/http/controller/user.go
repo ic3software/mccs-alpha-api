@@ -17,6 +17,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
@@ -199,24 +200,35 @@ func (u *userHandler) requestPasswordReset() func(http.ResponseWriter, *http.Req
 			email.SendResetEmail(receiver, req.Email, lostPassword.Token)
 			api.Respond(w, r, http.StatusOK)
 			return
-		} else {
-			uid, err := uuid.NewV4()
-			if err != nil {
-				l.Logger.Error("[ERROR] UserHandler.requestPasswordReset failed:", zap.Error(err))
-				api.Respond(w, r, http.StatusInternalServerError, err)
-				return
-			}
-
-			err = logic.Lostpassword.Create(&types.LostPassword{Email: user.Email, Token: uid.String()})
-			if err != nil {
-				l.Logger.Error("[ERROR] UserHandler.requestPasswordReset failed:", zap.Error(err))
-				api.Respond(w, r, http.StatusInternalServerError, err)
-				return
-			}
-
-			email.SendResetEmail(receiver, req.Email, uid.String())
-			api.Respond(w, r, http.StatusOK)
 		}
+
+		uid, err := uuid.NewV4()
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.requestPasswordReset failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		err = logic.Lostpassword.Create(&types.LostPassword{Email: user.Email, Token: uid.String()})
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.requestPasswordReset failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		email.SendResetEmail(receiver, req.Email, uid.String())
+
+		if viper.GetString("env") == "development" {
+			type data struct {
+				Token string `json:"token"`
+			}
+			type respond struct {
+				Data data `json:"data"`
+			}
+			api.Respond(w, r, http.StatusOK, respond{Data: data{Token: uid.String()}})
+			return
+		}
+		api.Respond(w, r, http.StatusOK)
 	}
 }
 
