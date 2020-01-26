@@ -255,7 +255,7 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 
 		lostPassword, err := logic.Lostpassword.FindByToken(vars["token"])
 		if err != nil || logic.Lostpassword.IsTokenInvalid(lostPassword) {
-			api.Respond(w, r, http.StatusBadRequest, errors.New("token invalid."))
+			api.Respond(w, r, http.StatusBadRequest, errors.New("Password reset failed: Token is invalid."))
 			return
 		}
 
