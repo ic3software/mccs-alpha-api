@@ -161,7 +161,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: data{Token: token}})
+		api.Respond(w, r, http.StatusCreated, respond{Data: data{Token: token}})
 	}
 }
 
