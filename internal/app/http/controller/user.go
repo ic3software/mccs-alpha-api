@@ -161,6 +161,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
+		w.Header().Set("Location", viper.GetString("url")+"/api/v1/users/"+userID)
 		api.Respond(w, r, http.StatusCreated, respond{Data: data{Token: token}})
 	}
 }
