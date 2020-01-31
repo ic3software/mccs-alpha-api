@@ -46,6 +46,7 @@ func (u *userHandler) RegisterRoutes(
 		private.Path("/api/v1/logout").HandlerFunc(u.logout()).Methods("POST")
 		public.Path("/api/v1/password-reset").HandlerFunc(u.requestPasswordReset()).Methods("POST")
 		public.Path("/api/v1/password-reset/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
+		private.Path("/api/v1/password-change").HandlerFunc(u.passwordChange()).Methods("POST")
 
 		private.Path("/api/v1/users/removeFromFavoriteBusinesses").HandlerFunc(u.removeFromFavoriteBusinesses()).Methods("POST")
 		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
@@ -243,7 +244,7 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
-			l.Logger.Error("[INFO] UserHandler.passwordReset failed:", zap.Error(err))
+			l.Logger.Info("[INFO] UserHandler.passwordReset failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -273,6 +274,50 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 				l.Logger.Error("[ERROR] SetTokenUsed failed:", zap.Error(err))
 			}
 		}()
+
+		api.Respond(w, r, http.StatusOK)
+	}
+}
+
+func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) {
+	type request struct {
+		Password string `json:"password"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req request
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&req)
+		if err != nil {
+			l.Logger.Info("[INFO] UserHandler.passwordChange failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		errs := validate.ResetPassword(req.Password)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		objID, err := primitive.ObjectIDFromHex(r.Header.Get("userID"))
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.passwordChange failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		user, err := logic.User.FindByID(objID)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.passwordChange failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		err = logic.User.ResetPassword(user.Email, req.Password)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.passwordChange failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
 
 		api.Respond(w, r, http.StatusOK)
 	}
