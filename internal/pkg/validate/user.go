@@ -7,13 +7,17 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 )
 
+var (
+	emailMaxLen = 100
+)
+
 func SignUp(email, password string) []error {
 	errs := []error{}
 
 	email = strings.ToLower(email)
 	if email == "" {
 		errs = append(errs, errors.New("Email is missing."))
-	} else if len(email) > 100 {
+	} else if len(email) > emailMaxLen {
 		errs = append(errs, errors.New("Email address length cannot exceed 100 characters."))
 	} else if util.IsInValidEmail(email) {
 		errs = append(errs, errors.New("Email is invalid."))
