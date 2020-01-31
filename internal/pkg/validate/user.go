@@ -2,6 +2,7 @@ package validate
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
@@ -18,7 +19,7 @@ func SignUp(email, password string) []error {
 	if email == "" {
 		errs = append(errs, errors.New("Email is missing."))
 	} else if len(email) > emailMaxLen {
-		errs = append(errs, errors.New("Email address length cannot exceed 100 characters."))
+		errs = append(errs, errors.New("Email address length cannot exceed "+strconv.Itoa(emailMaxLen)+" characters."))
 	} else if util.IsInValidEmail(email) {
 		errs = append(errs, errors.New("Email is invalid."))
 	}
