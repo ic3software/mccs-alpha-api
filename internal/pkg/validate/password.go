@@ -2,20 +2,21 @@ package validate
 
 import (
 	"errors"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/passlib"
 	"strconv"
 	"unicode"
-)
 
-var (
-	minLen     = 8
-	hasLetter  = false
-	hasNumber  = false
-	hasSpecial = false
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/passlib"
 )
 
 // Validate validates the given password.
 func validatePassword(password string) []error {
+	var (
+		minLen     = 8
+		hasLetter  = false
+		hasNumber  = false
+		hasSpecial = false
+	)
+
 	errs := []error{}
 
 	for _, ch := range password {

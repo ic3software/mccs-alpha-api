@@ -141,7 +141,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 
 		errs := validate.SignUp(req.Email, req.Password)
 		if logic.User.UserEmailExists(req.Email) {
-			errs = append(errs, errors.New("User signup failed: Email address is already registered."))
+			errs = append(errs, errors.New("Email address is already registered."))
 		}
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
@@ -257,7 +257,7 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 
 		lostPassword, err := logic.Lostpassword.FindByToken(vars["token"])
 		if err != nil || logic.Lostpassword.IsTokenInvalid(lostPassword) {
-			api.Respond(w, r, http.StatusBadRequest, errors.New("Password reset failed: Token is invalid."))
+			api.Respond(w, r, http.StatusBadRequest, errors.New("Token is invalid."))
 			return
 		}
 

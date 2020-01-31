@@ -12,5 +12,5 @@ type httpErrors struct {
 
 var (
 	// ErrUnauthorized occurs when the user is unauthorized.
-	ErrUnauthorized = errors.New("Could not authenticate you")
+	ErrUnauthorized = errors.New("Could not authenticate you.")
 )
