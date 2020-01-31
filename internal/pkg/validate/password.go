@@ -10,12 +10,7 @@ import (
 
 // Validate validates the given password.
 func validatePassword(password string) []error {
-	var (
-		minLen     = 8
-		hasLetter  = false
-		hasNumber  = false
-		hasSpecial = false
-	)
+	minLen, hasLetter, hasNumber, hasSpecial := 8, false, false, false
 
 	errs := []error{}
 
