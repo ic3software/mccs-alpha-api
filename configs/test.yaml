@@ -13,6 +13,12 @@ concurrency_num: 3
 receive_trade_contact_emails: true
 receive_signup_notifications: true
 
+validate:
+  email:
+    maxLen: 100
+  password:
+    minLen: 8
+
 transaction:
   maxNegBal: 0
   maxPosBal: 500

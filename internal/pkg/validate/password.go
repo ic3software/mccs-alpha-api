@@ -5,12 +5,12 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/passlib"
+	"github.com/spf13/viper"
 )
 
 // Validate validates the given password.
 func validatePassword(password string) []error {
-	minLen, hasLetter, hasNumber, hasSpecial := 8, false, false, false
+	minLen, hasLetter, hasNumber, hasSpecial := viper.GetInt("validate.password.minLen"), false, false, false
 
 	errs := []error{}
 
@@ -41,37 +41,4 @@ func validatePassword(password string) []error {
 	}
 
 	return errs
-}
-
-// ==================== OLD CODE =======================
-func ValidatePassword(password string, confirmPassword string) []string {
-	errorMessages := []string{}
-
-	if password == "" {
-		errorMessages = append(errorMessages, "Please enter a password.")
-	} else if password != confirmPassword {
-		errorMessages = append(errorMessages, "Password and confirmation password do not match.")
-	} else {
-		errorMessages = append(errorMessages, passlib.Validate(password)...)
-	}
-
-	return errorMessages
-}
-
-func validateUpdatePassword(currentPass string, newPass string, confirmPass string) []string {
-	errorMessages := []string{}
-
-	if currentPass == "" && newPass == "" && confirmPass == "" {
-		return errorMessages
-	}
-
-	if currentPass == "" {
-		errorMessages = append(errorMessages, "Please enter your current password.")
-	} else if newPass != confirmPass {
-		errorMessages = append(errorMessages, "New password and confirmation password do not match.")
-	} else {
-		errorMessages = append(errorMessages, passlib.Validate(newPass)...)
-	}
-
-	return errorMessages
 }

@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/spf13/viper"
 )
 
 var (
-	emailMaxLen = 100
+	emailMaxLen = viper.GetInt("validate.email.maxLen")
 )
 
 func SignUp(email, password string) []error {
