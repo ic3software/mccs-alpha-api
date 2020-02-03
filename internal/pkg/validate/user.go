@@ -2,9 +2,15 @@ package validate
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/spf13/viper"
+)
+
+var (
+	emailMaxLen = viper.GetInt("validate.email.maxLen")
 )
 
 func SignUp(email, password string) []error {
@@ -12,15 +18,15 @@ func SignUp(email, password string) []error {
 
 	email = strings.ToLower(email)
 	if email == "" {
-		errs = append(errs, errors.New("User signup failed: Email is missing."))
-	} else if len(email) > 100 {
-		errs = append(errs, errors.New("User signup failed: Email address length cannot exceed 100 characters."))
+		errs = append(errs, errors.New("Email is missing."))
+	} else if len(email) > emailMaxLen {
+		errs = append(errs, errors.New("Email address length cannot exceed "+strconv.Itoa(emailMaxLen)+" characters."))
 	} else if util.IsInValidEmail(email) {
-		errs = append(errs, errors.New("User signup failed: Email is invalid."))
+		errs = append(errs, errors.New("Email is invalid."))
 	}
 
 	if password == "" {
-		errs = append(errs, errors.New("User signup failed: Password is missing."))
+		errs = append(errs, errors.New("Password is missing."))
 	} else {
 		errs = append(errs, validatePassword(password)...)
 	}
@@ -32,7 +38,7 @@ func Login(password string) []error {
 	errs := []error{}
 
 	if password == "" {
-		errs = append(errs, errors.New("User login failed: Password is missing."))
+		errs = append(errs, errors.New("Password is missing."))
 	}
 
 	return errs
@@ -42,7 +48,7 @@ func ResetPassword(password string) []error {
 	errs := []error{}
 
 	if password == "" {
-		errs = append(errs, errors.New("Reset password failed: Password is missing."))
+		errs = append(errs, errors.New("Password is missing."))
 	} else {
 		errs = append(errs, validatePassword(password)...)
 	}
