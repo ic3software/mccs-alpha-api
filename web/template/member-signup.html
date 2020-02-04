@@ -8,11 +8,11 @@
         <p><i>Please provide your company number as registered at Companies House. If you are a sole trader, simply leave it blank.</i></p>
         <div class="fields">
             <div class="five wide field required">
-                <label>Business Name:</label>
-                {{if .BusinessName}}
-                <input maxlength="100" type="text" name="business_name" value="{{.BusinessName}}">
+                <label>Entity Name:</label>
+                {{if .EntityName}}
+                <input maxlength="100" type="text" name="entity_name" value="{{.EntityName}}">
                 {{else}}
-                <input maxlength="100" type="text" name="business_name" value="">
+                <input maxlength="100" type="text" name="entity_name" value="">
                 {{end}}
             </div>
             <div class="three wide field required">
@@ -47,8 +47,8 @@
             </div>
         </div>
         <div class="field required" style="max-width: 500px;">
-            <label>Business Description:</label>
-            <textarea maxlength="500" name="description" cols="50" rows="3" value="" placeholder="Please summarise your business in one or two sentences.">{{or .Description ""}}</textarea>
+            <label>Entity Description:</label>
+            <textarea maxlength="500" name="description" cols="50" rows="3" value="" placeholder="Please summarise your entity in one or two sentences.">{{or .Description ""}}</textarea>
         </div>
         <div class="fields">
             <div class="five wide field">
@@ -60,18 +60,18 @@
                 {{end}}
             </div>
             <div class="three wide field">
-                <label>Business Phone:</label>
-                {{if .BusinessPhone}}
-                <input maxlength="25" type="text" name="business_phone" value="{{.BusinessPhone}}">
+                <label>Entity Phone:</label>
+                {{if .EntityPhone}}
+                <input maxlength="25" type="text" name="entity_phone" value="{{.EntityPhone}}">
                 {{else}}
-                <input maxlength="25" type="text" name="business_phone" value="">
+                <input maxlength="25" type="text" name="entity_phone" value="">
                 {{end}}
             </div>
         </div>
     </div>
     <div class="ui segment secondary">
-        <h2 class="ui medium header">Business Address</h2>
-        <p><i>The physical location of your business</i></p>
+        <h2 class="ui medium header">Entity Address</h2>
+        <p><i>The physical location of your entity</i></p>
         <div class="field required" style="max-width: 500px;">
             <label>Address:</label>
             <textarea maxlength="255" name="location_address" rows="3">{{or .LocationAddress ""}}</textarea>
@@ -166,7 +166,7 @@
         <div class="field">
             <div class="ui checkbox">
                 <input type="checkbox" name="authorised">
-                <label>I have read and agree to the Membership Agreement on behalf of my Business.  <span class="ui text red">*</span></label>
+                <label>I have read and agree to the Membership Agreement on behalf of my Entity.  <span class="ui text red">*</span></label>
             </div>
         </div>
         <p><i>The Open Credit Network will never pass on your details without your explicit consent but we will make your details  available to other members of the network as described in the Membership Agreement, for the purpose of facilitating trade within the network.</i></p>

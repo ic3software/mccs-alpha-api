@@ -16,27 +16,27 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type business struct {
+type entity struct {
 	c     *elastic.Client
 	index string
 }
 
-var Business = &business{}
+var Entity = &entity{}
 
-func (es *business) Register(client *elastic.Client) {
+func (es *entity) Register(client *elastic.Client) {
 	es.c = client
-	es.index = "businesses"
+	es.index = "entities"
 }
 
-func (es *business) Create(id primitive.ObjectID, data *types.BusinessData) error {
-	body := types.BusinessESRecord{
-		BusinessID:      id.Hex(),
-		BusinessName:    data.BusinessName,
+func (es *entity) Create(id primitive.ObjectID, data *types.EntityData) error {
+	body := types.EntityESRecord{
+		EntityID:        id.Hex(),
+		EntityName:      data.EntityName,
 		Offers:          data.Offers,
 		Wants:           data.Wants,
 		LocationCity:    data.LocationCity,
 		LocationCountry: data.LocationCountry,
-		Status:          constant.Business.Pending,
+		Status:          constant.Entity.Pending,
 		AdminTags:       data.AdminTags,
 	}
 	_, err := es.c.Index().
@@ -50,9 +50,9 @@ func (es *business) Create(id primitive.ObjectID, data *types.BusinessData) erro
 	return nil
 }
 
-func (es *business) Find(c *types.SearchCriteria, page int64) ([]string, int, int, error) {
+func (es *entity) Find(c *types.SearchCriteria, page int64) ([]string, int, int, error) {
 	if page < 0 || page == 0 {
-		return nil, 0, 0, e.New(e.InvalidPageNumber, "find business failed")
+		return nil, 0, 0, e.New(e.InvalidPageNumber, "find entity failed")
 	}
 
 	var ids []string
@@ -62,7 +62,7 @@ func (es *business) Find(c *types.SearchCriteria, page int64) ([]string, int, in
 	q := elastic.NewBoolQuery()
 
 	if c.ShowUserFavoritesOnly {
-		idQuery := elastic.NewIdsQuery().Ids(util.ToIDStrings(c.FavoriteBusinesses)...)
+		idQuery := elastic.NewIdsQuery().Ids(util.ToIDStrings(c.FavoriteEntities)...)
 		q.Must(idQuery)
 	}
 
@@ -74,8 +74,8 @@ func (es *business) Find(c *types.SearchCriteria, page int64) ([]string, int, in
 		q.Must(qq)
 	}
 
-	if c.BusinessName != "" {
-		q.Must(newFuzzyWildcardQuery("businessName", c.BusinessName))
+	if c.EntityName != "" {
+		q.Must(newFuzzyWildcardQuery("entityName", c.EntityName))
 	}
 	if c.LocationCountry != "" {
 		q.Must(elastic.NewMatchQuery("locationCountry", c.LocationCountry))
@@ -121,16 +121,16 @@ func (es *business) Find(c *types.SearchCriteria, page int64) ([]string, int, in
 		Do(context.Background())
 
 	if err != nil {
-		return nil, 0, 0, e.Wrap(err, "BusinessES Find failed")
+		return nil, 0, 0, e.Wrap(err, "EntityES Find failed")
 	}
 
 	for _, hit := range res.Hits.Hits {
-		var record types.BusinessESRecord
+		var record types.EntityESRecord
 		err := json.Unmarshal(hit.Source, &record)
 		if err != nil {
-			return nil, 0, 0, e.Wrap(err, "BusinessES Find failed")
+			return nil, 0, 0, e.Wrap(err, "EntityES Find failed")
 		}
-		ids = append(ids, record.BusinessID)
+		ids = append(ids, record.EntityID)
 	}
 
 	numberOfResults := res.Hits.TotalHits.Value
@@ -139,9 +139,9 @@ func (es *business) Find(c *types.SearchCriteria, page int64) ([]string, int, in
 	return ids, int(numberOfResults), totalPages, nil
 }
 
-func (es *business) UpdateBusiness(id primitive.ObjectID, data *types.BusinessData) error {
+func (es *entity) UpdateEntity(id primitive.ObjectID, data *types.EntityData) error {
 	params := map[string]interface{}{
-		"businessName":    data.BusinessName,
+		"entityName":      data.EntityName,
 		"locationCity":    data.LocationCity,
 		"locationCountry": data.LocationCountry,
 		"offersAdded":     helper.ToTagFields(data.OffersAdded),
@@ -156,7 +156,7 @@ func (es *business) UpdateBusiness(id primitive.ObjectID, data *types.BusinessDa
 
 	script := elastic.
 		NewScript(`
-			ctx._source.businessName = params.businessName;
+			ctx._source.entityName = params.entityName;
 			ctx._source.locationCity = params.locationCity;
 			ctx._source.locationCountry = params.locationCountry;
 
@@ -213,9 +213,9 @@ func (es *business) UpdateBusiness(id primitive.ObjectID, data *types.BusinessDa
 	return nil
 }
 
-func (es *business) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
+func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
 	doc := map[string]interface{}{
-		"businessName":    data.BusinessName,
+		"entityName":      data.EntityName,
 		"locationCity":    data.LocationCity,
 		"locationCountry": data.LocationCountry,
 		"status":          constant.Trading.Pending,
@@ -231,7 +231,7 @@ func (es *business) UpdateTradingInfo(id primitive.ObjectID, data *types.Trading
 	return nil
 }
 
-func (es *business) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
+func (es *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
 	params := map[string]interface{}{
 		"createdAt": t,
 	}
@@ -258,7 +258,7 @@ func (es *business) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) e
 	return nil
 }
 
-func (es *business) RenameTag(old string, new string) error {
+func (es *entity) RenameTag(old string, new string) error {
 	query := elastic.NewBoolQuery()
 	query.Should(elastic.NewMatchQuery("offers.name", old))
 	query.Should(elastic.NewMatchQuery("wants.name", old))
@@ -286,7 +286,7 @@ func (es *business) RenameTag(old string, new string) error {
 	return nil
 }
 
-func (es *business) RenameAdminTag(old string, new string) error {
+func (es *entity) RenameAdminTag(old string, new string) error {
 	query := elastic.NewMatchQuery("adminTags", old)
 	script := elastic.
 		NewScript(`
@@ -306,7 +306,7 @@ func (es *business) RenameAdminTag(old string, new string) error {
 	return nil
 }
 
-func (es *business) Delete(id string) error {
+func (es *entity) Delete(id string) error {
 	_, err := es.c.Delete().
 		Index(es.index).
 		Id(id).
@@ -317,7 +317,7 @@ func (es *business) Delete(id string) error {
 	return nil
 }
 
-func (es *business) DeleteTag(name string) error {
+func (es *entity) DeleteTag(name string) error {
 	query := elastic.NewBoolQuery()
 	query.Should(elastic.NewMatchQuery("offers.name", name))
 	query.Should(elastic.NewMatchQuery("wants.name", name))
@@ -347,7 +347,7 @@ func (es *business) DeleteTag(name string) error {
 	return nil
 }
 
-func (es *business) DeleteAdminTags(name string) error {
+func (es *entity) DeleteAdminTags(name string) error {
 	query := elastic.NewMatchQuery("adminTags", name)
 	script := elastic.
 		NewScript(`

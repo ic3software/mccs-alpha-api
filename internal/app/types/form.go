@@ -2,7 +2,7 @@ package types
 
 type RegisterData struct {
 	User             *User
-	Business         *BusinessData
+	Entity           *EntityData
 	ConfirmPassword  string
 	ConfirmEmail     string
 	Terms            string
@@ -11,7 +11,7 @@ type RegisterData struct {
 
 type UpdateAccountData struct {
 	User            *User
-	Business        *BusinessData
+	Entity          *EntityData
 	Balance         *BalanceLimit
 	CurrentPassword string
 	ConfirmPassword string

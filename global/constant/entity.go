@@ -1,7 +1,7 @@
 package constant
 
-// Business status
-var Business = struct {
+// Entity status
+var Entity = struct {
 	Pending  string
 	Accepted string
 	Rejected string

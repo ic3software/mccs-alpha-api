@@ -1,20 +1,20 @@
 {{ define "content" }}
-<h1 class="ui primary header">Business Details</h1>
+<h1 class="ui primary header">Entity Details</h1>
 <div class="ui segment">
     <div style="display: flex; align-items: center;">
-        <h2 class="ui large header" style="display: inline;margin-bottom: 0px;margin-right: 8px;">{{.Business.BusinessName}}</h2>
+        <h2 class="ui large header" style="display: inline;margin-bottom: 0px;margin-right: 8px;">{{.Entity.EntityName}}</h2>
         {{if .IsUserLoggedIn}}
-            {{if (IncludesID .User.FavoriteBusinesses .Business.ID)}}
-            <i class="red heart icon favorite-{{IDToString .Business.ID}}"
-                onclick="handleClickFavorite('{{IDToString .Business.ID}}')">
+            {{if (IncludesID .User.FavoriteEntities .Entity.ID)}}
+            <i class="red heart icon favorite-{{IDToString .Entity.ID}}"
+                onclick="handleClickFavorite('{{IDToString .Entity.ID}}')">
             </i>
             {{else}}
-            <i class="heart outline icon favorite-{{IDToString .Business.ID}}"
-                onclick="handleClickFavorite('{{IDToString .Business.ID}}')">
+            <i class="heart outline icon favorite-{{IDToString .Entity.ID}}"
+                onclick="handleClickFavorite('{{IDToString .Entity.ID}}')">
             </i>
             {{end}}
         {{end}}
-        {{if eq .Business.Status "tradingAccepted"}}
+        {{if eq .Entity.Status "tradingAccepted"}}
             <img style="height: 40px; padding-left: 10px;" src="/static/img/trading-member.svg" alt="trading-member">
         {{end}}
     </div>
@@ -22,11 +22,11 @@
     <br>
     <div class="ui stackable two column grid">
         <div class="eleven wide column">
-            <p style="font-size: 1.3em;">{{.Business.Description}}</p>
+            <p style="font-size: 1.3em;">{{.Entity.Description}}</p>
             <div class="ui message" style="margin: 1em 1em 1em 0;">
-                <h3 class="ui medium header" style="margin: 0 0 1em 0;">This Business Offers</h3>
-                {{ range $index, $offer := .Business.Offers }}
-                <a href="/businesses/search?page=1&tag_type=offers&tags={{$offer.Name}}">
+                <h3 class="ui medium header" style="margin: 0 0 1em 0;">This Entity Offers</h3>
+                {{ range $index, $offer := .Entity.Offers }}
+                <a href="/entities/search?page=1&tag_type=offers&tags={{$offer.Name}}">
                     <div class="ui medium label primary padded">
                         {{$offer.Name}}
                     </div>
@@ -34,9 +34,9 @@
                 {{ end }}
             </div>
             <div class="ui message" style="margin: 1em 1em 1em 0;">
-                <h3 class="ui medium header" style="margin: 0 0 1em 0;">This Business Wants</h3>
-                {{ range $index, $want := .Business.Wants }}
-                <a href="/businesses/search?page=1&tag_type=wants&tags={{$want.Name}}">
+                <h3 class="ui medium header" style="margin: 0 0 1em 0;">This Entity Wants</h3>
+                {{ range $index, $want := .Entity.Wants }}
+                <a href="/entities/search?page=1&tag_type=wants&tags={{$want.Name}}">
                     <div class="ui medium label orange padded">
                         {{$want.Name}}
                     </div>
@@ -44,10 +44,10 @@
                 {{ end }}
             </div>
 
-            <div id="contact-business" style="display:none;">
+            <div id="contact-entity" style="display:none;">
                 <div class="ui message" style="margin: 1em 1em 1em 0;">
                     {{if .IsUserLoggedIn}}
-                        <h3 class="ui medium header" style="margin: 0 0 1em 0;">Send an Email to This Business</h3>
+                        <h3 class="ui medium header" style="margin: 0 0 1em 0;">Send an Email to This Entity</h3>
                         <div>From: {{.User.FirstName}} {{.User.LastName}} &lt;{{.User.Email}}&gt;</div>
                         <div>Subject: Contact from OCN directory member</div>
                         <br />
@@ -58,12 +58,12 @@
                         </div>
                         <br />
                         <div style="display: flex;justify-content: flex-end;">
-                            <button class="ui button" onclick="hideContactBusinessForm()">Cancel</button>
-                            <button id="send-button" class="ui primary button" onclick="sendContactBusiness('{{IDToString .Business.ID}}')">Send</button>
+                            <button class="ui button" onclick="hideContactEntityForm()">Cancel</button>
+                            <button id="send-button" class="ui primary button" onclick="sendContactEntity('{{IDToString .Entity.ID}}')">Send</button>
                         </div>
                     {{else}}
                         <div class="ui orange message" style="font-size: large;">
-                            To contact this business via the Open Credit Network you need to sign up to the directory.
+                            To contact this entity via the Open Credit Network you need to sign up to the directory.
                             <a href="/signup">Create your FREE listing now</a>.
                         </div>
                     {{end}}
@@ -73,22 +73,22 @@
             {{if .IsUserLoggedIn}}
             <div id="upgrade-email" style="display:none;">
                 <div class="ui message" style="margin: 1em 1em 1em 0;">
-                    <h3 class="ui medium header" style="margin: 0 0 1em 0;">Send an Email to This Business</h3>
+                    <h3 class="ui medium header" style="margin: 0 0 1em 0;">Send an Email to This Entity</h3>
                     <div>From: {{.User.FirstName}} {{.User.LastName}} &lt;{{.User.Email}}&gt;</div>
                     <div>Subject: Trade request from OCN directory member</div>
                     <br />
                     <div class="ui form">
                         <div class="upgrade-email-message">
-                            Hi {{.Business.BusinessName}},
+                            Hi {{.Entity.EntityName}},
                             <br/>
                             <br/>
-                            <a href="trade.opencredit.network/member-signup">If you upgrade your membership at the Open Credit Network and become a Trading Member</a>, I would like to trade with you in mutual credit. Find out more about <a href="//opencredit.network/become-a-trading-member/">becoming a Trading Member</a>. I hope we can do business in the new economy soon!
+                            <a href="trade.opencredit.network/member-signup">If you upgrade your membership at the Open Credit Network and become a Trading Member</a>, I would like to trade with you in mutual credit. Find out more about <a href="//opencredit.network/become-a-trading-member/">becoming a Trading Member</a>. I hope we can do entity in the new economy soon!
                         </div>
                     </div>
                     <br />
                     <div style="display: flex;justify-content: flex-end;">
                         <button class="ui button" onclick="hideUpgradeEmailForm()">Cancel</button>
-                        <button class="ui primary button upgrade-btn" onclick="sendUpgradeEmail('{{IDToString .Business.ID}}')">Send</button>
+                        <button class="ui primary button upgrade-btn" onclick="sendUpgradeEmail('{{IDToString .Entity.ID}}')">Send</button>
                     </div>
                 </div>
             </div>
@@ -96,41 +96,41 @@
 
             <div id="info-message" style="display:none;">
                 <div class="ui info message" style="margin: 1em 1em 1em 0;">
-                    You will be able to contact other businesses once your application to be listed in our directory has been accepted.
+                    You will be able to contact other entities once your application to be listed in our directory has been accepted.
                 </div>
             </div>
         </div>
 
         <div class="five wide column">
-            {{if or .Business.LocationAddress .Business.LocationCity .Business.LocationRegion .Business.LocationPostalCode .Business.LocationCountry}}
+            {{if or .Entity.LocationAddress .Entity.LocationCity .Entity.LocationRegion .Entity.LocationPostalCode .Entity.LocationCountry}}
             <h3 class="ui medium header" style="margin-bottom:0;">Address</h3>
-            <div>{{.Business.LocationAddress}}</div>
-            <div>{{.Business.LocationCity}}</div>
-            <div>{{.Business.LocationRegion}}</div>
-            <div>{{.Business.LocationPostalCode}}</div>
-            <div>{{.Business.LocationCountry}}</div>
+            <div>{{.Entity.LocationAddress}}</div>
+            <div>{{.Entity.LocationCity}}</div>
+            <div>{{.Entity.LocationRegion}}</div>
+            <div>{{.Entity.LocationPostalCode}}</div>
+            <div>{{.Entity.LocationCountry}}</div>
             {{end}}
-            {{if .Business.BusinessPhone}}
+            {{if .Entity.EntityPhone}}
             <h3 class="ui medium header" style="margin-bottom:0;">Phone</h3>
-            <div>{{.Business.BusinessPhone}}</div>
+            <div>{{.Entity.EntityPhone}}</div>
             {{end}}
-            {{if .Business.Website}}
+            {{if .Entity.Website}}
             <h3 class="ui medium header" style="margin-bottom:0;">Website</h3>
-            <p class="ui small header"><a href="{{.Business.Website}}" target="_blank">{{.Business.Website}}</a></p>
+            <p class="ui small header"><a href="{{.Entity.Website}}" target="_blank">{{.Entity.Website}}</a></p>
             {{end}}
             <br>
             <br>
-            <a id="contact-btn" class="ui primary button" href="#" onclick="showContactBusinessForm()">Contact This Business</a>
+            <a id="contact-btn" class="ui primary button" href="#" onclick="showContactEntityForm()">Contact This Entity</a>
             <br>
             <br>
             <div id="trading-button" style="display:none;">
-                <a href="/transaction?user_email={{.BusinessEmail}}" class="ui primary button">Trade With This Business</a>
+                <a href="/transaction?user_email={{.EntityEmail}}" class="ui primary button">Trade With This Entity</a>
             </div>
             <div id="trading-member-signup" style="display:none;">
-                <a href="//opencredit.network/become-a-trading-member" class="ui primary button" target="_blank">Trade With This Business</a>
+                <a href="//opencredit.network/become-a-trading-member" class="ui primary button" target="_blank">Trade With This Entity</a>
             </div>
             <div id="upgrade-email-btn" style="display:none;">
-                <div class="ui primary button" onclick="showUpgradeEmailForm()">Trade With This Business</div>
+                <div class="ui primary button" onclick="showUpgradeEmailForm()">Trade With This Entity</div>
             </div>
         </div>
     </div>
@@ -141,7 +141,7 @@
     const tradingMemberStatus = () => {
         $.ajax({
             method: "GET",
-            url: "/api/tradingMemberStatus?business_id={{IDToString .Business.ID}}",
+            url: "/api/tradingMemberStatus?entity_id={{IDToString .Entity.ID}}",
             contentType: "application/json",
             success: data => {
                 if (data.self === undefined) {
@@ -162,10 +162,10 @@
     };
     tradingMemberStatus()
 
-    // Contact Business ***************************
-    const showContactBusinessForm = () => {
+    // Contact Entity ***************************
+    const showContactEntityForm = () => {
         $.ajax({
-            url: "/api/businessStatus",
+            url: "/api/entityStatus",
             contentType: "application/json",
             dataType: 'json',
             success: data => {
@@ -175,24 +175,24 @@
                 if (data.status === "pending" || data.status === "rejected") {
                     $("#info-message").show(500, () => {})
                 } else {
-                    $("#contact-business").show(500, () => {})
+                    $("#contact-entity").show(500, () => {})
                     $("#contact-btn").hide()
                     $("#trade-btn").hide()
                 }
             },
             error: () => {
-                $("#contact-business").show(500, () => {})
+                $("#contact-entity").show(500, () => {})
                 $("#contact-btn").hide()
                 $("#trade-btn").hide()
             }
         })
     }
-    const hideContactBusinessForm = () => {
-        $("#contact-business").hide(500, () => {})
+    const hideContactEntityForm = () => {
+        $("#contact-entity").hide(500, () => {})
         $("#contact-btn").show()
         $("#trade-btn").show()
     }
-    const sendContactBusiness = bID => {
+    const sendContactEntity = bID => {
         if ($("#contact-body").val() == "") {
             showErrorMessage("The content body is empty");
             return
@@ -201,7 +201,7 @@
         $("#send-button").addClass("loading disabled")
 
         $.ajax({
-            url: `/api/contactBusiness`,
+            url: `/api/contactEntity`,
             method: "POST",
             contentType: "application/json",
             data: JSON.stringify({
@@ -209,21 +209,21 @@
                 body: $("#contact-body").val()
             }),
             success: function() {
-                showSuccessMessage("Your message has been emailed to the owner of this business, and any replies will be sent directly to your email address.")
-                hideContactBusinessForm()
+                showSuccessMessage("Your message has been emailed to the owner of this entity, and any replies will be sent directly to your email address.")
+                hideContactEntityForm()
                 $("#send-button").removeClass("loading disabled")
                 $("#contact-body").val("")
             },
             error: function(xhr) {
                 showErrorMessage("An error occurred: " + xhr.status + " " + xhr.statusText);
-                hideContactBusinessForm()
+                hideContactEntityForm()
                 $("#send-button").removeClass("loading disabled")
             }
         });
     }
     //************************************************
 
-    // Upgrade Business ***************************
+    // Upgrade Entity ***************************
     const showUpgradeEmailForm = () => {
         $("#upgrade-email-btn").hide(500, () => {})
         $("#upgrade-email").show()
@@ -235,7 +235,7 @@
     const sendUpgradeEmail = bID => {
         $(".upgrade-btn").addClass("loading disabled")
         $.ajax({
-            url: "/api/contactBusiness",
+            url: "/api/contactEntity",
             method: "POST",
             contentType: "application/json",
             data: JSON.stringify({
@@ -243,7 +243,7 @@
                 body: $(".upgrade-email-message").html()
             }),
             success: function() {
-                showSuccessMessage("Your message has been emailed to the owner of this business, and any replies will be sent directly to your email address.")
+                showSuccessMessage("Your message has been emailed to the owner of this entity, and any replies will be sent directly to your email address.")
                 hideUpgradeEmailForm()
                 $(".upgrade-btn").removeClass("loading disabled")
             },

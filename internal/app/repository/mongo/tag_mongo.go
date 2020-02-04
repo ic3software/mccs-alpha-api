@@ -111,7 +111,7 @@ func (t *tag) FindByName(name string) (*types.Tag, error) {
 	}
 	err := t.c.FindOne(context.Background(), filter).Decode(&tag)
 	if err != nil {
-		return nil, e.New(e.BusinessNotFound, "Tag not found")
+		return nil, e.New(e.EntityNotFound, "Tag not found")
 	}
 	return &tag, nil
 }
@@ -124,7 +124,7 @@ func (t *tag) FindByID(id primitive.ObjectID) (*types.Tag, error) {
 	}
 	err := t.c.FindOne(context.Background(), filter).Decode(&tag)
 	if err != nil {
-		return nil, e.New(e.BusinessNotFound, "Tag not found")
+		return nil, e.New(e.EntityNotFound, "Tag not found")
 	}
 	return &tag, nil
 }

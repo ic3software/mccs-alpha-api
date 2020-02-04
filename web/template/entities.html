@@ -1,22 +1,22 @@
 {{ define "content" }}
 {{if not .IsUserLoggedIn}}
-<div class="ui orange message"><span style="font-size: large;">Create a FREE business listing to find new suppliers and customers - <a href="/signup">Sign Up now!</a></span></div>
+<div class="ui orange message"><span style="font-size: large;">Create a FREE entity listing to find new suppliers and customers - <a href="/signup">Sign Up now!</a></span></div>
 {{end}}
 
 <div id="upgrade-message" class="ui success message" style="display:none;">
     <h4>Upgrade to a full Trading Member</h4>
     <p>Unlock the full potential of the Open Credit Network by applying to become a Trading Member.</p>
-    <p>Trading via mutual credit is FREE during our alpha release and, if your business meets the application criteria, you will be awarded an interest free line of credit allowing you to trade with other businesses straight away. <a href="https://opencredit.network/become-a-trading-member/" target="_blank">Find out more</a> and <a href="/member-signup">apply now</a>.</p>
+    <p>Trading via mutual credit is FREE during our alpha release and, if your entity meets the application criteria, you will be awarded an interest free line of credit allowing you to trade with other entities straight away. <a href="https://opencredit.network/become-a-trading-member/" target="_blank">Find out more</a> and <a href="/member-signup">apply now</a>.</p>
 </div>
 
-<h1 class="ui primary header">Find Businesses</h1>
+<h1 class="ui primary header">Find Entities</h1>
 <div class="ui top attached tabular menu">
   <a onclick="onChangeTab()" class="item active" data-tab="search" style="user-select: auto;">Search</a>
   <a onclick="onChangeTab()" class="item" data-tab="browse" style="user-select: auto;">Browse</a>
 </div>
 <div class="ui bottom attached tab segment active" data-tab="search">
 <div class="ui segment secondary">
-    <form id="search-from" action="/businesses/search" method="get" class="ui form">
+    <form id="search-from" action="/entities/search" method="get" class="ui form">
         <input maxlength="255" name="page" value="1" hidden>
         <div>Search the directory for supplies or customers</div>
         <div class="inline fields">
@@ -35,7 +35,7 @@
                             <input type="radio" name="tag_type" value="offers" id="offers">
                             {{end}}
                         {{end}}
-                        <label for="offers">I am looking for businesses who are offering</label>
+                        <label for="offers">I am looking for entities who are offering</label>
                     </div>
                     </div>
                     <div class="field">
@@ -45,7 +45,7 @@
                         {{else}}
                         <input type="radio" name="tag_type" value="wants" id="wants">
                         {{end}}
-                        <label for="wants">I am looking for businesses who want</label>
+                        <label for="wants">I am looking for entities who want</label>
                     </div>
                     </div>
                 </div>
@@ -127,43 +127,43 @@
 <div id="results">
     <table class="ui padded table">
         <tbody>
-            {{ range $index, $business := .Result.Businesses }}
-            <tr id="{{IDToString $business.ID}}">
+            {{ range $index, $entity := .Result.Entities }}
+            <tr id="{{IDToString $entity.ID}}">
                 <td>
                     <p style="display: flex; align-items: center;">
-                        <a href="/businessPage/{{IDToString $business.ID}}"><span class="ui large text">{{$business.BusinessName}}</span></a>&nbsp;&nbsp;
+                        <a href="/entityPage/{{IDToString $entity.ID}}"><span class="ui large text">{{$entity.EntityName}}</span></a>&nbsp;&nbsp;
                         {{if $.IsUserLoggedIn}}
-                            {{if (IncludesID $.FavoriteBusinesses $business.ID)}}
+                            {{if (IncludesID $.FavoriteEntities $entity.ID)}}
                             <i
-                                class="red heart icon favorite-{{IDToString $business.ID}}"
-                                onclick="handleClickFavorite('{{IDToString $business.ID}}')">
+                                class="red heart icon favorite-{{IDToString $entity.ID}}"
+                                onclick="handleClickFavorite('{{IDToString $entity.ID}}')">
                             </i>
                             {{else}}
                             <i
-                                class="heart outline icon favorite-{{IDToString $business.ID}}"
-                                onclick="handleClickFavorite('{{IDToString $business.ID}}')">
+                                class="heart outline icon favorite-{{IDToString $entity.ID}}"
+                                onclick="handleClickFavorite('{{IDToString $entity.ID}}')">
                             </i>
                             {{end}}
                         {{end}}
-                        {{if eq $business.Status "tradingAccepted"}}
+                        {{if eq $entity.Status "tradingAccepted"}}
                             <a href="https://opencredit.network/become-a-trading-member/">
                                 <img style="height: 35px; padding-left: 5px;" src="/static/img/trading-member-icon.svg" alt="trading-member-icon">
                             </a>
                         {{end}}
                     </p>
-                    <p>{{if lt (len $business.Description) 90 }}
-                        {{$business.Description}}
+                    <p>{{if lt (len $entity.Description) 90 }}
+                        {{$entity.Description}}
                         {{else}}
-                        {{printf "%.85s" $business.Description}}...
+                        {{printf "%.85s" $entity.Description}}...
                         {{end}}
                     </p>
-                    {{if $business.LocationCity}}
-                        <p><i class="map marker alternate icon"></i> <b>{{$business.LocationCity}}</b></p>
+                    {{if $entity.LocationCity}}
+                        <p><i class="map marker alternate icon"></i> <b>{{$entity.LocationCity}}</b></p>
                     {{end}}
                 </td>
                 <td class="center aligned" style="width:20em;">
-                    <a href="/businessPage/{{IDToString $business.ID}}" class="ui primary button">
-                        More About This Business
+                    <a href="/entityPage/{{IDToString $entity.ID}}" class="ui primary button">
+                        More About This Entity
                     </a>
                 </td>
             </tr>
@@ -177,9 +177,9 @@
                         {{if gt .FormData.Page 1}}
 
                         {{if not .FormData.Category}}
-                            <a class="icon item left-chevron" href="/businesses/search?page={{Minus .FormData.Page 1}}&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&show-favorites-only={{.FormData.ShowUserFavoritesOnly}}">
+                            <a class="icon item left-chevron" href="/entities/search?page={{Minus .FormData.Page 1}}&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&show-favorites-only={{.FormData.ShowUserFavoritesOnly}}">
                         {{else}}
-                            <a class="icon item left-chevron" href="/businesses/search?page={{Minus .FormData.Page 1}}&category={{.FormData.Category}}">
+                            <a class="icon item left-chevron" href="/entities/search?page={{Minus .FormData.Page 1}}&category={{.FormData.Category}}">
                         {{end}}
                             <i class="left chevron icon"></i>
                         </a>
@@ -191,9 +191,9 @@
 
                         {{/* FirstPage */}}
                         {{if not .FormData.Category}}
-                            <a class="{{if eq .FormData.Page 1}}active{{end}} item" href="/businesses/search?page=1&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&show-favorites-only={{.FormData.ShowUserFavoritesOnly}}">1</a>
+                            <a class="{{if eq .FormData.Page 1}}active{{end}} item" href="/entities/search?page=1&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&show-favorites-only={{.FormData.ShowUserFavoritesOnly}}">1</a>
                         {{else}}
-                            <a class="{{if eq .FormData.Page 1}}active{{end}} item" href="/businesses/search?page=1&category={{.FormData.Category}}">1</a>
+                            <a class="{{if eq .FormData.Page 1}}active{{end}} item" href="/entities/search?page=1&category={{.FormData.Category}}">1</a>
                         {{end}}
 
                         {{/* ... */}}
@@ -209,9 +209,9 @@
                         {{if and (gt .Result.TotalPages 1) (lt .Result.TotalPages 10)}}
                         {{range $_, $v := N 2 .Result.TotalPages}}
                             {{if not $.FormData.Category}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item"href="/businesses/search?page={{$v}}&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{$.FormData.ShowUserFavoritesOnly}}">{{$v}}</a>
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item"href="/entities/search?page={{$v}}&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{$.FormData.ShowUserFavoritesOnly}}">{{$v}}</a>
                             {{else}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item"href="/businesses/search?page={{$v}}&category={{$.FormData.Category}}">{{$v}}</a>
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item"href="/entities/search?page={{$v}}&category={{$.FormData.Category}}">{{$v}}</a>
                             {{end}}
                         {{end}}
                         {{end}}
@@ -221,17 +221,17 @@
                         {{if ge .FormData.Page 4}}
                         {{range $_, $v := N (Minus .FormData.Page 2) (Add .FormData.Page 2)}}
                             {{if not $.FormData.Category}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/businesses/search?page={{$v}}&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{$.FormData.ShowUserFavoritesOnly}}">{{$v}}</a>
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/entities/search?page={{$v}}&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{$.FormData.ShowUserFavoritesOnly}}">{{$v}}</a>
                             {{else}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/businesses/search?page={{$v}}&category={{$.FormData.Category}}">{{$v}}</a>
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/entities/search?page={{$v}}&category={{$.FormData.Category}}">{{$v}}</a>
                             {{end}}
                         {{end}}
                         {{else}}
                         {{range $_, $v := N 2 5}}
                             {{if not $.FormData.Category}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/businesses/search?page={{$v}}&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{$.FormData.ShowUserFavoritesOnly}}">{{$v}}</a>
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/entities/search?page={{$v}}&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{$.FormData.ShowUserFavoritesOnly}}">{{$v}}</a>
                             {{else}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/businesses/search?page={{$v}}&category={{$.FormData.Category}}">{{$v}}</a>
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/entities/search?page={{$v}}&category={{$.FormData.Category}}">{{$v}}</a>
                             {{end}}
                         {{end}}
                         {{end}}
@@ -239,17 +239,17 @@
                         {{if le (Add .FormData.Page 3) .Result.TotalPages}}
                         {{range $_, $v := N (Minus .FormData.Page 2) (Add .FormData.Page 2)}}
                             {{if not $.FormData.Category}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/businesses/search?page={{$v}}&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{$.FormData.ShowUserFavoritesOnly}}">{{$v}}</a>
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/entities/search?page={{$v}}&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{$.FormData.ShowUserFavoritesOnly}}">{{$v}}</a>
                             {{else}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/businesses/search?page={{$v}}&category={{$.FormData.Category}}">{{$v}}</a>
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/entities/search?page={{$v}}&category={{$.FormData.Category}}">{{$v}}</a>
                             {{end}}
                         {{end}}
                         {{else}}
                         {{range $_, $v := N (Minus .Result.TotalPages 4) (Minus .Result.TotalPages 1)}}
                             {{if not $.FormData.Category}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/businesses/search?page={{$v}}&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{$.FormData.ShowUserFavoritesOnly}}">{{$v}}</a>
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/entities/search?page={{$v}}&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{$.FormData.ShowUserFavoritesOnly}}">{{$v}}</a>
                             {{else}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/businesses/search?page={{$v}}&category={{$.FormData.Category}}">{{$v}}</a>
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/entities/search?page={{$v}}&category={{$.FormData.Category}}">{{$v}}</a>
                             {{end}}
                         {{end}}
                         {{end}}
@@ -268,18 +268,18 @@
                         {{/* lastPage */}}
                         {{if gt .Result.TotalPages 9}}
                             {{if not .FormData.Category}}
-                                <a class="{{if eq .FormData.Page .Result.TotalPages}}active{{end}} item" href="/businesses/search?page={{.Result.TotalPages}}&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&show-favorites-only={{.FormData.ShowUserFavoritesOnly}}">{{.Result.TotalPages}}</a>
+                                <a class="{{if eq .FormData.Page .Result.TotalPages}}active{{end}} item" href="/entities/search?page={{.Result.TotalPages}}&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&show-favorites-only={{.FormData.ShowUserFavoritesOnly}}">{{.Result.TotalPages}}</a>
                             {{else}}
-                                <a class="{{if eq .FormData.Page .Result.TotalPages}}active{{end}} item" href="/businesses/search?page={{.Result.TotalPages}}&category={{.FormData.Category}}">{{.Result.TotalPages}}</a>
+                                <a class="{{if eq .FormData.Page .Result.TotalPages}}active{{end}} item" href="/entities/search?page={{.Result.TotalPages}}&category={{.FormData.Category}}">{{.Result.TotalPages}}</a>
                             {{end}}
                         {{end}}
 
                         {{/* > */}}
                         {{if lt .FormData.Page .Result.TotalPages}}
                             {{if not .FormData.Category}}
-                                <a class="icon item right-chevron" href="/businesses/search?page={{Add .FormData.Page 1}}&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{.FormData.ShowUserFavoritesOnly}}">
+                                <a class="icon item right-chevron" href="/entities/search?page={{Add .FormData.Page 1}}&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&show-favorites-only={{.FormData.ShowUserFavoritesOnly}}">
                             {{else}}
-                                <a class="icon item right-chevron" href="/businesses/search?page={{Add .FormData.Page 1}}&category={{.FormData.Category}}">
+                                <a class="icon item right-chevron" href="/entities/search?page={{Add .FormData.Page 1}}&category={{.FormData.Category}}">
                             {{end}}
                                     <i class="right chevron icon"></i>
                                 </a>
@@ -369,7 +369,7 @@
                         <a
                             class="four wide column category"
                             data-name="${tag}"
-                            href="/businesses/search?page=1&prefix=${prefix}&category=${tag}#browse"
+                            href="/entities/search?page=1&prefix=${prefix}&category=${tag}#browse"
                         >
                             ${tag}
                         </a>
@@ -410,9 +410,9 @@
     }
     changeToBrowseTab()
 
-    const checkBusinessStatus = () =>
+    const checkEntityStatus = () =>
         $.ajax({
-            url: "/api/businessStatus",
+            url: "/api/entityStatus",
             contentType: "application/json",
             dataType: 'json',
             success: data => {
@@ -424,7 +424,7 @@
                 }
             }
         })
-    checkBusinessStatus()
+    checkEntityStatus()
 </script>
 
 {{ end }}

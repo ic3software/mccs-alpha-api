@@ -49,7 +49,7 @@ func (a *adminTag) FindByName(name string) (*types.AdminTag, error) {
 	}
 	err := a.c.FindOne(context.Background(), filter).Decode(&adminTag)
 	if err != nil {
-		return nil, e.New(e.BusinessNotFound, "Admin tag not found")
+		return nil, e.New(e.EntityNotFound, "Admin tag not found")
 	}
 	return &adminTag, nil
 }
@@ -62,7 +62,7 @@ func (a *adminTag) FindByID(id primitive.ObjectID) (*types.AdminTag, error) {
 	}
 	err := a.c.FindOne(context.Background(), filter).Decode(&adminTag)
 	if err != nil {
-		return nil, e.New(e.BusinessNotFound, "Admin tag not found")
+		return nil, e.New(e.EntityNotFound, "Admin tag not found")
 	}
 	return &adminTag, nil
 }

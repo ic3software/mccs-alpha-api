@@ -37,23 +37,23 @@ func (a admin) LoginFailure(admin *types.AdminUser, ip string) *types.UserAction
 	}
 }
 
-func (a admin) ModifyBusiness(
+func (a admin) ModifyEntity(
 	admin *types.AdminUser,
 	user *types.User,
-	oldBusiness *types.Business,
-	newBusiness *types.BusinessData,
+	oldEntity *types.Entity,
+	newEntity *types.EntityData,
 	oldBalance *types.BalanceLimit,
 	newBalance *types.BalanceLimit,
 ) *types.UserAction {
-	modifiedFields := util.CheckDiff(oldBusiness, newBusiness, nil)
-	if !helper.SameTags(newBusiness.Offers, oldBusiness.Offers) {
-		modifiedFields = append(modifiedFields, "offers: "+strings.Join(helper.GetTagNames(oldBusiness.Offers), " ")+" -> "+strings.Join(helper.GetTagNames(newBusiness.Offers), " "))
+	modifiedFields := util.CheckDiff(oldEntity, newEntity, nil)
+	if !helper.SameTags(newEntity.Offers, oldEntity.Offers) {
+		modifiedFields = append(modifiedFields, "offers: "+strings.Join(helper.GetTagNames(oldEntity.Offers), " ")+" -> "+strings.Join(helper.GetTagNames(newEntity.Offers), " "))
 	}
-	if !helper.SameTags(newBusiness.Wants, oldBusiness.Wants) {
-		modifiedFields = append(modifiedFields, "wants: "+strings.Join(helper.GetTagNames(oldBusiness.Wants), " ")+" -> "+strings.Join(helper.GetTagNames(newBusiness.Wants), " "))
+	if !helper.SameTags(newEntity.Wants, oldEntity.Wants) {
+		modifiedFields = append(modifiedFields, "wants: "+strings.Join(helper.GetTagNames(oldEntity.Wants), " ")+" -> "+strings.Join(helper.GetTagNames(newEntity.Wants), " "))
 	}
-	if strings.Join(newBusiness.AdminTags, " ") != strings.Join(oldBusiness.AdminTags, " ") {
-		modifiedFields = append(modifiedFields, "adminTags: "+strings.Join(oldBusiness.AdminTags, " ")+" -> "+strings.Join(newBusiness.AdminTags, " "))
+	if strings.Join(newEntity.AdminTags, " ") != strings.Join(oldEntity.AdminTags, " ") {
+		modifiedFields = append(modifiedFields, "adminTags: "+strings.Join(oldEntity.AdminTags, " ")+" -> "+strings.Join(newEntity.AdminTags, " "))
 	}
 	modifiedFields = append(modifiedFields, util.CheckDiff(oldBalance, newBalance, map[string]bool{})...)
 	if len(modifiedFields) == 0 {
@@ -62,7 +62,7 @@ func (a admin) ModifyBusiness(
 	return &types.UserAction{
 		UserID:        user.ID,
 		Email:         user.Email,
-		Action:        "admin modified business details",
+		Action:        "admin modified entity details",
 		ActionDetails: admin.Email + " - " + user.Email + " - " + strings.Join(modifiedFields, ", "),
 		Category:      "admin",
 	}

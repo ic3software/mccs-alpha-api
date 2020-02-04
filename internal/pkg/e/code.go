@@ -2,7 +2,7 @@ package e
 
 const (
 	UserNotFound = iota
-	BusinessNotFound
+	EntityNotFound
 	InternalServerError
 	EmailExisted
 	PasswordIncorrect
@@ -15,7 +15,7 @@ const (
 
 var Msg = map[int]string{
 	UserNotFound:        "Email address not found.",
-	BusinessNotFound:    "Business not found.",
+	EntityNotFound:      "Entity not found.",
 	EmailExisted:        "Email address is already registered.",
 	TokenInvalid:        "Invalid token.",
 	PasswordIncorrect:   "Invalid password.",

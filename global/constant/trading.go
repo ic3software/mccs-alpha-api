@@ -1,6 +1,6 @@
 package constant
 
-// Trading Status decides whether a business can perform transactions (already in accepted status).
+// Trading Status decides whether a entity can perform transactions (already in accepted status).
 var Trading = struct {
 	Pending  string
 	Accepted string

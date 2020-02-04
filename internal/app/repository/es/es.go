@@ -18,7 +18,7 @@ func init() {
 }
 
 func registerCollections(client *elastic.Client) {
-	Business.Register(client)
+	Entity.Register(client)
 	User.Register(client)
 	Tag.Register(client)
 }

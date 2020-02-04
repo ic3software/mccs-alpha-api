@@ -211,7 +211,7 @@ func (a *adminTagHandler) renameAdminTag() func(http.ResponseWriter, *http.Reque
 		oldName := adminTag.Name
 
 		go func() {
-			err := logic.Business.RenameAdminTag(oldName, req.Name)
+			err := logic.Entity.RenameAdminTag(oldName, req.Name)
 			if err != nil {
 				l.Logger.Error("RenameAdminTag failed", zap.Error(err))
 			}
@@ -272,7 +272,7 @@ func (a *adminTagHandler) deleteAdminTag() func(http.ResponseWriter, *http.Reque
 		}
 
 		go func() {
-			err := logic.Business.DeleteAdminTags(adminTag.Name)
+			err := logic.Entity.DeleteAdminTags(adminTag.Name)
 			if err != nil {
 				l.Logger.Error("DeleteAdminTags failed", zap.Error(err))
 			}

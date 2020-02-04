@@ -21,74 +21,74 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 )
 
-type businessHandler struct {
+type entityHandler struct {
 	once *sync.Once
 }
 
-var BusinessHandler = newBusinessHandler()
+var EntityHandler = newEntityHandler()
 
-func newBusinessHandler() *businessHandler {
-	return &businessHandler{
+func newEntityHandler() *entityHandler {
+	return &entityHandler{
 		once: new(sync.Once),
 	}
 }
 
-func (b *businessHandler) RegisterRoutes(
+func (b *entityHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
 	adminPublic *mux.Router,
 	adminPrivate *mux.Router,
 ) {
 	b.once.Do(func() {
-		public.Path("/businesses").HandlerFunc(b.searchBusinessPage()).Methods("GET")
-		public.Path("/businesses/search").HandlerFunc(b.searchBusiness()).Methods("GET")
-		public.Path("/businessPage/{id}").HandlerFunc(b.businessPage()).Methods("GET")
-		private.Path("/businesses/search/match-tags").HandlerFunc(b.searhMatchTags()).Methods("GET")
+		public.Path("/entities").HandlerFunc(b.searchEntityPage()).Methods("GET")
+		public.Path("/entities/search").HandlerFunc(b.searchEntity()).Methods("GET")
+		public.Path("/entityPage/{id}").HandlerFunc(b.entityPage()).Methods("GET")
+		private.Path("/entities/search/match-tags").HandlerFunc(b.searhMatchTags()).Methods("GET")
 
-		private.Path("/api/businessStatus").HandlerFunc(b.businessStatus()).Methods("GET")
-		private.Path("/api/getBusinessName").HandlerFunc(b.getBusinessName()).Methods("GET")
+		private.Path("/api/entityStatus").HandlerFunc(b.entityStatus()).Methods("GET")
+		private.Path("/api/getEntityName").HandlerFunc(b.getEntityName()).Methods("GET")
 		private.Path("/api/tradingMemberStatus").HandlerFunc(b.tradingMemberStatus()).Methods("GET")
-		private.Path("/api/contactBusiness").HandlerFunc(b.contactBusiness()).Methods("POST")
+		private.Path("/api/contactEntity").HandlerFunc(b.contactEntity()).Methods("POST")
 	})
 }
 
-func (b *businessHandler) FindByID(businessID string) (*types.Business, error) {
-	objID, err := primitive.ObjectIDFromHex(businessID)
+func (b *entityHandler) FindByID(entityID string) (*types.Entity, error) {
+	objID, err := primitive.ObjectIDFromHex(entityID)
 	if err != nil {
 		return nil, err
 	}
-	business, err := logic.Business.FindByID(objID)
+	entity, err := logic.Entity.FindByID(objID)
 	if err != nil {
 		return nil, err
 	}
-	return business, nil
+	return entity, nil
 }
 
-func (b *businessHandler) FindByEmail(email string) (*types.Business, error) {
+func (b *entityHandler) FindByEmail(email string) (*types.Entity, error) {
 	user, err := logic.User.FindByEmail(email)
 	if err != nil {
 		return nil, err
 	}
-	bs, err := logic.Business.FindByID(user.CompanyID)
+	bs, err := logic.Entity.FindByID(user.CompanyID)
 	if err != nil {
 		return nil, err
 	}
 	return bs, nil
 }
 
-func (b *businessHandler) FindByUserID(uID string) (*types.Business, error) {
+func (b *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	user, err := UserHandler.FindByID(uID)
 	if err != nil {
 		return nil, err
 	}
-	bs, err := logic.Business.FindByID(user.CompanyID)
+	bs, err := logic.Entity.FindByID(user.CompanyID)
 	if err != nil {
 		return nil, err
 	}
 	return bs, nil
 }
 
-type searchBusinessFormData struct {
+type searchEntityFormData struct {
 	TagType               string
 	Tags                  []*types.TagField
 	CreatedOnOrAfter      string
@@ -97,24 +97,24 @@ type searchBusinessFormData struct {
 	Page                  int
 }
 
-type searchBusinessResponse struct {
-	IsUserLoggedIn     bool
-	FormData           searchBusinessFormData
-	Categories         []string
-	Result             *types.FindBusinessResult
-	FavoriteBusinesses []primitive.ObjectID
+type searchEntityResponse struct {
+	IsUserLoggedIn   bool
+	FormData         searchEntityFormData
+	Categories       []string
+	Result           *types.FindEntityResult
+	FavoriteEntities []primitive.ObjectID
 }
 
-func (b *businessHandler) searchBusinessPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("businesses")
+func (b *entityHandler) searchEntityPage() func(http.ResponseWriter, *http.Request) {
+	t := template.NewView("entities")
 	return func(w http.ResponseWriter, r *http.Request) {
 		adminTags, err := logic.AdminTag.GetAll()
 		if err != nil {
-			l.Logger.Error("SearchBusinessPage failed", zap.Error(err))
+			l.Logger.Error("SearchEntityPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
-		res := searchBusinessResponse{Categories: helper.GetAdminTagNames(adminTags)}
+		res := searchEntityResponse{Categories: helper.GetAdminTagNames(adminTags)}
 		_, err = UserHandler.FindByID(r.Header.Get("userID"))
 		if err != nil {
 			res.IsUserLoggedIn = false
@@ -125,19 +125,19 @@ func (b *businessHandler) searchBusinessPage() func(http.ResponseWriter, *http.R
 	}
 }
 
-func (b *businessHandler) searchBusiness() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("businesses")
+func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) {
+	t := template.NewView("entities")
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 
 		page, err := strconv.Atoi(q.Get("page"))
 		if err != nil {
-			l.Logger.Error("SearchBusiness failed", zap.Error(err))
+			l.Logger.Error("SearchEntity failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
 
-		f := searchBusinessFormData{
+		f := searchEntityFormData{
 			TagType:               q.Get("tag_type"),
 			Tags:                  helper.ToSearchTags(q.Get("tags")),
 			CreatedOnOrAfter:      q.Get("created_on_or_after"),
@@ -145,21 +145,21 @@ func (b *businessHandler) searchBusiness() func(http.ResponseWriter, *http.Reque
 			ShowUserFavoritesOnly: q.Get("show-favorites-only") == "true",
 			Page:                  page,
 		}
-		res := searchBusinessResponse{FormData: f}
+		res := searchEntityResponse{FormData: f}
 
 		user, err := UserHandler.FindByID(r.Header.Get("userID"))
 		if err != nil {
 			res.IsUserLoggedIn = false
 		} else {
 			res.IsUserLoggedIn = true
-			res.FavoriteBusinesses = user.FavoriteBusinesses
+			res.FavoriteEntities = user.FavoriteEntities
 		}
 
 		c := types.SearchCriteria{
 			TagType: f.TagType,
 			Tags:    f.Tags,
 			Statuses: []string{
-				constant.Business.Accepted,
+				constant.Entity.Accepted,
 				constant.Trading.Pending,
 				constant.Trading.Accepted,
 				constant.Trading.Rejected,
@@ -167,19 +167,19 @@ func (b *businessHandler) searchBusiness() func(http.ResponseWriter, *http.Reque
 			CreatedOnOrAfter:      util.ParseTime(f.CreatedOnOrAfter),
 			AdminTag:              f.Category,
 			ShowUserFavoritesOnly: f.ShowUserFavoritesOnly,
-			FavoriteBusinesses:    res.FavoriteBusinesses,
+			FavoriteEntities:      res.FavoriteEntities,
 		}
-		findResult, err := logic.Business.FindBusiness(&c, int64(f.Page))
+		findResult, err := logic.Entity.FindEntity(&c, int64(f.Page))
 		res.Result = findResult
 		if err != nil {
-			l.Logger.Error("SearchBusiness failed", zap.Error(err))
+			l.Logger.Error("SearchEntity failed", zap.Error(err))
 			t.Error(w, r, res, err)
 			return
 		}
 
 		adminTags, err := logic.AdminTag.GetAll()
 		if err != nil {
-			l.Logger.Error("SearchBusiness failed", zap.Error(err))
+			l.Logger.Error("SearchEntity failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
@@ -189,35 +189,35 @@ func (b *businessHandler) searchBusiness() func(http.ResponseWriter, *http.Reque
 	}
 }
 
-func (b *businessHandler) businessPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("business")
+func (b *entityHandler) entityPage() func(http.ResponseWriter, *http.Request) {
+	t := template.NewView("entity")
 	type formData struct {
 		IsUserLoggedIn bool
-		BusinessEmail  string
-		Business       *types.Business
+		EntityEmail    string
+		Entity         *types.Entity
 		User           *types.User
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		bID := vars["id"]
-		business, err := b.FindByID(bID)
+		entity, err := b.FindByID(bID)
 		if err != nil {
-			l.Logger.Error("BusinessPage failed", zap.Error(err))
+			l.Logger.Error("EntityPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
 
 		f := formData{
-			Business: business,
+			Entity: entity,
 		}
 
-		businessUser, err := UserHandler.FindByBusinessID(bID)
+		entityUser, err := UserHandler.FindByEntityID(bID)
 		if err != nil {
-			l.Logger.Error("BusinessPage failed", zap.Error(err))
+			l.Logger.Error("EntityPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
-		f.BusinessEmail = businessUser.Email
+		f.EntityEmail = entityUser.Email
 
 		user, err := UserHandler.FindByID(r.Header.Get("userID"))
 		if err != nil {
@@ -231,10 +231,10 @@ func (b *businessHandler) businessPage() func(http.ResponseWriter, *http.Request
 	}
 }
 
-func (b *businessHandler) contactBusiness() func(http.ResponseWriter, *http.Request) {
+func (b *entityHandler) contactEntity() func(http.ResponseWriter, *http.Request) {
 	type request struct {
-		BusinessID string `json:"id"`
-		Body       string `json:"body"`
+		EntityID string `json:"id"`
+		Body     string `json:"body"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request
@@ -242,7 +242,7 @@ func (b *businessHandler) contactBusiness() func(http.ResponseWriter, *http.Requ
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
-			l.Logger.Error("ContactBusiness failed", zap.Error(err))
+			l.Logger.Error("ContactEntity failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
 			return
@@ -250,25 +250,25 @@ func (b *businessHandler) contactBusiness() func(http.ResponseWriter, *http.Requ
 
 		user, err := UserHandler.FindByID(r.Header.Get("userID"))
 		if err != nil {
-			l.Logger.Error("ContactBusiness failed", zap.Error(err))
+			l.Logger.Error("ContactEntity failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
 			return
 		}
 
-		businessOwner, err := UserHandler.FindByBusinessID(req.BusinessID)
+		entityOwner, err := UserHandler.FindByEntityID(req.EntityID)
 		if err != nil {
-			l.Logger.Error("ContactBusiness failed", zap.Error(err))
+			l.Logger.Error("ContactEntity failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
 			return
 		}
 
-		receiver := businessOwner.FirstName + " " + businessOwner.LastName
+		receiver := entityOwner.FirstName + " " + entityOwner.LastName
 		replyToName := user.FirstName + " " + user.LastName
-		err = email.SendContactBusiness(receiver, businessOwner.Email, replyToName, user.Email, req.Body)
+		err = email.SendContactEntity(receiver, entityOwner.Email, replyToName, user.Email, req.Body)
 		if err != nil {
-			l.Logger.Error("ContactBusiness failed", zap.Error(err))
+			l.Logger.Error("ContactEntity failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
 			return
@@ -278,48 +278,48 @@ func (b *businessHandler) contactBusiness() func(http.ResponseWriter, *http.Requ
 	}
 }
 
-func (b *businessHandler) searhMatchTags() func(http.ResponseWriter, *http.Request) {
+func (b *entityHandler) searhMatchTags() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/businesses/search?"+r.URL.Query().Encode(), http.StatusFound)
+		http.Redirect(w, r, "/entities/search?"+r.URL.Query().Encode(), http.StatusFound)
 	}
 }
 
-func (b *businessHandler) businessStatus() func(http.ResponseWriter, *http.Request) {
+func (b *entityHandler) entityStatus() func(http.ResponseWriter, *http.Request) {
 	type response struct {
 		Status string `json:"status"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var business *types.Business
+		var entity *types.Entity
 		var err error
 
 		q := r.URL.Query()
 
-		if q.Get("business_id") != "" {
-			objID, err := primitive.ObjectIDFromHex(q.Get("business_id"))
+		if q.Get("entity_id") != "" {
+			objID, err := primitive.ObjectIDFromHex(q.Get("entity_id"))
 			if err != nil {
-				l.Logger.Error("BusinessHandler.businessStatus failed", zap.Error(err))
+				l.Logger.Error("EntityHandler.entityStatus failed", zap.Error(err))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			business, err = logic.Business.FindByID(objID)
+			entity, err = logic.Entity.FindByID(objID)
 			if err != nil {
-				l.Logger.Error("BusinessHandler.businessStatus failed", zap.Error(err))
+				l.Logger.Error("EntityHandler.entityStatus failed", zap.Error(err))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 		} else {
-			business, err = BusinessHandler.FindByUserID(r.Header.Get("userID"))
+			entity, err = EntityHandler.FindByUserID(r.Header.Get("userID"))
 			if err != nil {
-				l.Logger.Error("BusinessHandler.businessStatus failed", zap.Error(err))
+				l.Logger.Error("EntityHandler.entityStatus failed", zap.Error(err))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 		}
 
-		res := &response{Status: business.Status}
+		res := &response{Status: entity.Status}
 		js, err := json.Marshal(res)
 		if err != nil {
-			l.Logger.Error("BusinessHandler.businessStatus failed", zap.Error(err))
+			l.Logger.Error("EntityHandler.entityStatus failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -329,7 +329,7 @@ func (b *businessHandler) businessStatus() func(http.ResponseWriter, *http.Reque
 	}
 }
 
-func (b *businessHandler) getBusinessName() func(http.ResponseWriter, *http.Request) {
+func (b *entityHandler) getEntityName() func(http.ResponseWriter, *http.Request) {
 	type response struct {
 		Name string
 	}
@@ -338,22 +338,22 @@ func (b *businessHandler) getBusinessName() func(http.ResponseWriter, *http.Requ
 
 		user, err := logic.User.FindByEmail(q.Get("email"))
 		if err != nil {
-			l.Logger.Error("BusinessHandler.getBusinessName failed", zap.Error(err))
+			l.Logger.Error("EntityHandler.getEntityName failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		business, err := logic.Business.FindByID(user.CompanyID)
+		entity, err := logic.Entity.FindByID(user.CompanyID)
 		if err != nil {
-			l.Logger.Error("BusinessHandler.getBusinessName failed", zap.Error(err))
+			l.Logger.Error("EntityHandler.getEntityName failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		res := response{Name: business.BusinessName}
+		res := response{Name: entity.EntityName}
 		js, err := json.Marshal(res)
 		if err != nil {
-			l.Logger.Error("BusinessHandler.getBusinessName failed", zap.Error(err))
+			l.Logger.Error("EntityHandler.getEntityName failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -363,7 +363,7 @@ func (b *businessHandler) getBusinessName() func(http.ResponseWriter, *http.Requ
 	}
 }
 
-func (b *businessHandler) tradingMemberStatus() func(http.ResponseWriter, *http.Request) {
+func (b *entityHandler) tradingMemberStatus() func(http.ResponseWriter, *http.Request) {
 	type response struct {
 		Self  bool `json:"self"`
 		Other bool `json:"other"`
@@ -371,23 +371,23 @@ func (b *businessHandler) tradingMemberStatus() func(http.ResponseWriter, *http.
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 
-		objID, err := primitive.ObjectIDFromHex(q.Get("business_id"))
+		objID, err := primitive.ObjectIDFromHex(q.Get("entity_id"))
 		if err != nil {
-			l.Logger.Error("BusinessHandler.tradingMemberStatus failed", zap.Error(err))
+			l.Logger.Error("EntityHandler.tradingMemberStatus failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		other, err := logic.Business.FindByID(objID)
+		other, err := logic.Entity.FindByID(objID)
 		if err != nil {
-			l.Logger.Error("BusinessHandler.tradingMemberStatus failed", zap.Error(err))
+			l.Logger.Error("EntityHandler.tradingMemberStatus failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		self, err := BusinessHandler.FindByUserID(r.Header.Get("userID"))
+		self, err := EntityHandler.FindByUserID(r.Header.Get("userID"))
 		if err != nil {
-			l.Logger.Error("BusinessHandler.tradingMemberStatus failed", zap.Error(err))
+			l.Logger.Error("EntityHandler.tradingMemberStatus failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -401,7 +401,7 @@ func (b *businessHandler) tradingMemberStatus() func(http.ResponseWriter, *http.
 		}
 		js, err := json.Marshal(res)
 		if err != nil {
-			l.Logger.Error("BusinessHandler.tradingMemberStatus failed", zap.Error(err))
+			l.Logger.Error("EntityHandler.tradingMemberStatus failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

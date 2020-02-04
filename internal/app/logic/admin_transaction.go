@@ -12,21 +12,21 @@ var AdminTransaction = &adminTransaction{}
 func (a *adminTransaction) Create(
 	fromID,
 	fromEmail,
-	fromBusinessName,
+	fromEntityName,
 
 	toID,
 	toEmail,
-	toBusinessName string,
+	toEntityName string,
 
 	amount float64,
 	description string,
 ) error {
 	// Get the Account IDs using MongoIDs.
-	from, err := pg.Account.FindByBusinessID(fromID)
+	from, err := pg.Account.FindByEntityID(fromID)
 	if err != nil {
 		return e.Wrap(err, "service.Account.MakeTransfer failed")
 	}
-	to, err := pg.Account.FindByBusinessID(toID)
+	to, err := pg.Account.FindByEntityID(toID)
 	if err != nil {
 		return e.Wrap(err, "service.Account.MakeTransfer failed")
 	}
@@ -50,10 +50,10 @@ func (a *adminTransaction) Create(
 	err = pg.Transaction.Create(
 		from.ID,
 		fromEmail,
-		fromBusinessName,
+		fromEntityName,
 		to.ID,
 		toEmail,
-		toBusinessName,
+		toEntityName,
 		amount,
 		description,
 	)

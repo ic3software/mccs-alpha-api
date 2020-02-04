@@ -13,14 +13,14 @@ type user struct{}
 
 var User = user{}
 
-func (us user) Signup(u *types.User, b *types.BusinessData) *types.UserAction {
+func (us user) Signup(u *types.User, b *types.EntityData) *types.UserAction {
 	u.Email = strings.ToLower(u.Email)
 	return &types.UserAction{
 		UserID: u.ID,
 		Email:  u.Email,
 		Action: "account created",
-		// [businessName] - [firstName] [lastName] - [email]
-		ActionDetails: b.BusinessName + " - " + u.FirstName + " " + u.LastName + " - " + u.Email,
+		// [entityName] - [firstName] [lastName] - [email]
+		ActionDetails: b.EntityName + " - " + u.FirstName + " " + u.LastName + " - " + u.Email,
 		Category:      "user",
 	}
 }
@@ -74,16 +74,16 @@ func (us user) ChangePassword(u *types.User) *types.UserAction {
 func (us user) ModifyAccount(
 	oldUser *types.User,
 	newUser *types.User,
-	oldBusiness *types.Business,
-	newBusiness *types.BusinessData,
+	oldEntity *types.Entity,
+	newEntity *types.EntityData,
 ) *types.UserAction {
-	// check for business
-	modifiedFields := util.CheckDiff(oldBusiness, newBusiness, map[string]bool{"Status": true})
-	if !helper.SameTags(newBusiness.Offers, oldBusiness.Offers) {
-		modifiedFields = append(modifiedFields, "offers: "+strings.Join(helper.GetTagNames(oldBusiness.Offers), " ")+" -> "+strings.Join(helper.GetTagNames(newBusiness.Offers), " "))
+	// check for entity
+	modifiedFields := util.CheckDiff(oldEntity, newEntity, map[string]bool{"Status": true})
+	if !helper.SameTags(newEntity.Offers, oldEntity.Offers) {
+		modifiedFields = append(modifiedFields, "offers: "+strings.Join(helper.GetTagNames(oldEntity.Offers), " ")+" -> "+strings.Join(helper.GetTagNames(newEntity.Offers), " "))
 	}
-	if !helper.SameTags(newBusiness.Wants, oldBusiness.Wants) {
-		modifiedFields = append(modifiedFields, "wants: "+strings.Join(helper.GetTagNames(oldBusiness.Wants), " ")+" -> "+strings.Join(helper.GetTagNames(newBusiness.Wants), " "))
+	if !helper.SameTags(newEntity.Wants, oldEntity.Wants) {
+		modifiedFields = append(modifiedFields, "wants: "+strings.Join(helper.GetTagNames(oldEntity.Wants), " ")+" -> "+strings.Join(helper.GetTagNames(newEntity.Wants), " "))
 	}
 	// check for user
 	modifiedFields = append(modifiedFields, util.CheckDiff(oldUser, newUser, map[string]bool{

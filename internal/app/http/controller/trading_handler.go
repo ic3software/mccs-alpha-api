@@ -47,9 +47,9 @@ func (th *tradingHandler) RegisterRoutes(
 func (th *tradingHandler) signupPage() func(http.ResponseWriter, *http.Request) {
 	t := template.NewView("member-signup")
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Check if the business has the status of "accepted".
-		business, err := BusinessHandler.FindByUserID(r.Header.Get("userID"))
-		if err != nil || business.Status != constant.Business.Accepted {
+		// Check if the entity has the status of "accepted".
+		entity, err := EntityHandler.FindByUserID(r.Header.Get("userID"))
+		if err != nil || entity.Status != constant.Entity.Accepted {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
@@ -59,18 +59,18 @@ func (th *tradingHandler) signupPage() func(http.ResponseWriter, *http.Request) 
 			return
 		}
 		data := &types.TradingRegisterData{
-			BusinessName:       business.BusinessName,
-			IncType:            business.IncType,
-			CompanyNumber:      business.CompanyNumber,
-			BusinessPhone:      business.BusinessPhone,
-			Website:            business.Website,
-			Turnover:           business.Turnover,
-			Description:        business.Description,
-			LocationAddress:    business.LocationAddress,
-			LocationCity:       business.LocationCity,
-			LocationRegion:     business.LocationRegion,
-			LocationPostalCode: business.LocationPostalCode,
-			LocationCountry:    business.LocationCountry,
+			EntityName:         entity.EntityName,
+			IncType:            entity.IncType,
+			CompanyNumber:      entity.CompanyNumber,
+			EntityPhone:        entity.EntityPhone,
+			Website:            entity.Website,
+			Turnover:           entity.Turnover,
+			Description:        entity.Description,
+			LocationAddress:    entity.LocationAddress,
+			LocationCity:       entity.LocationCity,
+			LocationRegion:     entity.LocationRegion,
+			LocationPostalCode: entity.LocationPostalCode,
+			LocationCountry:    entity.LocationCountry,
 			FirstName:          user.FirstName,
 			LastName:           user.LastName,
 			Telephone:          user.Telephone,
@@ -101,14 +101,14 @@ func (th *tradingHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		// Update business collection.
-		business, err := BusinessHandler.FindByUserID(r.Header.Get("userID"))
+		// Update entity collection.
+		entity, err := EntityHandler.FindByUserID(r.Header.Get("userID"))
 		if err != nil {
 			l.Logger.Info("TradingHandler.Signup failed", zap.Error(err))
 			t.Error(w, r, data, err)
 			return
 		}
-		err = logic.Trading.UpdateBusiness(business.ID, data)
+		err = logic.Trading.UpdateEntity(entity.ID, data)
 		if err != nil {
 			l.Logger.Info("TradingHandler.Signup failed", zap.Error(err))
 			t.Error(w, r, data, err)
@@ -138,7 +138,7 @@ func (th *tradingHandler) signup() func(http.ResponseWriter, *http.Request) {
 		}()
 		// Send the to the OCN Admin email address.
 		go func() {
-			err := email.SendNewMemberSignupEmail(data.BusinessName, user.Email)
+			err := email.SendNewMemberSignupEmail(data.EntityName, user.Email)
 			if err != nil {
 				l.Logger.Error("email.SendNewMemberSignupEmail failed", zap.Error(err))
 			}
@@ -153,13 +153,13 @@ func (th *tradingHandler) isMember() func(http.ResponseWriter, *http.Request) {
 		IsMember bool
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		business, err := BusinessHandler.FindByUserID(r.Header.Get("userID"))
+		entity, err := EntityHandler.FindByUserID(r.Header.Get("userID"))
 		if err != nil {
 			l.Logger.Error("TradingHandler.IsMember failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		res := response{IsMember: business.Status == constant.Trading.Accepted}
+		res := response{IsMember: entity.Status == constant.Trading.Accepted}
 		js, err := json.Marshal(res)
 		if err != nil {
 			l.Logger.Error("TradingHandler.IsMember failed", zap.Error(err))

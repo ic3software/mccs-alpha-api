@@ -13,29 +13,29 @@ var Transaction = &transaction{}
 
 type emailInfo struct {
 	InitiatorEmail,
-	InitiatorBusinessName,
+	InitiatorEntityName,
 	ReceiverEmail,
-	ReceiverBusinessName string
+	ReceiverEntityName string
 }
 
 func (tr *transaction) getEmailInfo(t *types.Transaction) *emailInfo {
-	var initiatorEmail, initiatorBusinessName, receiverEmail, receiverBusinessName string
+	var initiatorEmail, initiatorEntityName, receiverEmail, receiverEntityName string
 	if t.InitiatedBy == t.FromID {
-		initiatorBusinessName = t.FromBusinessName
+		initiatorEntityName = t.FromEntityName
 		initiatorEmail = t.FromEmail
-		receiverBusinessName = t.ToBusinessName
+		receiverEntityName = t.ToEntityName
 		receiverEmail = t.ToEmail
 	} else {
-		initiatorBusinessName = t.ToBusinessName
+		initiatorEntityName = t.ToEntityName
 		initiatorEmail = t.ToEmail
-		receiverBusinessName = t.FromBusinessName
+		receiverEntityName = t.FromEntityName
 		receiverEmail = t.FromEmail
 	}
 	return &emailInfo{
 		initiatorEmail,
-		initiatorBusinessName,
+		initiatorEntityName,
 		receiverEmail,
-		receiverBusinessName,
+		receiverEntityName,
 	}
 }
 
@@ -45,13 +45,13 @@ func (tr *transaction) Initiate(transactionType string, t *types.Transaction) er
 
 	var body string
 	if transactionType == "send" {
-		body = info.InitiatorBusinessName + " wants to send " + fmt.Sprintf("%.2f", t.Amount) + " Credits to you. <a href=" + url + ">Click here to review this pending transaction</a>."
+		body = info.InitiatorEntityName + " wants to send " + fmt.Sprintf("%.2f", t.Amount) + " Credits to you. <a href=" + url + ">Click here to review this pending transaction</a>."
 	} else {
-		body = info.InitiatorBusinessName + " wants to receive " + fmt.Sprintf("%.2f", t.Amount) + " Credits from you. <a href=" + url + ">Click here to review this pending transaction</a>."
+		body = info.InitiatorEntityName + " wants to receive " + fmt.Sprintf("%.2f", t.Amount) + " Credits from you. <a href=" + url + ">Click here to review this pending transaction</a>."
 	}
 
 	d := emailData{
-		receiver:      info.ReceiverBusinessName,
+		receiver:      info.ReceiverEntityName,
 		receiverEmail: info.ReceiverEmail,
 		subject:       "OCN Transaction Requiring Your Approval",
 		text:          body,
@@ -69,13 +69,13 @@ func (tr *transaction) Accept(t *types.Transaction) error {
 
 	var body string
 	if t.InitiatedBy == t.FromID {
-		body = info.ReceiverBusinessName + " has accepted the transaction you initiated for -" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
+		body = info.ReceiverEntityName + " has accepted the transaction you initiated for -" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
 	} else {
-		body = info.ReceiverBusinessName + " has accepted the transaction you initiated for +" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
+		body = info.ReceiverEntityName + " has accepted the transaction you initiated for +" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
 	}
 
 	d := emailData{
-		receiver:      info.InitiatorBusinessName,
+		receiver:      info.InitiatorEntityName,
 		receiverEmail: info.InitiatorEmail,
 		subject:       "OCN Transaction Accepted",
 		text:          body,
@@ -93,9 +93,9 @@ func (tr *transaction) Cancel(t *types.Transaction, reason string) error {
 
 	var body string
 	if t.InitiatedBy == t.FromID {
-		body = info.InitiatorBusinessName + " has cancelled the transaction it initiated for +" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
+		body = info.InitiatorEntityName + " has cancelled the transaction it initiated for +" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
 	} else {
-		body = info.InitiatorBusinessName + " has cancelled the transaction it initiated for -" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
+		body = info.InitiatorEntityName + " has cancelled the transaction it initiated for -" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
 	}
 
 	if reason != "" {
@@ -103,7 +103,7 @@ func (tr *transaction) Cancel(t *types.Transaction, reason string) error {
 	}
 
 	d := emailData{
-		receiver:      info.ReceiverBusinessName,
+		receiver:      info.ReceiverEntityName,
 		receiverEmail: info.ReceiverEmail,
 		subject:       "OCN Transaction Cancelled",
 		text:          body,
@@ -118,9 +118,9 @@ func (tr *transaction) Cancel(t *types.Transaction, reason string) error {
 
 func (tr *transaction) CancelBySystem(t *types.Transaction, reason string) error {
 	info := tr.getEmailInfo(t)
-	body := "The system has cancelled the transaction you initiated with " + info.ReceiverBusinessName + " for the following reason: " + reason
+	body := "The system has cancelled the transaction you initiated with " + info.ReceiverEntityName + " for the following reason: " + reason
 	d := emailData{
-		receiver:      info.InitiatorBusinessName,
+		receiver:      info.InitiatorEntityName,
 		receiverEmail: info.InitiatorEmail,
 		subject:       "OCN Transaction Cancelled",
 		text:          body,
@@ -138,13 +138,13 @@ func (tr *transaction) Reject(t *types.Transaction) error {
 
 	var body string
 	if t.InitiatedBy == t.FromID {
-		body = info.ReceiverBusinessName + " has rejected the transaction you initiated for -" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
+		body = info.ReceiverEntityName + " has rejected the transaction you initiated for -" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
 	} else {
-		body = info.ReceiverBusinessName + " has rejected the transaction you initiated for +" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
+		body = info.ReceiverEntityName + " has rejected the transaction you initiated for +" + fmt.Sprintf("%.2f", t.Amount) + " Credits."
 	}
 
 	d := emailData{
-		receiver:      info.InitiatorBusinessName,
+		receiver:      info.InitiatorEntityName,
 		receiverEmail: info.InitiatorEmail,
 		subject:       "OCN Transaction Rejected",
 		text:          body,

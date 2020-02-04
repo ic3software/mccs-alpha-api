@@ -6,44 +6,44 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type business struct {
+type entity struct {
 	c *mongo.Collection
 }
 
-var Business = &business{}
+var Entity = &entity{}
 
-func (b *business) Register(db *mongo.Database) {
-	b.c = db.Collection("businesses")
+func (b *entity) Register(db *mongo.Database) {
+	b.c = db.Collection("entities")
 }
 
-func (b *business) FindByID(id primitive.ObjectID) (*types.Business, error) {
+func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
 	ctx := context.Background()
-	business := types.Business{}
+	entity := types.Entity{}
 	filter := bson.M{
 		"_id":       id,
 		"deletedAt": bson.M{"$exists": false},
 	}
-	err := b.c.FindOne(ctx, filter).Decode(&business)
+	err := b.c.FindOne(ctx, filter).Decode(&entity)
 	if err != nil {
-		return nil, e.New(e.BusinessNotFound, "business not found")
+		return nil, e.New(e.EntityNotFound, "entity not found")
 	}
-	return &business, nil
+	return &entity, nil
 }
 
-func (b *business) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
+func (b *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{
-		"businessName":       data.BusinessName,
+		"entityName":         data.EntityName,
 		"incType":            data.IncType,
 		"companyNumber":      data.CompanyNumber,
-		"businessPhone":      data.BusinessPhone,
+		"entityPhone":        data.EntityPhone,
 		"website":            data.Website,
 		"turnover":           data.Turnover,
 		"description":        data.Description,
@@ -61,21 +61,21 @@ func (b *business) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingR
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "BusinessMongo UpdateTradingInfo failed")
+		return e.Wrap(err, "EntityMongo UpdateTradingInfo failed")
 	}
 	return nil
 }
 
-func (b *business) UpdateBusiness(
+func (b *entity) UpdateEntity(
 	id primitive.ObjectID,
-	data *types.BusinessData,
+	data *types.EntityData,
 	isAdmin bool,
 ) error {
 	updates := []bson.M{}
 
 	u := bson.M{
-		"businessName":       data.BusinessName,
-		"businessPhone":      data.BusinessPhone,
+		"entityName":         data.EntityName,
+		"entityPhone":        data.EntityPhone,
 		"incType":            data.IncType,
 		"companyNumber":      data.CompanyNumber,
 		"website":            data.Website,
@@ -126,12 +126,12 @@ func (b *business) UpdateBusiness(
 
 	_, err := b.c.BulkWrite(context.Background(), writes)
 	if err != nil {
-		return e.Wrap(err, "businessMongo updateBusiness failed")
+		return e.Wrap(err, "entityMongo updateEntity failed")
 	}
 	return nil
 }
 
-func (b *business) SetMemberStartedAt(id primitive.ObjectID) error {
+func (b *entity) SetMemberStartedAt(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{
 		"memberStartedAt": time.Now(),
@@ -142,16 +142,16 @@ func (b *business) SetMemberStartedAt(id primitive.ObjectID) error {
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "BusinessMongo SetMemberStartedAt failed")
+		return e.Wrap(err, "EntityMongo SetMemberStartedAt failed")
 	}
 	return nil
 }
 
-// Create creates a business record in the table.
-func (b *business) Create(data *types.BusinessData) (primitive.ObjectID, error) {
+// Create creates a entity record in the table.
+func (b *entity) Create(data *types.EntityData) (primitive.ObjectID, error) {
 	doc := bson.M{
-		"businessName":       data.BusinessName,
-		"businessPhone":      data.BusinessPhone,
+		"entityName":         data.EntityName,
+		"entityPhone":        data.EntityPhone,
 		"incType":            data.IncType,
 		"companyNumber":      data.CompanyNumber,
 		"website":            data.Website,
@@ -164,7 +164,7 @@ func (b *business) Create(data *types.BusinessData) (primitive.ObjectID, error) 
 		"locationRegion":     data.LocationRegion,
 		"locationPostalCode": data.LocationPostalCode,
 		"locationCountry":    data.LocationCountry,
-		"status":             constant.Business.Pending,
+		"status":             constant.Entity.Pending,
 		"createdAt":          time.Now(),
 	}
 	res, err := b.c.InsertOne(context.Background(), doc)
@@ -174,7 +174,7 @@ func (b *business) Create(data *types.BusinessData) (primitive.ObjectID, error) 
 	return res.InsertedID.(primitive.ObjectID), nil
 }
 
-func (b *business) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
+func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{
 		"offers.$[].createdAt": t,
@@ -182,42 +182,42 @@ func (b *business) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) er
 	}}
 	_, err := b.c.UpdateMany(context.Background(), filter, update)
 	if err != nil {
-		return e.Wrap(err, "businessMongo UpdateAllTagsCreatedAt failed")
+		return e.Wrap(err, "entityMongo UpdateAllTagsCreatedAt failed")
 	}
 	return nil
 }
 
-func (b *business) FindByIDs(ids []string) ([]*types.Business, error) {
-	var results []*types.Business
+func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
+	var results []*types.Entity
 
 	objectIDs, err := toObjectIDs(ids)
 	if err != nil {
-		return nil, e.Wrap(err, "find business failed")
+		return nil, e.Wrap(err, "find entity failed")
 	}
 
 	pipeline := newFindByIDsPipeline(objectIDs)
 	cur, err := b.c.Aggregate(context.TODO(), pipeline)
 	if err != nil {
-		return nil, e.Wrap(err, "find business failed")
+		return nil, e.Wrap(err, "find entity failed")
 	}
 
 	for cur.Next(context.TODO()) {
-		var elem types.Business
+		var elem types.Entity
 		err := cur.Decode(&elem)
 		if err != nil {
-			return nil, e.Wrap(err, "find business failed")
+			return nil, e.Wrap(err, "find entity failed")
 		}
 		results = append(results, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		return nil, e.Wrap(err, "find business failed")
+		return nil, e.Wrap(err, "find entity failed")
 	}
 	cur.Close(context.TODO())
 
 	return results, nil
 }
 
-func (b *business) DeleteByID(id primitive.ObjectID) error {
+func (b *entity) DeleteByID(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{"deletedAt": time.Now()}}
 	_, err := b.c.UpdateOne(
@@ -226,12 +226,12 @@ func (b *business) DeleteByID(id primitive.ObjectID) error {
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "delete business failed")
+		return e.Wrap(err, "delete entity failed")
 	}
 	return nil
 }
 
-func (b *business) RenameTag(old string, new string) error {
+func (b *entity) RenameTag(old string, new string) error {
 	err := b.updateOffers(old, new)
 	if err != nil {
 		return err
@@ -243,7 +243,7 @@ func (b *business) RenameTag(old string, new string) error {
 	return nil
 }
 
-func (b *business) updateOffers(old string, new string) error {
+func (b *entity) updateOffers(old string, new string) error {
 	filter := bson.M{"offers.name": old}
 	update := bson.M{
 		"$set": bson.M{
@@ -258,7 +258,7 @@ func (b *business) updateOffers(old string, new string) error {
 	return nil
 }
 
-func (b *business) updateWants(old string, new string) error {
+func (b *entity) updateWants(old string, new string) error {
 	filter := bson.M{"wants.name": old}
 	update := bson.M{
 		"$set": bson.M{
@@ -273,7 +273,7 @@ func (b *business) updateWants(old string, new string) error {
 	return nil
 }
 
-func (b *business) RenameAdminTag(old string, new string) error {
+func (b *entity) RenameAdminTag(old string, new string) error {
 	// Push the new tag tag name.
 	filter := bson.M{"adminTags": old}
 	update := bson.M{
@@ -297,7 +297,7 @@ func (b *business) RenameAdminTag(old string, new string) error {
 	return nil
 }
 
-func (b *business) DeleteTag(name string) error {
+func (b *entity) DeleteTag(name string) error {
 	filter := bson.M{
 		"$or": []interface{}{
 			bson.M{"offers.name": name},
@@ -324,7 +324,7 @@ func (b *business) DeleteTag(name string) error {
 	return nil
 }
 
-func (b *business) DeleteAdminTags(name string) error {
+func (b *entity) DeleteAdminTags(name string) error {
 	filter := bson.M{
 		"$or": []interface{}{
 			bson.M{"adminTags": name},

@@ -11,12 +11,12 @@ type trading struct{}
 
 var Trading = &trading{}
 
-func (t *trading) UpdateBusiness(id primitive.ObjectID, data *types.TradingRegisterData) error {
-	err := es.Business.UpdateTradingInfo(id, data)
+func (t *trading) UpdateEntity(id primitive.ObjectID, data *types.TradingRegisterData) error {
+	err := es.Entity.UpdateTradingInfo(id, data)
 	if err != nil {
 		return err
 	}
-	err = mongo.Business.UpdateTradingInfo(id, data)
+	err = mongo.Entity.UpdateTradingInfo(id, data)
 	if err != nil {
 		return err
 	}

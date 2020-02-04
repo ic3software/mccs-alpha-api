@@ -101,8 +101,8 @@ func (tr *transactionHandler) proposeTransactionPage() func(http.ResponseWriter,
 	t := template.NewView("transaction")
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Only allow access to Transfer screens for users with trading-accepted status
-		business, _ := BusinessHandler.FindByUserID(r.Header.Get("userID"))
-		if business.Status != constant.Trading.Accepted {
+		entity, _ := EntityHandler.FindByUserID(r.Header.Get("userID"))
+		if entity.Status != constant.Trading.Accepted {
 			http.Redirect(w, r, "/", http.StatusFound)
 		}
 
@@ -121,51 +121,51 @@ func (tr *transactionHandler) proposeTransactionPage() func(http.ResponseWriter,
 type proposeInfo struct {
 	FromID,
 	FromEmail,
-	FromBusinessName,
+	FromEntityName,
 	FromStatus,
 	ToID,
 	ToEmail,
-	ToBusinessName,
+	ToEntityName,
 	ToStatus string
 }
 
 func (tr *transactionHandler) getProposeInfo(
 	kind string,
-	initiatorBusiness,
-	receiverBusiness *types.Business,
+	initiatorEntity,
+	receiverEntity *types.Entity,
 	initiatorEmail,
 	receiverEmail string,
 ) *proposeInfo {
-	var fromID, fromEmail, fromBusinessName, fromStatus, toID, toEmail, toBusinessName, toStatus string
+	var fromID, fromEmail, fromEntityName, fromStatus, toID, toEmail, toEntityName, toStatus string
 	if kind == "send" {
-		fromID = initiatorBusiness.ID.Hex()
+		fromID = initiatorEntity.ID.Hex()
 		fromEmail = initiatorEmail
-		fromBusinessName = initiatorBusiness.BusinessName
-		fromStatus = initiatorBusiness.Status
+		fromEntityName = initiatorEntity.EntityName
+		fromStatus = initiatorEntity.Status
 
-		toID = receiverBusiness.ID.Hex()
+		toID = receiverEntity.ID.Hex()
 		toEmail = receiverEmail
-		toBusinessName = receiverBusiness.BusinessName
-		toStatus = receiverBusiness.Status
+		toEntityName = receiverEntity.EntityName
+		toStatus = receiverEntity.Status
 	} else if kind == "receive" {
-		fromID = receiverBusiness.ID.Hex()
+		fromID = receiverEntity.ID.Hex()
 		fromEmail = receiverEmail
-		fromBusinessName = receiverBusiness.BusinessName
-		fromStatus = receiverBusiness.Status
+		fromEntityName = receiverEntity.EntityName
+		fromStatus = receiverEntity.Status
 
-		toID = initiatorBusiness.ID.Hex()
+		toID = initiatorEntity.ID.Hex()
 		toEmail = initiatorEmail
-		toBusinessName = initiatorBusiness.BusinessName
-		toStatus = initiatorBusiness.Status
+		toEntityName = initiatorEntity.EntityName
+		toStatus = initiatorEntity.Status
 	}
 	return &proposeInfo{
 		fromID,
 		fromEmail,
-		fromBusinessName,
+		fromEntityName,
 		fromStatus,
 		toID,
 		toEmail,
-		toBusinessName,
+		toEntityName,
 		toStatus,
 	}
 }
@@ -212,13 +212,13 @@ func (tr *transactionHandler) proposeTransaction() func(http.ResponseWriter, *ht
 			return
 		}
 		// Decide the initiator and receiver.
-		initiatorBusiness, err := logic.Business.FindByID(initiator.CompanyID)
+		initiatorEntity, err := logic.Entity.FindByID(initiator.CompanyID)
 		if err != nil {
 			l.Logger.Info("Transfer failed", zap.Error(err))
 			t.Error(w, r, res, err)
 			return
 		}
-		receiverBusiness, err := BusinessHandler.FindByEmail(f.Email)
+		receiverEntity, err := EntityHandler.FindByEmail(f.Email)
 		if err != nil {
 			l.Logger.Info("Transfer failed", zap.Error(err))
 			t.Error(w, r, res, err)
@@ -226,8 +226,8 @@ func (tr *transactionHandler) proposeTransaction() func(http.ResponseWriter, *ht
 		}
 		proposeInfo := tr.getProposeInfo(
 			f.Type,
-			initiatorBusiness,
-			receiverBusiness,
+			initiatorEntity,
+			receiverEntity,
 			initiator.Email,
 			f.Email,
 		)
@@ -235,7 +235,7 @@ func (tr *transactionHandler) proposeTransaction() func(http.ResponseWriter, *ht
 		// Only allow transfers with accounts that also have "trading-accepted" status
 		if (proposeInfo.FromStatus != constant.Trading.Accepted) ||
 			(proposeInfo.ToStatus != constant.Trading.Accepted) {
-			t.Render(w, r, res, []string{"Recipient is not a trading member. You can only make transfers to other businesses that have trading member status."})
+			t.Render(w, r, res, []string{"Recipient is not a trading member. You can only make transfers to other entities that have trading member status."})
 			return
 		}
 
@@ -249,10 +249,10 @@ func (tr *transactionHandler) proposeTransaction() func(http.ResponseWriter, *ht
 			initiator.CompanyID.Hex(),
 			proposeInfo.FromID,
 			proposeInfo.FromEmail,
-			proposeInfo.FromBusinessName,
+			proposeInfo.FromEntityName,
 			proposeInfo.ToID,
 			proposeInfo.ToEmail,
-			proposeInfo.ToBusinessName,
+			proposeInfo.ToEntityName,
 			f.Amount,
 			f.Description,
 		)

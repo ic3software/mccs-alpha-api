@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func validateTagsLimit(b *types.BusinessData) []string {
+func validateTagsLimit(b *types.EntityData) []string {
 	errorMessages := []string{}
 
 	if len(b.Offers) == 0 {

@@ -43,8 +43,8 @@ func (h *historyHandler) historyPage() func(http.ResponseWriter, *http.Request) 
 	t := template.NewView("history")
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Only allow access to History screens for users with trading-accepted status
-		business, _ := BusinessHandler.FindByUserID(r.Header.Get("userID"))
-		if business.Status != constant.Trading.Accepted {
+		entity, _ := EntityHandler.FindByUserID(r.Header.Get("userID"))
+		if entity.Status != constant.Trading.Accepted {
 			http.Redirect(w, r, "/", http.StatusFound)
 		}
 		t.Render(w, r, nil, nil)
@@ -89,7 +89,7 @@ func (h *historyHandler) searchHistory() func(http.ResponseWriter, *http.Request
 		}
 
 		// Get the account balance.
-		account, err := logic.Account.FindByBusinessID(user.CompanyID.Hex())
+		account, err := logic.Account.FindByEntityID(user.CompanyID.Hex())
 		if err != nil {
 			l.Logger.Error("controller.History.HistoryPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)

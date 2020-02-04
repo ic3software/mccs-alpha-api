@@ -48,9 +48,9 @@ func (u *userHandler) RegisterRoutes(
 		public.Path("/api/v1/password-reset/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
 		private.Path("/api/v1/password-change").HandlerFunc(u.passwordChange()).Methods("POST")
 
-		private.Path("/api/v1/users/removeFromFavoriteBusinesses").HandlerFunc(u.removeFromFavoriteBusinesses()).Methods("POST")
+		private.Path("/api/v1/users/removeFromFavoriteEntities").HandlerFunc(u.removeFromFavoriteEntities()).Methods("POST")
 		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
-		private.Path("/api/v1/users/addToFavoriteBusinesses").HandlerFunc(u.addToFavoriteBusinesses()).Methods("POST")
+		private.Path("/api/v1/users/addToFavoriteEntities").HandlerFunc(u.addToFavoriteEntities()).Methods("POST")
 	})
 }
 
@@ -66,14 +66,14 @@ func (u *userHandler) FindByID(id string) (*types.User, error) {
 	return user, nil
 }
 
-func (u *userHandler) FindByBusinessID(id string) (*types.User, error) {
+func (u *userHandler) FindByEntityID(id string) (*types.User, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, e.Wrap(err, "controller.User.FindByBusinessID failed")
+		return nil, e.Wrap(err, "controller.User.FindByEntityID failed")
 	}
-	user, err := logic.User.FindByBusinessID(objID)
+	user, err := logic.User.FindByEntityID(objID)
 	if err != nil {
-		return nil, e.Wrap(err, "controller.User.FindByBusinessID failed")
+		return nil, e.Wrap(err, "controller.User.FindByEntityID failed")
 	}
 	return user, nil
 }
@@ -341,7 +341,7 @@ func (u *userHandler) toggleShowRecentMatchedTags() func(http.ResponseWriter, *h
 	}
 }
 
-func (u *userHandler) addToFavoriteBusinesses() func(http.ResponseWriter, *http.Request) {
+func (u *userHandler) addToFavoriteEntities() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		ID string `json:"id"`
 	}
@@ -351,9 +351,9 @@ func (u *userHandler) addToFavoriteBusinesses() func(http.ResponseWriter, *http.
 		err := decoder.Decode(&req)
 		if err != nil || req.ID == "" {
 			if err != nil {
-				l.Logger.Error("AppServer AddToFavoriteBusinesses failed", zap.Error(err))
+				l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
 			} else {
-				l.Logger.Error("AppServer AddToFavoriteBusinesses failed", zap.String("error", "request business id is empty"))
+				l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.String("error", "request entity id is empty"))
 			}
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
@@ -361,7 +361,7 @@ func (u *userHandler) addToFavoriteBusinesses() func(http.ResponseWriter, *http.
 		}
 		bID, err := primitive.ObjectIDFromHex(req.ID)
 		if err != nil {
-			l.Logger.Error("AppServer AddToFavoriteBusinesses failed", zap.Error(err))
+			l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
 			return
@@ -369,15 +369,15 @@ func (u *userHandler) addToFavoriteBusinesses() func(http.ResponseWriter, *http.
 
 		uID, err := primitive.ObjectIDFromHex(r.Header.Get("userID"))
 		if err != nil {
-			l.Logger.Error("AppServer AddToFavoriteBusinesses failed", zap.Error(err))
+			l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
 			return
 		}
 
-		err = logic.User.AddToFavoriteBusinesses(uID, bID)
+		err = logic.User.AddToFavoriteEntities(uID, bID)
 		if err != nil {
-			l.Logger.Error("AppServer AddToFavoriteBusinesses failed", zap.Error(err))
+			l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
 			return
@@ -387,7 +387,7 @@ func (u *userHandler) addToFavoriteBusinesses() func(http.ResponseWriter, *http.
 	}
 }
 
-func (u *userHandler) removeFromFavoriteBusinesses() func(http.ResponseWriter, *http.Request) {
+func (u *userHandler) removeFromFavoriteEntities() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		ID string `json:"id"`
 	}
@@ -397,9 +397,9 @@ func (u *userHandler) removeFromFavoriteBusinesses() func(http.ResponseWriter, *
 		err := decoder.Decode(&req)
 		if err != nil || req.ID == "" {
 			if err != nil {
-				l.Logger.Error("AppServer RemoveFromFavoriteBusinesses failed", zap.Error(err))
+				l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
 			} else {
-				l.Logger.Error("AppServer RemoveFromFavoriteBusinesses failed", zap.String("error", "request business id is empty"))
+				l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.String("error", "request entity id is empty"))
 			}
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
@@ -407,7 +407,7 @@ func (u *userHandler) removeFromFavoriteBusinesses() func(http.ResponseWriter, *
 		}
 		bID, err := primitive.ObjectIDFromHex(req.ID)
 		if err != nil {
-			l.Logger.Error("AppServer RemoveFromFavoriteBusinesses failed", zap.Error(err))
+			l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
 			return
@@ -415,15 +415,15 @@ func (u *userHandler) removeFromFavoriteBusinesses() func(http.ResponseWriter, *
 
 		uID, err := primitive.ObjectIDFromHex(r.Header.Get("userID"))
 		if err != nil {
-			l.Logger.Error("AppServer RemoveFromFavoriteBusinesses failed", zap.Error(err))
+			l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
 			return
 		}
 
-		err = logic.User.RemoveFromFavoriteBusinesses(uID, bID)
+		err = logic.User.RemoveFromFavoriteEntities(uID, bID)
 		if err != nil {
-			l.Logger.Error("AppServer RemoveFromFavoriteBusinesses failed", zap.Error(err))
+			l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Something went wrong. Please try again later."))
 			return

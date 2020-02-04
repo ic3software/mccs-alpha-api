@@ -68,7 +68,7 @@
                         style="margin-right: 20px;"
                     >
                     {{end}}
-                    <span id="business_name" style="font-weight: bolder; font-size: 1.25rem;"></span>
+                    <span id="entity_name" style="font-weight: bolder; font-size: 1.25rem;"></span>
                 <div>
             </div>
         </div>
@@ -104,20 +104,20 @@
         $("#email_address").val(urlParams.get("user_email"));
     }
 
-    const getBusinessName = debounce(function (email) {
+    const getEntityName = debounce(function (email) {
         $.ajax({
             method: "GET",
-            url: `/api/getBusinessName?email=${email}`,
+            url: `/api/getEntityName?email=${email}`,
             contentType: "application/json",
             success: data => {
-                $("#business_name").text(data.Name)
+                $("#entity_name").text(data.Name)
             },
             error: () => {
-                $("#business_name").text("")
+                $("#entity_name").text("")
             }
         });
     }, 1000)
 
-    $("#email_address").keyup(() => getBusinessName($("#email_address").val()));
+    $("#email_address").keyup(() => getEntityName($("#email_address").val()));
 </script>
 {{ end }}

@@ -33,8 +33,8 @@ func (u *user) FindByEmail(email string) (*types.User, error) {
 	return user, nil
 }
 
-func (u *user) FindByBusinessID(id primitive.ObjectID) (*types.User, error) {
-	user, err := mongo.User.FindByBusinessID(id)
+func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
+	user, err := mongo.User.FindByEntityID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -238,18 +238,18 @@ func (u *user) ToggleShowRecentMatchedTags(id primitive.ObjectID) error {
 	return nil
 }
 
-func (u *user) AddToFavoriteBusinesses(uID, businessID primitive.ObjectID) error {
-	err := mongo.User.AddToFavoriteBusinesses(uID, businessID)
+func (u *user) AddToFavoriteEntities(uID, entityID primitive.ObjectID) error {
+	err := mongo.User.AddToFavoriteEntities(uID, entityID)
 	if err != nil {
-		return e.Wrap(err, "UserService AddToFavoriteBusinesses failed")
+		return e.Wrap(err, "UserService AddToFavoriteEntities failed")
 	}
 	return nil
 }
 
-func (u *user) RemoveFromFavoriteBusinesses(uID, businessID primitive.ObjectID) error {
-	err := mongo.User.RemoveFromFavoriteBusinesses(uID, businessID)
+func (u *user) RemoveFromFavoriteEntities(uID, entityID primitive.ObjectID) error {
+	err := mongo.User.RemoveFromFavoriteEntities(uID, entityID)
 	if err != nil {
-		return e.Wrap(err, "UserService RemoveFromFavoriteBusinesses failed")
+		return e.Wrap(err, "UserService RemoveFromFavoriteEntities failed")
 	}
 	return nil
 }

@@ -2,9 +2,9 @@
 <h1 class="ui primary header">Search/View Accounts</h1>
 <div class="ui segment secondary">
     <form action="/admin/accounts/search#results" method="get" class="ui form">
-        <h2 class="ui medium header">Search by Business</h2>
+        <h2 class="ui medium header">Search by Entity</h2>
         <input maxlength="255" name="page" value="1" hidden>
-        <input maxlength="255" name="filter" value="business" hidden>
+        <input maxlength="255" name="filter" value="entity" hidden>
         <div class="inline fields">
             <div class="two wide field">
                 <label>Search For:</label>
@@ -75,11 +75,11 @@
                     </div>
                 </div>
                 <div class="six wide field">
-                    <label>Business Name:</label>
+                    <label>Entity Name:</label>
                     <div class="ui input">
-                        {{if .FormData.BusinessName}}
-                        <input maxlength="100" name="business_name" value="{{.FormData.BusinessName}}"> {{else}}
-                        <input maxlength="100" name="business_name" value=""> {{end}}
+                        {{if .FormData.EntityName}}
+                        <input maxlength="100" name="entity_name" value="{{.FormData.EntityName}}"> {{else}}
+                        <input maxlength="100" name="entity_name" value=""> {{end}}
                     </div>
                 </div>
             </div>
@@ -145,7 +145,7 @@
         </div>
         <div style="margin: 1em;"></div>
         <button class="ui primary button">
-            Search Businesses
+            Search Entities
         </button>
     </form>
     <div style="margin: 3em;"></div>
@@ -182,7 +182,7 @@
 <h2 id="results" class="ui medium header anchored">Total Results: {{.Result.NumberOfResults}}</h2>
 <table class="ui celled padded table">
     <thead>
-        <th>Business Name</th>
+        <th>Entity Name</th>
         <th>Balance</th>
         <th>Status</th>
         <th>Country</th>
@@ -196,21 +196,21 @@
     </thead>
     <tbody>
         {{ range $index, $account := .Result.Accounts }}
-        <tr id="{{IDToString $account.Business.ID}}">
+        <tr id="{{IDToString $account.Entity.ID}}">
             <td>
-                <a href="/admin/businesses/{{IDToString $account.Business.ID}}">{{$account.Business.BusinessName}}</a>
+                <a href="/admin/entities/{{IDToString $account.Entity.ID}}">{{$account.Entity.EntityName}}</a>
             </td>
             <td>
-                <a href="/admin/history/{{IDToString $account.Business.ID}}?page=1&date-from={{DaysBefore 13}}&date-to={{TimeNow}}#results">{{$account.Balance}}</a>
+                <a href="/admin/history/{{IDToString $account.Entity.ID}}?page=1&date-from={{DaysBefore 13}}&date-to={{TimeNow}}#results">{{$account.Balance}}</a>
             </td>
             <td>
-                {{$account.Business.Status}}
+                {{$account.Entity.Status}}
             </td>
             <td>
-                {{$account.Business.LocationCountry}}
+                {{$account.Entity.LocationCountry}}
             </td>
             <td>
-                {{$account.Business.LocationCity}}
+                {{$account.Entity.LocationCity}}
             </td>
             <td>
                 {{if $account.User.LastName}}
@@ -227,8 +227,8 @@
                 {{$account.User.Email}}
             </td>
             <td style="width:250px">
-                {{ range $index, $offer := $account.Business.Offers }}
-                <a href="/admin/accounts/search?page=1&filter=business&tag_type=offers&tags={{$offer.Name}}&status={{$.FormData.Status}}&business_name={{$.FormData.BusinessName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
+                {{ range $index, $offer := $account.Entity.Offers }}
+                <a href="/admin/accounts/search?page=1&filter=entity&tag_type=offers&tags={{$offer.Name}}&status={{$.FormData.Status}}&entity_name={{$.FormData.EntityName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
                     <div class="ui small label primary" style="margin-top:5px;margin-bottom:5px;">
                         {{$offer.Name}}
                     </div>
@@ -236,8 +236,8 @@
                 {{ end }}
             </td>
             <td style="width:250px">
-                {{ range $index, $want := $account.Business.Wants }}
-                <a href="/admin/accounts/search?page=1&filter=business&tag_type=wants&tags={{$want.Name}}&status={{$.FormData.Status}}&business_name={{$.FormData.BusinessName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
+                {{ range $index, $want := $account.Entity.Wants }}
+                <a href="/admin/accounts/search?page=1&filter=entity&tag_type=wants&tags={{$want.Name}}&status={{$.FormData.Status}}&entity_name={{$.FormData.EntityName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
                     <div class="ui small label orange" style="margin-top:5px;margin-bottom:5px;">
                         {{$want.Name}}
                     </div>
@@ -245,8 +245,8 @@
                 {{ end }}
             </td>
             <td style="width:600px">
-                {{ range $index, $tag := $account.Business.AdminTags }}
-                <a href="/admin/accounts/search?page=1&filter=business&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&business_name={{$.FormData.BusinessName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$tag}}#results">
+                {{ range $index, $tag := $account.Entity.AdminTags }}
+                <a href="/admin/accounts/search?page=1&filter=entity&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&entity_name={{$.FormData.EntityName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$tag}}#results">
                     <div class="ui small label" style="margin-top:5px;margin-bottom:5px;">
                         {{$tag}}
                     </div>
@@ -254,7 +254,7 @@
                 {{ end }}
             </td>
             <td>
-                <button class="ui icon negative button action-delete" business-id="{{IDToString $account.Business.ID}}">
+                <button class="ui icon negative button action-delete" entity-id="{{IDToString $account.Entity.ID}}">
                     <i class="trash alternate icon"></i>
                 </button>
             </td>
@@ -262,13 +262,13 @@
         {{ end }}
     </tbody>
     <tfoot>
-        {{if eq .FormData.Filter "business"}}
+        {{if eq .FormData.Filter "entity"}}
         <tr>
             <th colspan="11">
                 <div class="ui right floated pagination menu">
                     {{/* < */}}
                     {{if gt .FormData.Page 1}}
-                    <a class="icon item left-chevron" href="/admin/accounts/search?page={{Minus .FormData.Page 1}}&filter=business&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&status={{.FormData.Status}}&business_name={{.FormData.BusinessName}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&location_city={{.FormData.LocationCity}}&location_country={{.FormData.LocationCountry}}&category={{.FormData.Category}}#results">
+                    <a class="icon item left-chevron" href="/admin/accounts/search?page={{Minus .FormData.Page 1}}&filter=entity&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&status={{.FormData.Status}}&entity_name={{.FormData.EntityName}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&location_city={{.FormData.LocationCity}}&location_country={{.FormData.LocationCountry}}&category={{.FormData.Category}}#results">
                         <i class="left chevron icon"></i>
                     </a>
                     {{else}}
@@ -278,7 +278,7 @@
                     {{end}}
 
                     {{/* FirstPage */}}
-                    <a class="{{if eq .FormData.Page 1}}active{{end}} item" href="/admin/accounts/search?page=1&filter=business&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&status={{.FormData.Status}}&business_name={{.FormData.BusinessName}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&location_city={{.FormData.LocationCity}}&location_country={{.FormData.LocationCountry}}&category={{.FormData.Category}}#results">
+                    <a class="{{if eq .FormData.Page 1}}active{{end}} item" href="/admin/accounts/search?page=1&filter=entity&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&status={{.FormData.Status}}&entity_name={{.FormData.EntityName}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&location_city={{.FormData.LocationCity}}&location_country={{.FormData.LocationCountry}}&category={{.FormData.Category}}#results">
                         1
                     </a>
 
@@ -294,7 +294,7 @@
                     {{/* if 1 < page < 10 */}}
                     {{if and (gt .Result.TotalPages 1) (lt .Result.TotalPages 10)}}
                         {{range $_, $v := N 2 .Result.TotalPages}}
-                        <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/admin/accounts/search?page={{$v}}&filter=business&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&business_name={{$.FormData.BusinessName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
+                        <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/admin/accounts/search?page={{$v}}&filter=entity&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&entity_name={{$.FormData.EntityName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
                             {{$v}}
                         </a>
                         {{end}}
@@ -304,13 +304,13 @@
                         {{if lt (Add .FormData.Page 4) .Result.TotalPages}}
                             {{if ge .FormData.Page 4}}
                                 {{range $_, $v := N (Minus .FormData.Page 2) (Add .FormData.Page 2)}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/admin/accounts/search?page={{$v}}&filter=business&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&business_name={{$.FormData.BusinessName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/admin/accounts/search?page={{$v}}&filter=entity&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&entity_name={{$.FormData.EntityName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
                                     {{$v}}
                                 </a>
                                 {{end}}
                             {{else}}
                                 {{range $_, $v := N 2 5}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/admin/accounts/search?page={{$v}}&filter=business&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&business_name={{$.FormData.BusinessName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/admin/accounts/search?page={{$v}}&filter=entity&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&entity_name={{$.FormData.EntityName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
                                     {{$v}}
                                 </a>
                                 {{end}}
@@ -318,13 +318,13 @@
                         {{else}}
                             {{if le (Add .FormData.Page 3) .Result.TotalPages}}
                                 {{range $_, $v := N (Minus .FormData.Page 2) (Add .FormData.Page 2)}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/admin/accounts/search?page={{$v}}&filter=business&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&business_name={{$.FormData.BusinessName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/admin/accounts/search?page={{$v}}&filter=entity&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&entity_name={{$.FormData.EntityName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
                                     {{$v}}
                                 </a>
                                 {{end}}
                             {{else}}
                                 {{range $_, $v := N (Minus .Result.TotalPages 4) (Minus .Result.TotalPages 1)}}
-                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/admin/accounts/search?page={{$v}}&filter=business&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&business_name={{$.FormData.BusinessName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
+                                <a class="{{if eq $v $.FormData.Page}}active{{end}} item" href="/admin/accounts/search?page={{$v}}&filter=entity&tag_type={{$.FormData.TagType}}&tags={{TagsToSearchString $.FormData.Tags}}&status={{$.FormData.Status}}&entity_name={{$.FormData.EntityName}}&created_on_or_after={{$.FormData.CreatedOnOrAfter}}&location_city={{$.FormData.LocationCity}}&location_country={{$.FormData.LocationCountry}}&category={{$.FormData.Category}}#results">
                                     {{$v}}
                                 </a>
                                 {{end}}
@@ -343,14 +343,14 @@
 
                     {{/* lastPage */}}
                     {{if gt .Result.TotalPages 9}}
-                        <a class="{{if eq .FormData.Page .Result.TotalPages}}active{{end}} item" href="/admin/accounts/search?page={{.Result.TotalPages}}&filter=business&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&status={{.FormData.Status}}&business_name={{.FormData.BusinessName}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&location_city={{.FormData.LocationCity}}&location_country={{.FormData.LocationCountry}}&category={{.FormData.Category}}#results">
+                        <a class="{{if eq .FormData.Page .Result.TotalPages}}active{{end}} item" href="/admin/accounts/search?page={{.Result.TotalPages}}&filter=entity&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&status={{.FormData.Status}}&entity_name={{.FormData.EntityName}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&location_city={{.FormData.LocationCity}}&location_country={{.FormData.LocationCountry}}&category={{.FormData.Category}}#results">
                             {{.Result.TotalPages}}
                         </a>
                     {{end}}
 
                     {{/* > */}}
                     {{if lt .FormData.Page .Result.TotalPages}}
-                    <a class="icon item right-chevron" href="/admin/accounts/search?page={{Add .FormData.Page 1}}&filter=business&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&status={{.FormData.Status}}&business_name={{.FormData.BusinessName}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&location_city={{.FormData.LocationCity}}&location_country={{.FormData.LocationCountry}}&category={{.FormData.Category}}#results">
+                    <a class="icon item right-chevron" href="/admin/accounts/search?page={{Add .FormData.Page 1}}&filter=entity&tag_type={{.FormData.TagType}}&tags={{TagsToSearchString .FormData.Tags}}&status={{.FormData.Status}}&entity_name={{.FormData.EntityName}}&created_on_or_after={{.FormData.CreatedOnOrAfter}}&location_city={{.FormData.LocationCity}}&location_country={{.FormData.LocationCountry}}&category={{.FormData.Category}}#results">
                         <i class="right chevron icon"></i>
                     </a>
                     {{else}}

@@ -6,15 +6,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Business is the model representation of a business in the data model.
-type Business struct {
+// Entity is the model representation of a entity in the data model.
+type Entity struct {
 	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	CreatedAt time.Time          `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
 	UpdatedAt time.Time          `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
 	DeletedAt time.Time          `json:"deletedAt,omitempty" bson:"deletedAt,omitempty"`
 
-	BusinessName       string      `json:"businessName,omitempty" bson:"businessName,omitempty"`
-	BusinessPhone      string      `json:"businessPhone,omitempty" bson:"businessPhone,omitempty"`
+	EntityName         string      `json:"entityName,omitempty" bson:"entityName,omitempty"`
+	EntityPhone        string      `json:"entityPhone,omitempty" bson:"entityPhone,omitempty"`
 	IncType            string      `json:"incType,omitempty" bson:"incType,omitempty"`
 	CompanyNumber      string      `json:"companyNumber,omitempty" bson:"companyNumber,omitempty"`
 	Website            string      `json:"website,omitempty" bson:"website,omitempty"`
@@ -38,10 +38,10 @@ type TagField struct {
 	CreatedAt time.Time `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
 }
 
-// BusinessESRecord is the data that will store into the elastic search.
-type BusinessESRecord struct {
-	BusinessID      string      `json:"businessID,omitempty"`
-	BusinessName    string      `json:"businessName,omitempty"`
+// EntityESRecord is the data that will store into the elastic search.
+type EntityESRecord struct {
+	EntityID        string      `json:"entityID,omitempty"`
+	EntityName      string      `json:"entityName,omitempty"`
 	Offers          []*TagField `json:"offers,omitempty"`
 	Wants           []*TagField `json:"wants,omitempty"`
 	LocationCity    string      `json:"locationCity,omitempty"`
@@ -52,12 +52,12 @@ type BusinessESRecord struct {
 
 // Helper types
 
-type BusinessData struct {
+type EntityData struct {
 	ID                 primitive.ObjectID
-	BusinessName       string
+	EntityName         string
 	IncType            string
 	CompanyNumber      string
-	BusinessPhone      string
+	EntityPhone        string
 	Website            string
 	Turnover           int
 	Offers             []*TagField
@@ -82,16 +82,16 @@ type SearchCriteria struct {
 	CreatedOnOrAfter time.Time
 
 	Statuses              []string // accepted", "pending", rejected", "tradingPending", "tradingAccepted", "tradingRejected"
-	BusinessName          string
+	EntityName            string
 	LocationCountry       string
 	LocationCity          string
 	ShowUserFavoritesOnly bool
-	FavoriteBusinesses    []primitive.ObjectID
+	FavoriteEntities      []primitive.ObjectID
 	AdminTag              string
 }
 
-type FindBusinessResult struct {
-	Businesses      []*Business
+type FindEntityResult struct {
+	Entities        []*Entity
 	NumberOfResults int
 	TotalPages      int
 }

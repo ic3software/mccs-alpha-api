@@ -1,9 +1,9 @@
 {{ define "content" }}
-{{if eq .Business.Status "accepted"}}
+{{if eq .Entity.Status "accepted"}}
     <div class="ui success message">
         <h4>Upgrade to a full Trading Member</h4>
         <p>Unlock the full potential of the Open Credit Network by applying to become a Trading Member.</p>
-        <p>Trading via mutual credit is FREE during our alpha release and, if your business meets the application criteria, you will be awarded an interest free line of credit allowing you to trade with other businesses straight away. <a href="https://opencredit.network/become-a-trading-member/" target="_blank">Find out more</a> and <a href="/member-signup">apply now</a>.</p>
+        <p>Trading via mutual credit is FREE during our alpha release and, if your entity meets the application criteria, you will be awarded an interest free line of credit allowing you to trade with other entities straight away. <a href="https://opencredit.network/become-a-trading-member/" target="_blank">Find out more</a> and <a href="/member-signup">apply now</a>.</p>
     </div>
 {{end}}
 <h1 class="ui primary header">My Account Details</h1>
@@ -12,22 +12,22 @@
         <h2 class="ui medium header">General Information</h2>
         <div class="fields">
             <div class="five wide field required">
-                <label>Business Name:</label>
-                {{if .Business.BusinessName}}
-                <input maxlength="100" type="text" name="business_name" value="{{.Business.BusinessName}}">
+                <label>Entity Name:</label>
+                {{if .Entity.EntityName}}
+                <input maxlength="100" type="text" name="entity_name" value="{{.Entity.EntityName}}">
                 {{else}}
-                <input maxlength="100" type="text" name="business_name" value="">
+                <input maxlength="100" type="text" name="entity_name" value="">
                 {{end}}
             </div>
-            {{if eq .Business.Status "tradingAccepted"}}
+            {{if eq .Entity.Status "tradingAccepted"}}
                 <div class="five wide field required">
             {{else}}
                 <div class="five wide field">
             {{end}}
                 <label>Type of Incorporation:</label>
                 <div class="ui selection dropdown">
-                    {{if .Business.IncType}}
-                    <input maxlength="25" type="hidden" name="inc_type" value="{{.Business.IncType}}">
+                    {{if .Entity.IncType}}
+                    <input maxlength="25" type="hidden" name="inc_type" value="{{.Entity.IncType}}">
                     {{else}}
                     <input maxlength="25" type="hidden" name="inc_type" value="">
                     {{end}}
@@ -47,38 +47,38 @@
             </div>
             <div class="three wide field">
                 <label>Company Number:</label>
-                <input maxlength="20" type="text" name="company_number" value="{{.Business.CompanyNumber}}">
+                <input maxlength="20" type="text" name="company_number" value="{{.Entity.CompanyNumber}}">
             </div>
         </div>
-        {{if eq .Business.Status "tradingAccepted"}}
+        {{if eq .Entity.Status "tradingAccepted"}}
             <div class="field required" style="max-width: 500px;">
         {{else}}
             <div class="field" style="max-width: 500px;">
         {{end}}
-            <label>Business Description:</label>
-            <textarea maxlength="500" name="description" cols="50" rows="3" value="">{{or .Business.Description ""}}</textarea>
+            <label>Entity Description:</label>
+            <textarea maxlength="500" name="description" cols="50" rows="3" value="">{{or .Entity.Description ""}}</textarea>
         </div>
         <div class="fields">
             <div class="five wide field">
                 <label>Website:</label>
-                {{if .Business.Website}}
-                <input maxlength="100" type="text" name="website" value="{{.Business.Website}}">
+                {{if .Entity.Website}}
+                <input maxlength="100" type="text" name="website" value="{{.Entity.Website}}">
                 {{else}}
                 <input maxlength="100" type="text" name="website" value="">
                 {{end}}
             </div>
             <div class="three wide field">
-                <label>Business Phone:</label>
-                {{if .Business.BusinessPhone}}
-                <input maxlength="25" type="text" name="business_phone" value="{{.Business.BusinessPhone}}">
+                <label>Entity Phone:</label>
+                {{if .Entity.EntityPhone}}
+                <input maxlength="25" type="text" name="entity_phone" value="{{.Entity.EntityPhone}}">
                 {{else}}
-                <input maxlength="25" type="text" name="business_phone" value="">
+                <input maxlength="25" type="text" name="entity_phone" value="">
                 {{end}}
             </div>
             <div class="three wide field">
                 <label>Annual Turnover (in £):</label>
-                {{if .Business.Turnover}}
-                <input maxlength="20" type="number" name="turnover" value="{{.Business.Turnover}}">
+                {{if .Entity.Turnover}}
+                <input maxlength="20" type="number" name="turnover" value="{{.Entity.Turnover}}">
                 {{else}}
                 <input maxlength="20" type="number" name="turnover" value="">
                 {{end}}
@@ -86,14 +86,14 @@
         </div>
     </div>
     <div class="ui segment secondary">
-        <h2 class="ui medium header">What Your Business Provides &amp; Needs</h2>
+        <h2 class="ui medium header">What Your Entity Provides &amp; Needs</h2>
         <p><i>Enter up to 10 descriptive tags in each input box (e.g., "Restaurant", “Food", “Noodles", etc.)
                 Start typing to see available tags. Whenever possible select existing tags to get more matches.</i></p>
         <div class="field required">
             <label>Products/Services Offered:</label>
             <div class="ui fluid multiple search selection offers dropdown">
-                {{if .Business.Offers}}
-                <input maxlength="500" name="offers" type="hidden" value="{{TagsToString .Business.Offers}}">
+                {{if .Entity.Offers}}
+                <input maxlength="500" name="offers" type="hidden" value="{{TagsToString .Entity.Offers}}">
                 {{else}}
                 <input maxlength="500" name="offers" type="hidden">
                 {{end}}
@@ -103,8 +103,8 @@
             <div class="field required">
                 <label>Products/Services Wanted:</label>
                 <div class="ui fluid multiple search selection wants dropdown">
-                    {{if .Business.Wants}}
-                    <input maxlength="500" name="wants" type="hidden" value="{{TagsToString .Business.Wants}}">
+                    {{if .Entity.Wants}}
+                    <input maxlength="500" name="wants" type="hidden" value="{{TagsToString .Entity.Wants}}">
                     {{else}}
                     <input maxlength="500" name="wants" type="hidden">
                     {{end}}
@@ -114,38 +114,38 @@
         </div>
     </div>
     <div class="ui segment secondary">
-        <h2 class="ui medium header">Business Address</h2>
-        <p><i>The physical location of your business</i></p>
-        {{if eq .Business.Status "tradingAccepted"}}
+        <h2 class="ui medium header">Entity Address</h2>
+        <p><i>The physical location of your entity</i></p>
+        {{if eq .Entity.Status "tradingAccepted"}}
             <div class="field required" style="max-width: 500px;">
         {{else}}
             <div class="field" style="max-width: 500px;">
         {{end}}
             <label>Address:</label>
-            <textarea maxlength="255" name="location_address" rows="3">{{or .Business.LocationAddress ""}}</textarea>
+            <textarea maxlength="255" name="location_address" rows="3">{{or .Entity.LocationAddress ""}}</textarea>
         </div>
         <div class="fields">
-            {{if eq .Business.Status "tradingAccepted"}}
+            {{if eq .Entity.Status "tradingAccepted"}}
                 <div class="four wide field required">
             {{else}}
                 <div class="four wide field">
             {{end}}
                 <label>City/Town:</label>
-                {{if .Business.LocationCity}}
-                <input maxlength="50" type="text" name="location_city" value="{{.Business.LocationCity}}">
+                {{if .Entity.LocationCity}}
+                <input maxlength="50" type="text" name="location_city" value="{{.Entity.LocationCity}}">
                 {{else}}
                 <input maxlength="50" type="text" name="location_city" value="">
                 {{end}}
             </div>
-            {{if eq .Business.Status "tradingAccepted"}}
+            {{if eq .Entity.Status "tradingAccepted"}}
                 <div class="four wide field required">
             {{else}}
                 <div class="four wide field">
             {{end}}
                 <label>Region/County:</label>
                 <div class="ui selection dropdown region-selection">
-                    {{if .Business.LocationRegion}}
-                    <input maxlength="50" type="hidden" name="location_region" value="{{.Business.LocationRegion}}">
+                    {{if .Entity.LocationRegion}}
+                    <input maxlength="50" type="hidden" name="location_region" value="{{.Entity.LocationRegion}}">
                     {{else}}
                     <input maxlength="50" type="hidden" name="location_region" value="">
                     {{end}}
@@ -155,27 +155,27 @@
                     </div>
                 </div>
             </div>
-            {{if eq .Business.Status "tradingAccepted"}}
+            {{if eq .Entity.Status "tradingAccepted"}}
                 <div class="three wide field required">
             {{else}}
                 <div class="three wide field">
             {{end}}
                 <label>Postcode:</label>
-                {{if .Business.LocationPostalCode}}
-                <input maxlength="10" type="text" name="location_postal_code" value="{{.Business.LocationPostalCode}}">
+                {{if .Entity.LocationPostalCode}}
+                <input maxlength="10" type="text" name="location_postal_code" value="{{.Entity.LocationPostalCode}}">
                 {{else}}
                 <input maxlength="10" type="text" name="location_postal_code" value="">
                 {{end}}
             </div>
-            {{if eq .Business.Status "tradingAccepted"}}
+            {{if eq .Entity.Status "tradingAccepted"}}
                 <div class="three wide field required">
             {{else}}
                 <div class="three wide field">
             {{end}}
                 <label>Country:</label>
                 <div class="ui selection dropdown">
-                    {{if .Business.LocationCountry}}
-                    <input maxlength="50" type="hidden" name="location_country" value="{{.Business.LocationCountry}}">
+                    {{if .Entity.LocationCountry}}
+                    <input maxlength="50" type="hidden" name="location_country" value="{{.Entity.LocationCountry}}">
                     {{else}}
                     <input maxlength="50" type="hidden" name="location_country" value="">
                     {{end}}
@@ -194,7 +194,7 @@
     <div class="ui segment secondary">
         <h2 class="ui medium header">Your Details</h2>
         <div class="fields">
-            {{if eq .Business.Status "tradingAccepted"}}
+            {{if eq .Entity.Status "tradingAccepted"}}
                 <div class="five wide field required">
             {{else}}
                 <div class="five wide field">
@@ -206,7 +206,7 @@
                 <input maxlength="100" type="text" name="first_name" value="">
                 {{end}}
             </div>
-            {{if eq .Business.Status "tradingAccepted"}}
+            {{if eq .Entity.Status "tradingAccepted"}}
                 <div class="seven wide field required">
             {{else}}
                 <div class="seven wide field">
@@ -224,7 +224,7 @@
                 <label>Email:</label>
                 <input maxlength="100" type="email" name="email" readonly value="{{.User.Email}}">
             </div>
-            {{if eq .Business.Status "tradingAccepted"}}
+            {{if eq .Entity.Status "tradingAccepted"}}
                 <div class="five wide field required">
             {{else}}
                 <div class="five wide field">
@@ -264,7 +264,7 @@
         {{else}}
             <input type="checkbox" name="daily_notification" value="true">
         {{end}}
-        <label>Send me daily notifications of new matches for my offers and wants from other businesses</label>
+        <label>Send me daily notifications of new matches for my offers and wants from other entities</label>
         </div>
     </div>
     <button class="ui primary button">
