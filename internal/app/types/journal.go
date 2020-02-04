@@ -13,13 +13,13 @@ type Journal struct {
 
 	InitiatedBy uint `gorm:"type:int;not null;default:0"`
 
-	FromID           uint   `gorm:"type:int;not null;default:0"`
-	FromEmail        string `gorm:"type:varchar(120);not null;default:''"`
-	FromBusinessName string `gorm:"type:varchar(120);not null;default:''"`
+	FromID         uint   `gorm:"type:int;not null;default:0"`
+	FromEmail      string `gorm:"type:varchar(120);not null;default:''"`
+	FromEntityName string `gorm:"type:varchar(120);not null;default:''"`
 
-	ToID           uint   `gorm:"type:int;not null;default:0"`
-	ToEmail        string `gorm:"type:varchar(120);not null;default:''"`
-	ToBusinessName string `gorm:"type:varchar(120);not null;default:''"`
+	ToID         uint   `gorm:"type:int;not null;default:0"`
+	ToEmail      string `gorm:"type:varchar(120);not null;default:''"`
+	ToEntityName string `gorm:"type:varchar(120);not null;default:''"`
 
 	Amount      float64 `gorm:"not null;default:0"`
 	Description string  `gorm:"type:varchar(510);not null;default:''"`

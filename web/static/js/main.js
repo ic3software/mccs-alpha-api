@@ -62,7 +62,7 @@ $(function () {
 
     // Delete Account
     $(".action-delete").click(function () {
-        const bID = $(this).attr("business-id")
+        const bID = $(this).attr("entity-id")
         $(".ui.basic.modal").modal("show");
         $("#selectedId").val(bID)
     });
@@ -70,7 +70,7 @@ $(function () {
     $("#confirm-delete").click(function () {
         const bID = $("#selectedId").val()
         $.ajax({
-            url: `/admin/api/businesses/${bID}`,
+            url: `/admin/api/entities/${bID}`,
             method: "DELETE",
             success: function () {
                 $(`#${bID}`).remove()
@@ -229,12 +229,12 @@ $(function () {
 
 const toggleMenu = () => $(".ui.sidebar").sidebar("toggle");
 
-// ToggleFavoriteBusinesses
+// ToggleFavoriteEntities
 function handleClickFavorite(bID) {
     const elem = $(`.favorite-${bID}`)
     if (elem.hasClass("outline")) {
         $.ajax({
-            url: `/api/users/addToFavoriteBusinesses`,
+            url: `/api/users/addToFavoriteEntities`,
             method: "POST",
             contentType: "application/json",
             data: JSON.stringify({
@@ -250,7 +250,7 @@ function handleClickFavorite(bID) {
         });
     } else {
         $.ajax({
-            url: `/api/users/removeFromFavoriteBusinesses`,
+            url: `/api/users/removeFromFavoriteEntities`,
             method: "POST",
             contentType: "application/json",
             data: JSON.stringify({

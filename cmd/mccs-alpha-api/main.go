@@ -9,7 +9,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/http"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic/balancecheck"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic/dailyemail"
-	"github.com/ic3network/mccs-alpha-api/internal/migration"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/version"
 	"github.com/robfig/cron"
@@ -58,6 +57,4 @@ func ServeBackGround() {
 }
 
 func RunMigration() {
-	// Runs at 2019-08-20
-	migration.SetUserActionCategory()
 }

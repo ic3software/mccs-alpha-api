@@ -50,7 +50,7 @@ func (h *adminHistoryHandler) historyPage() func(http.ResponseWriter, *http.Requ
 		Balance      float64
 		Transactions []*types.Transaction
 		Email        string
-		BusinessID   string
+		EntityID     string
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -69,16 +69,16 @@ func (h *adminHistoryHandler) historyPage() func(http.ResponseWriter, *http.Requ
 			DateTo:   q.Get("date-to"),
 			Page:     page,
 		}
-		user, err := UserHandler.FindByBusinessID(bID)
+		user, err := UserHandler.FindByEntityID(bID)
 		if err != nil {
 			l.Logger.Error("controller.AdminHistory.HistoryPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
-		res := response{FormData: f, BusinessID: bID, Email: user.Email}
+		res := response{FormData: f, EntityID: bID, Email: user.Email}
 
 		// Get the account balance.
-		account, err := logic.Account.FindByBusinessID(bID)
+		account, err := logic.Account.FindByEntityID(bID)
 		if err != nil {
 			l.Logger.Error("controller.AdminHistory.HistoryPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)

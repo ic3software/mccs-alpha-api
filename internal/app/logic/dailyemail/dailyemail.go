@@ -3,10 +3,10 @@ package dailyemail
 import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -52,16 +52,16 @@ func createEmailWorker(u *types.User) func() {
 }
 
 func getMatchTags(user *types.User) (*types.MatchedTags, error) {
-	business, err := logic.Business.FindByID(user.CompanyID)
+	entity, err := logic.Entity.FindByID(user.CompanyID)
 	if err != nil {
 		return nil, e.Wrap(err, "getMatchTags failed")
 	}
 
-	matchedOffers, err := logic.Tag.MatchOffers(helper.GetTagNames(business.Offers), user.LastNotificationSentDate)
+	matchedOffers, err := logic.Tag.MatchOffers(helper.GetTagNames(entity.Offers), user.LastNotificationSentDate)
 	if err != nil {
 		return nil, e.Wrap(err, "getMatchTags failed")
 	}
-	matchedWants, err := logic.Tag.MatchWants(helper.GetTagNames(business.Wants), user.LastNotificationSentDate)
+	matchedWants, err := logic.Tag.MatchWants(helper.GetTagNames(entity.Wants), user.LastNotificationSentDate)
 	if err != nil {
 		return nil, e.Wrap(err, "getMatchTags failed")
 	}

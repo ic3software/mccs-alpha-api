@@ -51,7 +51,7 @@ type searchAccountFormData struct {
 	Tags             []*types.TagField
 	CreatedOnOrAfter string
 	Status           string
-	BusinessName     string
+	EntityName       string
 	LocationCity     string
 	LocationCountry  string
 	Category         string
@@ -62,9 +62,9 @@ type searchAccountFormData struct {
 }
 
 type account struct {
-	Business *types.Business
-	User     *types.User
-	Balance  float64
+	Entity  *types.Entity
+	User    *types.User
+	Balance float64
 }
 
 type findAccountResult struct {
@@ -109,7 +109,7 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 			TagType:          q.Get("tag_type"),
 			Tags:             helper.ToSearchTags(q.Get("tags")),
 			Status:           q.Get("status"),
-			BusinessName:     q.Get("business_name"),
+			EntityName:       q.Get("entity_name"),
 			CreatedOnOrAfter: q.Get("created_on_or_after"),
 			LocationCity:     q.Get("location_city"),
 			LocationCountry:  q.Get("location_country"),
@@ -121,7 +121,7 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 		}
 		res := sreachResponse{FormData: f, Result: new(findAccountResult)}
 
-		if f.Filter != "business" && f.LastName == "" && f.Email == "" {
+		if f.Filter != "entity" && f.LastName == "" && f.Email == "" {
 			t.Render(w, r, res, []string{"Please enter at least one search criteria."})
 			return
 		}
@@ -138,9 +138,9 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 		var status []string
 		if f.Status == constant.ALL {
 			status = []string{
-				constant.Business.Pending,
-				constant.Business.Accepted,
-				constant.Business.Rejected,
+				constant.Entity.Pending,
+				constant.Entity.Accepted,
+				constant.Entity.Rejected,
 				constant.Trading.Pending,
 				constant.Trading.Accepted,
 				constant.Trading.Rejected,
@@ -149,19 +149,19 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 			status = []string{f.Status}
 		}
 
-		findResult := new(types.FindBusinessResult)
-		if f.Filter == "business" {
+		findResult := new(types.FindEntityResult)
+		if f.Filter == "entity" {
 			c := types.SearchCriteria{
 				TagType:          f.TagType,
 				Tags:             f.Tags,
 				Statuses:         status,
-				BusinessName:     f.BusinessName,
+				EntityName:       f.EntityName,
 				CreatedOnOrAfter: util.ParseTime(f.CreatedOnOrAfter),
 				LocationCity:     f.LocationCity,
 				LocationCountry:  f.LocationCountry,
 				AdminTag:         f.Category,
 			}
-			findResult, err = logic.Business.FindBusiness(&c, int64(f.Page))
+			findResult, err = logic.Entity.FindEntity(&c, int64(f.Page))
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
@@ -172,29 +172,29 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 		}
 
 		accounts := make([]account, 0)
-		// Find the user and account balance using business id.
-		for _, business := range findResult.Businesses {
-			user, err := logic.User.FindByBusinessID(business.ID)
+		// Find the user and account balance using entity id.
+		for _, entity := range findResult.Entities {
+			user, err := logic.User.FindByEntityID(entity.ID)
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
 				return
 			}
-			acc, err := logic.Account.FindByBusinessID(business.ID.Hex())
+			acc, err := logic.Account.FindByEntityID(entity.ID.Hex())
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
 				return
 			}
 			accounts = append(accounts, account{
-				Business: business,
-				User:     user,
-				Balance:  acc.Balance,
+				Entity:  entity,
+				User:    user,
+				Balance: acc.Balance,
 			})
 		}
 		res.Result.Accounts = accounts
 
-		if len(res.Result.Accounts) > 0 || f.Filter == "business" {
+		if len(res.Result.Accounts) > 0 || f.Filter == "entity" {
 			t.Render(w, r, res, nil)
 			return
 		}
@@ -213,24 +213,24 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 		res.Result.TotalPages = findUserResult.TotalPages
 		res.Result.NumberOfResults = findUserResult.NumberOfResults
 
-		// Find the business and account balance.
+		// Find the entity and account balance.
 		for _, user := range findUserResult.Users {
-			business, err := logic.Business.FindByID(user.CompanyID)
+			entity, err := logic.Entity.FindByID(user.CompanyID)
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
 				return
 			}
-			acc, err := logic.Account.FindByBusinessID(business.ID.Hex())
+			acc, err := logic.Account.FindByEntityID(entity.ID.Hex())
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
 				return
 			}
 			accounts = append(accounts, account{
-				Business: business,
-				User:     user,
-				Balance:  acc.Balance,
+				Entity:  entity,
+				User:    user,
+				Balance: acc.Balance,
 			})
 		}
 		res.Result.Accounts = accounts
@@ -242,8 +242,8 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 func (a *accountHandler) accountPage() func(http.ResponseWriter, *http.Request) {
 	t := template.NewView("account")
 	type request struct {
-		User     *types.User
-		Business *types.Business
+		User   *types.User
+		Entity *types.Entity
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := UserHandler.FindByID(r.Header.Get("userID"))
@@ -252,13 +252,13 @@ func (a *accountHandler) accountPage() func(http.ResponseWriter, *http.Request) 
 			t.Error(w, r, nil, err)
 			return
 		}
-		business, err := logic.Business.FindByID(user.CompanyID)
+		entity, err := logic.Entity.FindByID(user.CompanyID)
 		if err != nil {
 			l.Logger.Error("AccountPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
-		t.Render(w, r, request{User: user, Business: business}, nil)
+		t.Render(w, r, request{User: user, Entity: entity}, nil)
 	}
 }
 
@@ -268,14 +268,14 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		r.ParseForm()
 		formData := helper.GetUpdateData(r)
 
-		// Find the user and he's business.
+		// Find the user and he's entity.
 		user, err := logic.User.FindByEmail(formData.User.Email)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 			t.Error(w, r, formData, err)
 			return
 		}
-		oldBusiness, err := logic.Business.FindByID(user.CompanyID)
+		oldEntity, err := logic.Entity.FindByID(user.CompanyID)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 			return
@@ -292,8 +292,8 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 			}
 		}
 		errorMessages = validate.Account(formData)
-		if oldBusiness.Status == constant.Trading.Accepted {
-			// Additional validation if the business status is "tradingAccepted".
+		if oldEntity.Status == constant.Trading.Accepted {
+			// Additional validation if the entity status is "tradingAccepted".
 			data := helper.Trading.GetUpdateData(r)
 			errorMessages = append(errorMessages, data.Validate()...)
 		}
@@ -311,14 +311,14 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		offersAdded, offersRemoved := helper.TagDifference(formData.Business.Offers, oldBusiness.Offers)
-		formData.Business.OffersAdded = offersAdded
-		formData.Business.OffersRemoved = offersRemoved
-		wantsAdded, wantsRemoved := helper.TagDifference(formData.Business.Wants, oldBusiness.Wants)
-		formData.Business.WantsAdded = wantsAdded
-		formData.Business.WantsRemoved = wantsRemoved
+		offersAdded, offersRemoved := helper.TagDifference(formData.Entity.Offers, oldEntity.Offers)
+		formData.Entity.OffersAdded = offersAdded
+		formData.Entity.OffersRemoved = offersRemoved
+		wantsAdded, wantsRemoved := helper.TagDifference(formData.Entity.Wants, oldEntity.Wants)
+		formData.Entity.WantsAdded = wantsAdded
+		formData.Entity.WantsRemoved = wantsRemoved
 
-		err = logic.Business.UpdateBusiness(user.CompanyID, formData.Business, false)
+		err = logic.Entity.UpdateEntity(user.CompanyID, formData.Entity, false)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 			t.Error(w, r, formData, err)
@@ -335,21 +335,21 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		}
 
 		go func() {
-			err := logic.UserAction.Log(log.User.ModifyAccount(user, formData.User, oldBusiness, formData.Business))
+			err := logic.UserAction.Log(log.User.ModifyAccount(user, formData.User, oldEntity, formData.Entity))
 			if err != nil {
 				l.Logger.Error("BuildModifyAccountAction failed", zap.Error(err))
 			}
 		}()
 
 		// User Update tags logic:
-		// 	1. Update the tags collection only when the business is in accepted status.
+		// 	1. Update the tags collection only when the entity is in accepted status.
 		go func() {
-			if util.IsAcceptedStatus(oldBusiness.Status) {
-				err := TagHandler.SaveOfferTags(formData.Business.OffersAdded)
+			if util.IsAcceptedStatus(oldEntity.Status) {
+				err := TagHandler.SaveOfferTags(formData.Entity.OffersAdded)
 				if err != nil {
 					l.Logger.Error("saveOfferTags failed", zap.Error(err))
 				}
-				err = TagHandler.SaveWantTags(formData.Business.WantsAdded)
+				err = TagHandler.SaveWantTags(formData.Entity.WantsAdded)
 				if err != nil {
 					l.Logger.Error("saveWantTags failed", zap.Error(err))
 				}
@@ -361,13 +361,13 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 }
 
 func (a *accountHandler) FindByUserID(uID string) (*types.Account, error) {
-	business, err := BusinessHandler.FindByUserID(uID)
+	entity, err := EntityHandler.FindByUserID(uID)
 	if err != nil {
-		return nil, e.Wrap(err, "controller.Business.FindByUserID failed")
+		return nil, e.Wrap(err, "controller.Entity.FindByUserID failed")
 	}
-	account, err := logic.Account.FindByBusinessID(business.ID.Hex())
+	account, err := logic.Account.FindByEntityID(entity.ID.Hex())
 	if err != nil {
-		return nil, e.Wrap(err, "controller.Business.FindByUserID failed")
+		return nil, e.Wrap(err, "controller.Entity.FindByUserID failed")
 	}
 	return account, nil
 }

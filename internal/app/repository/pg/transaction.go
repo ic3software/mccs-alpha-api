@@ -20,11 +20,11 @@ var Transaction = &transaction{}
 func (t *transaction) Create(
 	fromID uint,
 	fromEmail string,
-	fromBusinessName string,
+	fromEntityName string,
 
 	toID uint,
 	toEmail string,
-	toBusinessName string,
+	toEntityName string,
 
 	amount float64,
 	desc string,
@@ -32,17 +32,17 @@ func (t *transaction) Create(
 	tx := db.Begin()
 
 	journalRecord := &types.Journal{
-		TransactionID:    ksuid.New().String(),
-		FromID:           fromID,
-		FromEmail:        fromEmail,
-		FromBusinessName: fromBusinessName,
-		ToID:             toID,
-		ToEmail:          toEmail,
-		ToBusinessName:   toBusinessName,
-		Amount:           amount,
-		Description:      desc,
-		Type:             constant.Journal.Transfer,
-		Status:           constant.Transaction.Completed,
+		TransactionID:  ksuid.New().String(),
+		FromID:         fromID,
+		FromEmail:      fromEmail,
+		FromEntityName: fromEntityName,
+		ToID:           toID,
+		ToEmail:        toEmail,
+		ToEntityName:   toEntityName,
+		Amount:         amount,
+		Description:    desc,
+		Type:           constant.Journal.Transfer,
+		Status:         constant.Transaction.Completed,
 	}
 	err := tx.Create(journalRecord).Error
 	if err != nil {
@@ -85,45 +85,45 @@ func (t *transaction) Propose(
 
 	fromID uint,
 	fromEmail string,
-	fromBusinessName string,
+	fromEntityName string,
 
 	toID uint,
 	toEmail string,
-	toBusinessName string,
+	toEntityName string,
 
 	amount float64,
 	desc string,
 ) (*types.Transaction, error) {
 	journalRecord := &types.Journal{
-		TransactionID:    ksuid.New().String(),
-		InitiatedBy:      initiatedBy,
-		FromID:           fromID,
-		FromEmail:        fromEmail,
-		FromBusinessName: fromBusinessName,
-		ToID:             toID,
-		ToEmail:          toEmail,
-		ToBusinessName:   toBusinessName,
-		Amount:           amount,
-		Description:      desc,
-		Type:             constant.Journal.Transfer,
-		Status:           constant.Transaction.Initiated,
+		TransactionID:  ksuid.New().String(),
+		InitiatedBy:    initiatedBy,
+		FromID:         fromID,
+		FromEmail:      fromEmail,
+		FromEntityName: fromEntityName,
+		ToID:           toID,
+		ToEmail:        toEmail,
+		ToEntityName:   toEntityName,
+		Amount:         amount,
+		Description:    desc,
+		Type:           constant.Journal.Transfer,
+		Status:         constant.Transaction.Initiated,
 	}
 	err := db.Create(journalRecord).Error
 	if err != nil {
 		return nil, e.Wrap(err, "pg.Transaction.Create failed")
 	}
 	return &types.Transaction{
-		TransactionID:    journalRecord.TransactionID,
-		InitiatedBy:      initiatedBy,
-		FromID:           fromID,
-		FromEmail:        fromEmail,
-		FromBusinessName: fromBusinessName,
-		ToID:             toID,
-		ToEmail:          toEmail,
-		ToBusinessName:   toBusinessName,
-		Amount:           amount,
-		Description:      desc,
-		Status:           journalRecord.Status,
+		TransactionID:  journalRecord.TransactionID,
+		InitiatedBy:    initiatedBy,
+		FromID:         fromID,
+		FromEmail:      fromEmail,
+		FromEntityName: fromEntityName,
+		ToID:           toID,
+		ToEmail:        toEmail,
+		ToEntityName:   toEntityName,
+		Amount:         amount,
+		Description:    desc,
+		Status:         journalRecord.Status,
 	}, nil
 }
 
@@ -132,8 +132,8 @@ func (t *transaction) Find(transactionID uint) (*types.Transaction, error) {
 	var result types.Transaction
 	err := db.Raw(`
 	SELECT
-		J.id, J.transaction_id, J.initiated_by, J.from_id, J.from_email, J.from_business_name,
-		J.to_id, J.to_email, J.to_business_name, J.amount, J.status
+		J.id, J.transaction_id, J.initiated_by, J.from_id, J.from_email, J.from_entity_name,
+		J.to_id, J.to_email, J.to_entity_name, J.amount, J.status
 	FROM journals AS J
 	WHERE J.id = ?
 	LIMIT 1
@@ -220,7 +220,7 @@ func (t *transaction) FindPendings(id uint) ([]*types.Transaction, error) {
 	err := db.Raw(`
 	SELECT
 		J.id, J.transaction_id, CAST((CASE WHEN J.initiated_by = ? THEN 1 ELSE 0 END) AS BIT) AS "is_initiator",
-		J.id, J.initiated_by, J.from_id, J.from_email, J.to_id, J.from_business_name, J.to_business_name,
+		J.id, J.initiated_by, J.from_id, J.from_email, J.to_id, J.from_entity_name, J.to_entity_name,
 		J.to_email, J.amount, J.description, J.created_at
 	FROM journals AS J
 	WHERE (J.from_id = ? OR J.to_id = ?) AND J.status = ?
@@ -237,7 +237,7 @@ func (t *transaction) FindPendings(id uint) ([]*types.Transaction, error) {
 func (t *transaction) FindRecent(id uint) ([]*types.Transaction, error) {
 	var result []*types.Transaction
 	err := db.Raw(`
-	SELECT J.transaction_id, J.from_email, J.to_email, J.from_business_name, J.to_business_name, J.description, P.amount, P.created_at
+	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
 	FROM postings AS P
 	INNER JOIN journals AS J ON J."id" = P."journal_id"
 	WHERE P.account_id = ?
@@ -268,7 +268,7 @@ func (t *transaction) FindInRange(id uint, dateFrom time.Time, dateTo time.Time,
 
 	var result []*types.Transaction
 	err := db.Raw(`
-	SELECT J.transaction_id, J.from_email, J.to_email, J.from_business_name, J.to_business_name, J.description, P.amount, P.created_at
+	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
 	FROM postings AS P
 	INNER JOIN journals AS J ON J."id" = P."journal_id"
 	WHERE P.account_id = ? AND (P.created_at BETWEEN ? AND ?)

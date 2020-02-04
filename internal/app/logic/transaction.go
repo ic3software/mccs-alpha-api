@@ -41,25 +41,25 @@ func (t *transaction) Propose(
 
 	fromID,
 	fromEmail,
-	fromBusinessName,
+	fromEntityName,
 
 	toID,
 	toEmail,
-	toBusinessName string,
+	toEntityName string,
 
 	amount float64,
 	description string,
 ) (*types.Transaction, error) {
 	// Get the Account IDs using MongoIDs.
-	proposer, err := pg.Account.FindByBusinessID(proposerID)
+	proposer, err := pg.Account.FindByEntityID(proposerID)
 	if err != nil {
 		return nil, e.Wrap(err, "service.Transaction.Propose")
 	}
-	from, err := pg.Account.FindByBusinessID(fromID)
+	from, err := pg.Account.FindByEntityID(fromID)
 	if err != nil {
 		return nil, e.Wrap(err, "service.Transaction.Propose")
 	}
-	to, err := pg.Account.FindByBusinessID(toID)
+	to, err := pg.Account.FindByEntityID(toID)
 	if err != nil {
 		return nil, e.Wrap(err, "service.Transaction.Propose")
 	}
@@ -92,10 +92,10 @@ func (t *transaction) Propose(
 		proposer.ID,
 		from.ID,
 		fromEmail,
-		fromBusinessName,
+		fromEntityName,
 		to.ID,
 		toEmail,
-		toBusinessName,
+		toEntityName,
 		amount,
 		description,
 	)

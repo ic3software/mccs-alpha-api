@@ -41,7 +41,7 @@ func (d *dashBoardHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 	t := template.NewView("dashboard")
 	type response struct {
 		User          *types.User
-		Business      *types.Business
+		Entity        *types.Entity
 		MatchedOffers map[string][]string
 		MatchedWants  map[string][]string
 		Balance       float64
@@ -55,7 +55,7 @@ func (d *dashBoardHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 			return
 		}
 
-		business, err := logic.Business.FindByID(user.CompanyID)
+		entity, err := logic.Entity.FindByID(user.CompanyID)
 		if err != nil {
 			l.Logger.Error("DashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -67,13 +67,13 @@ func (d *dashBoardHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 			lastLoginDate = user.LastLoginDate
 		}
 
-		matchedOffers, err := logic.Tag.MatchOffers(helper.GetTagNames(business.Offers), lastLoginDate)
+		matchedOffers, err := logic.Tag.MatchOffers(helper.GetTagNames(entity.Offers), lastLoginDate)
 		if err != nil {
 			l.Logger.Error("DashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
-		matchedWants, err := logic.Tag.MatchWants(helper.GetTagNames(business.Wants), lastLoginDate)
+		matchedWants, err := logic.Tag.MatchWants(helper.GetTagNames(entity.Wants), lastLoginDate)
 		if err != nil {
 			l.Logger.Error("DashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -82,13 +82,13 @@ func (d *dashBoardHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 
 		res := response{
 			User:          user,
-			Business:      business,
+			Entity:        entity,
 			MatchedOffers: matchedOffers,
 			MatchedWants:  matchedWants,
 		}
 
 		// Get the account balance.
-		account, err := logic.Account.FindByBusinessID(user.CompanyID.Hex())
+		account, err := logic.Account.FindByEntityID(user.CompanyID.Hex())
 		if err != nil {
 			l.Logger.Error("DashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)

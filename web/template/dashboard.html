@@ -1,30 +1,30 @@
 {{ define "content" }}
-{{if eq .Business.Status "pending"}}
+{{if eq .Entity.Status "pending"}}
 <div class="ui yellow message">
     <div class="header">Thank you for requesting to be listed in our directory.</div>
-    <p>We will review your application within the next business day, and if everything looks good your business will be
+    <p>We will review your application within the next entity day, and if everything looks good your entity will be
     added to the directory.</p>
 </div>
-{{else if eq .Business.Status "rejected"}}
+{{else if eq .Entity.Status "rejected"}}
 <div class="ui negative message">
         <div class="header">Your application to be listed in the directory has not been accepted.</div>
     <p>Please contact us by email to find out why: hello@opencredit.network</p>
 </div>
-{{else if eq .Business.Status "tradingPending"}}
+{{else if eq .Entity.Status "tradingPending"}}
     <div class="ui yellow message">
         <div class="header">Thank you for applying to become a Trading Member.</div>
-        <p>We will review your application within the next business day, and if everything looks good your business will become a Trading Member of the Open Credit Network.</p>
+        <p>We will review your application within the next entity day, and if everything looks good your entity will become a Trading Member of the Open Credit Network.</p>
     </div>
-{{else if eq .Business.Status "tradingRejected"}}
+{{else if eq .Entity.Status "tradingRejected"}}
     <div class="ui negative message">
         <div class="header">Your application to become a Trading Member has not been accepted.</div>
         <p>Please contact us by email to find out why: hello@opencredit.network</p>
     </div>
-{{else if eq .Business.Status "accepted"}}
+{{else if eq .Entity.Status "accepted"}}
     <div class="ui success message">
         <h4>Upgrade to a full Trading Member</h4>
         <p>Unlock the full potential of the Open Credit Network by applying to become a Trading Member.</p>
-        <p>Trading via mutual credit is FREE during our alpha release and, if your business meets the application criteria, you will be awarded an interest free line of credit allowing you to trade with other businesses straight away. <a href="https://opencredit.network/become-a-trading-member/" target="_blank">Find out more</a> and <a href="/member-signup">apply now</a>.</p>
+        <p>Trading via mutual credit is FREE during our alpha release and, if your entity meets the application criteria, you will be awarded an interest free line of credit allowing you to trade with other entities straight away. <a href="https://opencredit.network/become-a-trading-member/" target="_blank">Find out more</a> and <a href="/member-signup">apply now</a>.</p>
     </div>
 {{end}}
 <h1 class="ui primary header">Dashboard</h1>
@@ -32,12 +32,12 @@
     <div class="ui grid">
         <div class="ten wide tablet ten wide computer column">
             {{if ShouldDisplayTime .User.LastLoginDate}}
-                <h2 style="margin-bottom: 0px;">Welcome back, {{.Business.BusinessName}}</h2>
+                <h2 style="margin-bottom: 0px;">Welcome back, {{.Entity.EntityName}}</h2>
             {{ else }}
-                <h2>Welcome to the Open Credit Network, {{.Business.BusinessName}}</h2>
+                <h2>Welcome to the Open Credit Network, {{.Entity.EntityName}}</h2>
             {{ end }}
         </div>
-        {{if eq .Business.Status "tradingAccepted"}}
+        {{if eq .Entity.Status "tradingAccepted"}}
             <div class="six wide tablet six wide computer column right aligned">
                 <img style="height: 40px;" src="/static/img/trading-member.svg" alt="trading-member">
             </div>
@@ -49,7 +49,7 @@
     <div class="ui divider"></div>
     <div class="ui top attached tabular menu">
     <a class="active item" data-tab="first">Potential Trades</a>
-    {{if eq .Business.Status "tradingAccepted"}}
+    {{if eq .Entity.Status "tradingAccepted"}}
         <a class="item" data-tab="second">Transactions <span id="transaction-count"></span></a>
     {{end}}
     </div>
@@ -65,7 +65,7 @@
     </div>
 
     <h3>Potential Trades for You</h3>
-    <p>Click the colored tags to see businesses with Offers and Wants which match yours</p>
+    <p>Click the colored tags to see entities with Offers and Wants which match yours</p>
 
     {{if or .MatchedOffers .MatchedWants}}
     <div class="ui two column stackable grid">
@@ -79,13 +79,13 @@
                         {{ range $myWant, $matchedOffers := .MatchedOffers }}
                         {{if $.User.ShowRecentMatchedTags}}
                         <a
-                            href="/businesses/search?page=1&created_on_or_after={{FormatTime $.User.LastLoginDate}}&tag_type=wants&tags={{$myWant}}#results">
+                            href="/entities/search?page=1&created_on_or_after={{FormatTime $.User.LastLoginDate}}&tag_type=wants&tags={{$myWant}}#results">
                             <div class="ui small label primary" style="margin-top:5px;margin-bottom:5px;">
                                 {{$myWant}}
                             </div>
                         </a>
                         {{else}}
-                        <a href="/businesses/search?page=1&tag_type=wants&tags={{$myWant}}#results">
+                        <a href="/entities/search?page=1&tag_type=wants&tags={{$myWant}}#results">
                             <div class="ui small label primary" style="margin-top:5px;margin-bottom:5px;">
                                 {{$myWant}}
                             </div>
@@ -107,13 +107,13 @@
                         {{ range $myOffer, $matchedWants := .MatchedWants }}
                         {{if $.User.ShowRecentMatchedTags}}
                         <a
-                            href="/businesses/search?page=1&created_on_or_after={{FormatTime $.User.LastLoginDate}}&tag_type=offers&tags={{$myOffer}}#results">
+                            href="/entities/search?page=1&created_on_or_after={{FormatTime $.User.LastLoginDate}}&tag_type=offers&tags={{$myOffer}}#results">
                             <div class="ui small label orange" style="margin-top:5px;margin-bottom:5px;">
                                 {{$myOffer}}
                             </div>
                         </a>
                         {{else}}
-                        <a href="/businesses/search?page=1&tag_type=offers&tags={{$myOffer}}#results">
+                        <a href="/entities/search?page=1&tag_type=offers&tags={{$myOffer}}#results">
                             <div class="ui small label orange" style="margin-top:5px;margin-bottom:5px;">
                                 {{$myOffer}}
                             </div>
@@ -242,8 +242,8 @@
                     <td style="max-width: 225px;word-wrap: break-word;">${t.Description}</td>
                     <td>${
                         t.IsInitiator ?
-                            t.InitiatedBy === t.FromID ? `${t.ToEmail} (${t.ToBusinessName})` : `${t.FromEmail} (${t.FromBusinessName})` :
-                            t.InitiatedBy === t.FromID ? `${t.FromEmail} (${t.FromBusinessName})` : `${t.ToEmail} (${t.ToBusinessName})`
+                            t.InitiatedBy === t.FromID ? `${t.ToEmail} (${t.ToEntityName})` : `${t.FromEmail} (${t.FromEntityName})` :
+                            t.InitiatedBy === t.FromID ? `${t.FromEmail} (${t.FromEntityName})` : `${t.ToEmail} (${t.ToEntityName})`
                     }</td>
                     <td>${formatTime(t.CreatedAt)}</td>
                     <td style="text-align: center">${t.IsInitiator ? initiatorButtons(t.ID) : receiverButtons(t.ID)}</td>
@@ -305,8 +305,8 @@
                     <td style="max-width: 225px;word-wrap: break-word;">${t.Description}</td>
                     <td>${
                         t.Amount < 0 ?
-                            `${t.ToEmail} (${t.ToBusinessName})` :
-                            `${t.FromEmail} (${t.FromBusinessName})`
+                            `${t.ToEmail} (${t.ToEntityName})` :
+                            `${t.FromEmail} (${t.FromEntityName})`
                     }</td>
                     <td>${formatTime(t.CreatedAt)}</td>
                     <td></td>

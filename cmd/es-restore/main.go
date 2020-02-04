@@ -15,7 +15,7 @@ import (
 func main() {
 	global.Init()
 	restoreUser()
-	restoreBusiness()
+	restoreEntity()
 	restoreTag()
 }
 
@@ -66,8 +66,8 @@ func restoreUser() {
 	log.Printf("took  %v\n\n", time.Now().Sub(startTime))
 }
 
-func restoreBusiness() {
-	log.Println("start restoring businesses")
+func restoreEntity() {
+	log.Println("start restoring entities")
 	startTime := time.Now()
 
 	// Don't incluse deleted item.
@@ -75,23 +75,23 @@ func restoreBusiness() {
 		"deletedAt": bson.M{"$exists": false},
 	}
 
-	cur, err := mongo.DB().Collection("businesses").Find(context.TODO(), filter)
+	cur, err := mongo.DB().Collection("entities").Find(context.TODO(), filter)
 	if err != nil {
 		log.Fatal(err)
 	}
 	counter := 0
 	for cur.Next(context.TODO()) {
-		var b types.Business
+		var b types.Entity
 		err := cur.Decode(&b)
 		if err != nil {
 			log.Fatal(err)
 		}
-		// Add the business to elastic search.
+		// Add the entity to elastic search.
 		{
-			businessID := b.ID.Hex()
-			uRecord := types.BusinessESRecord{
-				BusinessID:      businessID,
-				BusinessName:    b.BusinessName,
+			entityID := b.ID.Hex()
+			uRecord := types.EntityESRecord{
+				EntityID:        entityID,
+				EntityName:      b.EntityName,
 				Offers:          b.Offers,
 				Wants:           b.Wants,
 				LocationCity:    b.LocationCity,
@@ -100,8 +100,8 @@ func restoreBusiness() {
 				AdminTags:       b.AdminTags,
 			}
 			_, err = es.Client().Index().
-				Index("businesses").
-				Id(businessID).
+				Index("entities").
+				Id(entityID).
 				BodyJson(uRecord).
 				Do(context.Background())
 		}

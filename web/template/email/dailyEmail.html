@@ -23,7 +23,7 @@
                 <li>
                     <span style="margin-top:5px;margin-bottom:5px;margin:auto;padding: 0px 5px;display: inline-block;vertical-align: middle;border-radius: 5px;background: #003fa7;color: #ffffff;">{{ $myWant }}</span> -
                     <a
-                    href="{{$.URL}}/businesses/search/match-tags?page=1&created_on_or_after={{FormatTime $.User.LastNotificationSentDate}}&tag_type=wants&tags={{$myWant}}#results">
+                    href="{{$.URL}}/entities/search/match-tags?page=1&created_on_or_after={{FormatTime $.User.LastNotificationSentDate}}&tag_type=wants&tags={{$myWant}}#results">
                     See the full details and get in touch
                     </a>
                 </li>
@@ -45,7 +45,7 @@
                 <li>
                     <span style="margin-top:5px;margin-bottom:5px;margin:auto;padding: 0px 5px;display: inline-block;vertical-align: middle;border-radius: 5px;background: #f7a502;color: #ffffff;">{{ $myOffer }}</span> - 
                     <a
-                    href="{{$.URL}}/businesses/search/match-tags?page=1&created_on_or_after={{FormatTime $.User.LastNotificationSentDate}}&tag_type=offers&tags={{$myOffer}}#results">
+                    href="{{$.URL}}/entities/search/match-tags?page=1&created_on_or_after={{FormatTime $.User.LastNotificationSentDate}}&tag_type=offers&tags={{$myOffer}}#results">
                     See the full details and get in touch
                     </a>
                 </li>
@@ -54,7 +54,7 @@
           </div>
         </div>
         {{ end }}
-        <p>If your wants, offers or business details have changed, please <a href="{{$.URL}}/account">update your listing</a>.</p>
+        <p>If your wants, offers or entity details have changed, please <a href="{{$.URL}}/account">update your listing</a>.</p>
 
         <p>You can also unsubscribe from these emails by <a href="{{$.URL}}/account">following this link</a>.</p>
 

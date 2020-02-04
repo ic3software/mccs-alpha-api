@@ -14,10 +14,10 @@ var Trading = &trading{}
 func (t *trading) GetRegisterData(r *http.Request) *types.TradingRegisterData {
 	turnover, _ := strconv.Atoi(r.FormValue("turnover"))
 	return &types.TradingRegisterData{
-		BusinessName:       r.FormValue("business_name"),        // 100 chars
+		EntityName:         r.FormValue("entity_name"),          // 100 chars
 		IncType:            r.FormValue("inc_type"),             // 25 chars
 		CompanyNumber:      r.FormValue("company_number"),       // 20 chars
-		BusinessPhone:      r.FormValue("business_phone"),       // 25 chars
+		EntityPhone:        r.FormValue("entity_phone"),         // 25 chars
 		Website:            r.FormValue("website"),              // 100 chars
 		Turnover:           turnover,                            // 20 chars
 		Description:        r.FormValue("description"),          // 500 chars
@@ -36,10 +36,10 @@ func (t *trading) GetRegisterData(r *http.Request) *types.TradingRegisterData {
 func (t *trading) GetUpdateData(r *http.Request) *types.TradingUpdateData {
 	turnover, _ := strconv.Atoi(r.FormValue("turnover"))
 	return &types.TradingUpdateData{
-		BusinessName:       r.FormValue("business_name"),        // 100 chars
+		EntityName:         r.FormValue("entity_name"),          // 100 chars
 		IncType:            r.FormValue("inc_type"),             // 25 chars
 		CompanyNumber:      r.FormValue("company_number"),       // 20 chars
-		BusinessPhone:      r.FormValue("business_phone"),       // 25 chars
+		EntityPhone:        r.FormValue("entity_phone"),         // 25 chars
 		Website:            r.FormValue("website"),              // 100 chars
 		Turnover:           turnover,                            // 20 chars
 		Description:        r.FormValue("description"),          // 500 chars

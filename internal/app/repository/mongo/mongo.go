@@ -24,7 +24,7 @@ func init() {
 }
 
 func registerCollections(db *mongo.Database) {
-	Business.Register(db)
+	Entity.Register(db)
 	User.Register(db)
 	UserAction.Register(db)
 	AdminUser.Register(db)

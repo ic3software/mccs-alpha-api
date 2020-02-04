@@ -6,12 +6,12 @@ import (
 
 func Account(d *types.UpdateAccountData) []string {
 	errorMessages := []string{}
-	errorMessages = append(errorMessages, ValidateBusiness(d.Business)...)
+	errorMessages = append(errorMessages, ValidateEntity(d.Entity)...)
 	return errorMessages
 }
 
-func UpdateBusiness(b *types.BusinessData) []string {
+func UpdateEntity(b *types.EntityData) []string {
 	errorMessages := []string{}
-	errorMessages = append(errorMessages, ValidateBusiness(b)...)
+	errorMessages = append(errorMessages, ValidateEntity(b)...)
 	return errorMessages
 }

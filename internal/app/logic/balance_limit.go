@@ -20,8 +20,8 @@ func (b balanceLimit) FindByAccountID(id uint) (*types.BalanceLimit, error) {
 	return record, nil
 }
 
-func (b balanceLimit) FindByBusinessID(id string) (*types.BalanceLimit, error) {
-	account, err := Account.FindByBusinessID(id)
+func (b balanceLimit) FindByEntityID(id string) (*types.BalanceLimit, error) {
+	account, err := Account.FindByEntityID(id)
 	if err != nil {
 		return nil, err
 	}

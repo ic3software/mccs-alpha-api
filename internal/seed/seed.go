@@ -7,16 +7,16 @@ import (
 	"log"
 	"time"
 
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
-	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
-	businessData  []types.Business
+	entityData    []types.Entity
 	userData      []types.User
 	adminUserData []types.AdminUser
 	tagData       []types.Tag
@@ -24,14 +24,14 @@ var (
 )
 
 func LoadData() {
-	// Load business data.
-	data, err := ioutil.ReadFile("internal/seed/data/business.json")
+	// Load entity data.
+	data, err := ioutil.ReadFile("internal/seed/data/entity.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	businesses := make([]types.Business, 0)
-	json.Unmarshal(data, &businesses)
-	businessData = businesses
+	entities := make([]types.Entity, 0)
+	json.Unmarshal(data, &entities)
+	entityData = entities
 
 	// Load user data.
 	data, err = ioutil.ReadFile("internal/seed/data/user.json")
@@ -74,17 +74,17 @@ func Run() {
 	log.Println("start seeding")
 	startTime := time.Now()
 
-	// Generate users and businesses.
-	for i, b := range businessData {
-		res, err := mongo.DB().Collection("businesses").InsertOne(context.Background(), b)
+	// Generate users and entities.
+	for i, b := range entityData {
+		res, err := mongo.DB().Collection("entities").InsertOne(context.Background(), b)
 		if err != nil {
 			log.Fatal(err)
 		}
 		b.ID = res.InsertedID.(primitive.ObjectID)
 
-		bRecord := types.BusinessESRecord{
-			BusinessID:      b.ID.Hex(),
-			BusinessName:    b.BusinessName,
+		bRecord := types.EntityESRecord{
+			EntityID:        b.ID.Hex(),
+			EntityName:      b.EntityName,
 			Offers:          b.Offers,
 			Wants:           b.Wants,
 			LocationCity:    b.LocationCity,
@@ -93,7 +93,7 @@ func Run() {
 			AdminTags:       b.AdminTags,
 		}
 		_, err = es.Client().Index().
-			Index("businesses").
+			Index("entities").
 			Id(b.ID.Hex()).
 			BodyJson(bRecord).
 			Do(context.Background())
@@ -101,7 +101,7 @@ func Run() {
 			log.Fatal(err)
 		}
 
-		// PostgresSQL - Create account from business.
+		// PostgresSQL - Create account from entity.
 		err = logic.Account.Create(b.ID.Hex())
 		if err != nil {
 			log.Fatal(err)

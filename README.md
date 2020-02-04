@@ -16,9 +16,9 @@ We are making this code public to show our commitment to free and open source so
 
 There are four main functions that the MCCS API provides:
 
-1. **Manage accounts** - create and modify user accounts and related business details
-2. **Find businesses** - view and search for businesses based on what they sell and need
-3. **Transfer mutual credits** - create and complete/cancel mutual credit (MC) transfers between businesses
+1. **Manage accounts** - create and modify user accounts and related entity details
+2. **Find entities** - view and search for entities based on what they sell and need
+3. **Transfer mutual credits** - create and complete/cancel mutual credit (MC) transfers between entities
 4. **Review transfer activity** - view pending and completed MC transfers
 
 See the detailed description of these main functions in the [MCCS Alpha web application repository](https://github.com/ic3network/mccs-alpha#main-functions).
@@ -86,9 +86,9 @@ The MCCS web app is written in Go, and it uses Docker Compose to orchestrate its
 
 **App Dependencies**
 
-- [MongoDB](https://en.wikipedia.org/wiki/MongoDB) - the database used to store user and business directory data
+- [MongoDB](https://en.wikipedia.org/wiki/MongoDB) - the database used to store user and entity directory data
 - [PostgreSQL](https://www.postgresql.org/) - the database used to store mutual credit transfer data
-- [Elasticsearch](https://en.wikipedia.org/wiki/Elasticsearch) - the search engine for searching user/business data
+- [Elasticsearch](https://en.wikipedia.org/wiki/Elasticsearch) - the search engine for searching user/entity data
 
 These dependencies are installed automatically by Docker Compose.
 

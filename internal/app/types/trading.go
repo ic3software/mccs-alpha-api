@@ -3,11 +3,11 @@ package types
 import "strings"
 
 type TradingRegisterData struct {
-	// Business
-	BusinessName       string
+	// Entity
+	EntityName         string
 	IncType            string
 	CompanyNumber      string
-	BusinessPhone      string
+	EntityPhone        string
 	Website            string
 	Turnover           int
 	Description        string
@@ -27,11 +27,11 @@ type TradingRegisterData struct {
 }
 
 type TradingUpdateData struct {
-	// Business
-	BusinessName       string
+	// Entity
+	EntityName         string
 	IncType            string
 	CompanyNumber      string
-	BusinessPhone      string
+	EntityPhone        string
 	Website            string
 	Turnover           int
 	Description        string
@@ -51,10 +51,10 @@ type TradingUpdateData struct {
 func (t *TradingRegisterData) Validate() []string {
 	errs := []string{}
 
-	if t.BusinessName == "" {
-		errs = append(errs, "Business name is missing.")
-	} else if len(t.BusinessName) > 100 {
-		errs = append(errs, "Business name cannot exceed 100 characters.")
+	if t.EntityName == "" {
+		errs = append(errs, "Entity name is missing.")
+	} else if len(t.EntityName) > 100 {
+		errs = append(errs, "Entity name cannot exceed 100 characters.")
 	}
 	if t.IncType == "" {
 		errs = append(errs, "Incorporation type is missing.")
@@ -65,22 +65,22 @@ func (t *TradingRegisterData) Validate() []string {
 		errs = append(errs, "Company number cannot exceed 20 characters")
 	}
 	if t.Description == "" {
-		errs = append(errs, "Business description is missing.")
+		errs = append(errs, "Entity description is missing.")
 	} else if len(t.Description) > 500 {
-		errs = append(errs, "Business description cannot exceed 500 characters.")
+		errs = append(errs, "Entity description cannot exceed 500 characters.")
 	}
 	if t.Website != "" && !strings.HasPrefix(t.Website, "http://") && !strings.HasPrefix(t.Website, "https://") {
 		errs = append(errs, "Website URL should start with http:// or https://.")
 	} else if len(t.Website) > 100 {
 		errs = append(errs, "Website URL cannot exceed 100 characters.")
 	}
-	if len(t.BusinessPhone) > 25 {
-		errs = append(errs, "Business phone cannot exceed 25 characters.")
+	if len(t.EntityPhone) > 25 {
+		errs = append(errs, "Entity phone cannot exceed 25 characters.")
 	}
 	if t.LocationAddress == "" {
-		errs = append(errs, "Business address is missing.")
+		errs = append(errs, "Entity address is missing.")
 	} else if len(t.LocationAddress) > 255 {
-		errs = append(errs, "Business address cannot exceed 255 characters.")
+		errs = append(errs, "Entity address cannot exceed 255 characters.")
 	}
 	if t.LocationCity == "" {
 		errs = append(errs, "City/town is missing.")
@@ -119,7 +119,7 @@ func (t *TradingRegisterData) Validate() []string {
 		errs = append(errs, "Telephone cannot exceed 25 characters.")
 	}
 	if t.Authorised != "on" {
-		errs = append(errs, "Please confirm you have read and agree to the Membership Agreement on behalf of your business.")
+		errs = append(errs, "Please confirm you have read and agree to the Membership Agreement on behalf of your entity.")
 	}
 
 	return errs
@@ -128,10 +128,10 @@ func (t *TradingRegisterData) Validate() []string {
 func (t *TradingUpdateData) Validate() []string {
 	errs := []string{}
 
-	if t.BusinessName == "" {
-		errs = append(errs, "Business name is missing.")
-	} else if len(t.BusinessName) > 100 {
-		errs = append(errs, "Business name cannot exceed 100 characters.")
+	if t.EntityName == "" {
+		errs = append(errs, "Entity name is missing.")
+	} else if len(t.EntityName) > 100 {
+		errs = append(errs, "Entity name cannot exceed 100 characters.")
 	}
 	if t.IncType == "" {
 		errs = append(errs, "Incorporation type is missing.")
@@ -142,22 +142,22 @@ func (t *TradingUpdateData) Validate() []string {
 		errs = append(errs, "Company number cannot exceed 20 characters.")
 	}
 	if t.Description == "" {
-		errs = append(errs, "Business description is missing.")
+		errs = append(errs, "Entity description is missing.")
 	} else if len(t.Description) > 500 {
-		errs = append(errs, "Business description cannot exceed 500 characters.")
+		errs = append(errs, "Entity description cannot exceed 500 characters.")
 	}
 	if t.Website != "" && !strings.HasPrefix(t.Website, "http://") && !strings.HasPrefix(t.Website, "https://") {
 		errs = append(errs, "Website URL should start with http:// or https://.")
 	} else if len(t.Website) > 100 {
 		errs = append(errs, "Website URL cannot exceed 100 characters.")
 	}
-	if len(t.BusinessPhone) > 25 {
-		errs = append(errs, "Business phone cannot exceed 25 characters.")
+	if len(t.EntityPhone) > 25 {
+		errs = append(errs, "Entity phone cannot exceed 25 characters.")
 	}
 	if t.LocationAddress == "" {
-		errs = append(errs, "Business address is missing.")
+		errs = append(errs, "Entity address is missing.")
 	} else if len(t.LocationAddress) > 255 {
-		errs = append(errs, "Business address cannot exceed 255 characters.")
+		errs = append(errs, "Entity address cannot exceed 255 characters.")
 	}
 	if t.LocationCity == "" {
 		errs = append(errs, "City/town is missing.")

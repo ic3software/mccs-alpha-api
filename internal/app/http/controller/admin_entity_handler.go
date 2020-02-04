@@ -23,63 +23,63 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 )
 
-type adminBusinessHandler struct {
+type adminEntityHandler struct {
 	once *sync.Once
 }
 
-var AdminBusinessHandler = newAdminBusinessHandler()
+var AdminEntityHandler = newAdminEntityHandler()
 
-func newAdminBusinessHandler() *adminBusinessHandler {
-	return &adminBusinessHandler{
+func newAdminEntityHandler() *adminEntityHandler {
+	return &adminEntityHandler{
 		once: new(sync.Once),
 	}
 }
 
-func (a *adminBusinessHandler) RegisterRoutes(
+func (a *adminEntityHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
 	adminPublic *mux.Router,
 	adminPrivate *mux.Router,
 ) {
 	a.once.Do(func() {
-		adminPrivate.Path("/businesses/{id}").HandlerFunc(a.adminBusinessPage()).Methods("GET")
-		adminPrivate.Path("/businesses/{id}").HandlerFunc(a.updateBusiness()).Methods("POST")
+		adminPrivate.Path("/entities/{id}").HandlerFunc(a.adminEntityPage()).Methods("GET")
+		adminPrivate.Path("/entities/{id}").HandlerFunc(a.updateEntity()).Methods("POST")
 
-		adminPrivate.Path("/api/businesses/{id}").HandlerFunc(a.deleteBusiness()).Methods("DELETE")
+		adminPrivate.Path("/api/entities/{id}").HandlerFunc(a.deleteEntity()).Methods("DELETE")
 	})
 }
 
-func (a *adminBusinessHandler) adminBusinessPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("admin/business")
+func (a *adminEntityHandler) adminEntityPage() func(http.ResponseWriter, *http.Request) {
+	t := template.NewView("admin/entity")
 	type formData struct {
-		Business *types.Business
-		Balance  *types.BalanceLimit
+		Entity  *types.Entity
+		Balance *types.BalanceLimit
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		id := vars["id"]
 
-		business, err := BusinessHandler.FindByID(id)
+		entity, err := EntityHandler.FindByID(id)
 		if err != nil {
-			l.Logger.Error("AdminBusinessPage failed", zap.Error(err))
+			l.Logger.Error("AdminEntityPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
-		balance, err := logic.BalanceLimit.FindByBusinessID(id)
+		balance, err := logic.BalanceLimit.FindByEntityID(id)
 		if err != nil {
-			l.Logger.Error("AdminBusinessPage failed", zap.Error(err))
+			l.Logger.Error("AdminEntityPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
 
-		f := formData{Business: business, Balance: balance}
+		f := formData{Entity: entity, Balance: balance}
 
 		t.Render(w, r, f, nil)
 	}
 }
 
-func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("admin/business")
+func (a *adminEntityHandler) updateEntity() func(http.ResponseWriter, *http.Request) {
+	t := template.NewView("admin/entity")
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		d := helper.GetUpdateData(r)
@@ -88,13 +88,13 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		id := vars["id"]
 		bID, err := primitive.ObjectIDFromHex(id)
 		if err != nil {
-			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
+			l.Logger.Error("UpdateEntity failed", zap.Error(err))
 			t.Error(w, r, d, err)
 			return
 		}
-		d.Business.ID = bID
+		d.Entity.ID = bID
 
-		errorMessages := validate.UpdateBusiness(d.Business)
+		errorMessages := validate.UpdateEntity(d.Entity)
 		maxPosBal, err := strconv.ParseFloat(r.FormValue("max_pos_bal"), 64)
 		if err != nil {
 			errorMessages = append(errorMessages, "Max pos balance should be a number")
@@ -111,9 +111,9 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		}
 
 		// Check if the current balance has exceeded the input balances.
-		account, err := logic.Account.FindByBusinessID(bID.Hex())
+		account, err := logic.Account.FindByEntityID(bID.Hex())
 		if err != nil {
-			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
+			l.Logger.Error("UpdateEntity failed", zap.Error(err))
 			t.Error(w, r, d, err)
 			return
 		}
@@ -124,27 +124,27 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 			errorMessages = append(errorMessages, "The current account balance ("+fmt.Sprintf("%.2f", account.Balance)+") has exceed your max neg balance input")
 		}
 		if len(errorMessages) > 0 {
-			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
+			l.Logger.Error("UpdateEntity failed", zap.Error(err))
 			t.Render(w, r, d, errorMessages)
 			return
 		}
 
-		// Update Business
-		oldBusiness, err := logic.Business.FindByID(bID)
+		// Update Entity
+		oldEntity, err := logic.Entity.FindByID(bID)
 		if err != nil {
-			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
+			l.Logger.Error("UpdateEntity failed", zap.Error(err))
 			t.Error(w, r, d, err)
 			return
 		}
-		offersAdded, offersRemoved := helper.TagDifference(d.Business.Offers, oldBusiness.Offers)
-		d.Business.OffersAdded = offersAdded
-		d.Business.OffersRemoved = offersRemoved
-		wantsAdded, wantsRemoved := helper.TagDifference(d.Business.Wants, oldBusiness.Wants)
-		d.Business.WantsAdded = wantsAdded
-		d.Business.WantsRemoved = wantsRemoved
-		err = logic.Business.UpdateBusiness(bID, d.Business, true)
+		offersAdded, offersRemoved := helper.TagDifference(d.Entity.Offers, oldEntity.Offers)
+		d.Entity.OffersAdded = offersAdded
+		d.Entity.OffersRemoved = offersRemoved
+		wantsAdded, wantsRemoved := helper.TagDifference(d.Entity.Wants, oldEntity.Wants)
+		d.Entity.WantsAdded = wantsAdded
+		d.Entity.WantsRemoved = wantsRemoved
+		err = logic.Entity.UpdateEntity(bID, d.Entity, true)
 		if err != nil {
-			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
+			l.Logger.Error("UpdateEntity failed", zap.Error(err))
 			t.Error(w, r, d, err)
 			return
 		}
@@ -152,20 +152,20 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		// Update BalanceLimit
 		oldBalance, err := logic.BalanceLimit.FindByAccountID(account.ID)
 		if err != nil {
-			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
+			l.Logger.Error("UpdateEntity failed", zap.Error(err))
 			t.Error(w, r, d, err)
 			return
 		}
 		err = logic.BalanceLimit.Update(account.ID, d.Balance.MaxPosBal, d.Balance.MaxNegBal)
 		if err != nil {
-			l.Logger.Error("UpdateBusiness failed", zap.Error(err))
+			l.Logger.Error("UpdateEntity failed", zap.Error(err))
 			t.Error(w, r, d, err)
 			return
 		}
 
 		// Update the admin tags collection.
 		go func() {
-			err := AdminTagHandler.SaveAdminTags(d.Business.AdminTags)
+			err := AdminTagHandler.SaveAdminTags(d.Entity.AdminTags)
 			if err != nil {
 				l.Logger.Error("saveAdminTags failed", zap.Error(err))
 			}
@@ -173,43 +173,43 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		go func() {
 			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
 			adminUser, err := logic.AdminUser.FindByID(objID)
-			user, err := logic.User.FindByBusinessID(bID)
+			user, err := logic.User.FindByEntityID(bID)
 			if err != nil {
-				l.Logger.Error("log.Admin.ModifyBusiness failed", zap.Error(err))
+				l.Logger.Error("log.Admin.ModifyEntity failed", zap.Error(err))
 				return
 			}
-			err = logic.UserAction.Log(log.Admin.ModifyBusiness(adminUser, user, oldBusiness, d.Business, oldBalance, d.Balance))
+			err = logic.UserAction.Log(log.Admin.ModifyEntity(adminUser, user, oldEntity, d.Entity, oldBalance, d.Balance))
 			if err != nil {
-				l.Logger.Error("log.Admin.ModifyBusiness failed", zap.Error(err))
+				l.Logger.Error("log.Admin.ModifyEntity failed", zap.Error(err))
 			}
 		}()
 
 		// Admin Update tags logic:
-		// 	1. When a business' status is changed from pending/rejected to accepted.
+		// 	1. When a entity' status is changed from pending/rejected to accepted.
 		// 	   - update all tags.
-		// 	2. When the business is in accepted status.
+		// 	2. When the entity is in accepted status.
 		//	   - only update added tags.
 		go func() {
-			if !util.IsAcceptedStatus(oldBusiness.Status) && util.IsAcceptedStatus(d.Business.Status) {
-				err := logic.Business.UpdateAllTagsCreatedAt(oldBusiness.ID, time.Now())
+			if !util.IsAcceptedStatus(oldEntity.Status) && util.IsAcceptedStatus(d.Entity.Status) {
+				err := logic.Entity.UpdateAllTagsCreatedAt(oldEntity.ID, time.Now())
 				if err != nil {
 					l.Logger.Error("UpdateAllTagsCreatedAt failed", zap.Error(err))
 				}
-				err = TagHandler.SaveOfferTags(helper.GetTagNames(d.Business.Offers))
+				err = TagHandler.SaveOfferTags(helper.GetTagNames(d.Entity.Offers))
 				if err != nil {
 					l.Logger.Error("saveOfferTags failed", zap.Error(err))
 				}
-				err = TagHandler.SaveWantTags(helper.GetTagNames(d.Business.Wants))
+				err = TagHandler.SaveWantTags(helper.GetTagNames(d.Entity.Wants))
 				if err != nil {
 					l.Logger.Error("saveWantTags failed", zap.Error(err))
 				}
 			}
-			if util.IsAcceptedStatus(oldBusiness.Status) && util.IsAcceptedStatus(d.Business.Status) {
-				err := TagHandler.SaveOfferTags(d.Business.OffersAdded)
+			if util.IsAcceptedStatus(oldEntity.Status) && util.IsAcceptedStatus(d.Entity.Status) {
+				err := TagHandler.SaveOfferTags(d.Entity.OffersAdded)
 				if err != nil {
 					l.Logger.Error("saveOfferTags failed", zap.Error(err))
 				}
-				err = TagHandler.SaveWantTags(d.Business.WantsAdded)
+				err = TagHandler.SaveWantTags(d.Entity.WantsAdded)
 				if err != nil {
 					l.Logger.Error("saveWantTags failed", zap.Error(err))
 				}
@@ -217,43 +217,43 @@ func (a *adminBusinessHandler) updateBusiness() func(http.ResponseWriter, *http.
 		}()
 		go func() {
 			// Set timestamp when first trading status applied.
-			if oldBusiness.MemberStartedAt.IsZero() && (oldBusiness.Status == constant.Business.Accepted) && (d.Business.Status == constant.Trading.Accepted) {
-				logic.Business.SetMemberStartedAt(bID)
+			if oldEntity.MemberStartedAt.IsZero() && (oldEntity.Status == constant.Entity.Accepted) && (d.Entity.Status == constant.Trading.Accepted) {
+				logic.Entity.SetMemberStartedAt(bID)
 			}
 		}()
 
-		t.Success(w, r, d, "The business has been updated!")
+		t.Success(w, r, d, "The entity has been updated!")
 	}
 }
 
-func (a *adminBusinessHandler) deleteBusiness() func(http.ResponseWriter, *http.Request) {
+func (a *adminEntityHandler) deleteEntity() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		id := vars["id"]
 		bsID, err := primitive.ObjectIDFromHex(id)
 		if err != nil {
-			l.Logger.Error("DeleteBusiness failed", zap.Error(err))
+			l.Logger.Error("DeleteEntity failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		err = logic.Business.DeleteByID(bsID)
+		err = logic.Entity.DeleteByID(bsID)
 		if err != nil {
-			l.Logger.Error("DeleteBusiness failed", zap.Error(err))
+			l.Logger.Error("DeleteEntity failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		user, err := logic.User.FindByBusinessID(bsID)
+		user, err := logic.User.FindByEntityID(bsID)
 		if err != nil {
-			l.Logger.Error("DeleteBusiness failed", zap.Error(err))
+			l.Logger.Error("DeleteEntity failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		err = logic.User.DeleteByID(user.ID)
 		if err != nil {
-			l.Logger.Error("DeleteBusiness failed", zap.Error(err))
+			l.Logger.Error("DeleteEntity failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

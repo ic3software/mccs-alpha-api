@@ -107,13 +107,13 @@ func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http
 		}
 		f.Amount = amount
 
-		from, err := BusinessHandler.FindByEmail(f.FromEmail)
+		from, err := EntityHandler.FindByEmail(f.FromEmail)
 		if err != nil {
 			l.Logger.Info("Transaction failed", zap.Error(err))
 			t.Error(w, r, res, err)
 			return
 		}
-		to, err := BusinessHandler.FindByEmail(f.ToEmail)
+		to, err := EntityHandler.FindByEmail(f.ToEmail)
 		if err != nil {
 			l.Logger.Info("Transaction failed", zap.Error(err))
 			t.Error(w, r, res, err)
@@ -122,10 +122,10 @@ func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http
 
 		// Only allow transfers with accounts that also have "trading-accepted" status
 		if from.Status != constant.Trading.Accepted {
-			t.Render(w, r, res, []string{"Sender is not a trading member. You can only make transfers from businesses that have trading member status."})
+			t.Render(w, r, res, []string{"Sender is not a trading member. You can only make transfers from entities that have trading member status."})
 			return
 		} else if to.Status != constant.Trading.Accepted {
-			t.Render(w, r, res, []string{"Receiver is not a trading member. You can only make transfers to businesses that have trading member status."})
+			t.Render(w, r, res, []string{"Receiver is not a trading member. You can only make transfers to entities that have trading member status."})
 			return
 		}
 		if f.FromEmail == f.ToEmail {
@@ -136,10 +136,10 @@ func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http
 		err = logic.AdminTransaction.Create(
 			from.ID.Hex(),
 			f.FromEmail,
-			from.BusinessName,
+			from.EntityName,
 			to.ID.Hex(),
 			f.ToEmail,
-			to.BusinessName,
+			to.EntityName,
 			f.Amount,
 			f.Description,
 		)
@@ -176,7 +176,7 @@ func (tr *adminTransactionHandler) pendingTransactions() func(http.ResponseWrite
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 
-		user, err := UserHandler.FindByBusinessID(q.Get("business_id"))
+		user, err := UserHandler.FindByEntityID(q.Get("entity_id"))
 		if err != nil {
 			l.Logger.Error("AdminTransactionHandler.pendingTransactions failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)

@@ -9,7 +9,7 @@ import (
 
 func GetRegisterData(r *http.Request) *types.RegisterData {
 	return &types.RegisterData{
-		Business:        GetBusiness(r),
+		Entity:          GetEntity(r),
 		User:            GetUser(r),
 		ConfirmPassword: r.FormValue("confirm_password"),
 		ConfirmEmail:    r.FormValue("confirm_email"),
@@ -19,7 +19,7 @@ func GetRegisterData(r *http.Request) *types.RegisterData {
 
 func GetUpdateData(r *http.Request) *types.UpdateAccountData {
 	return &types.UpdateAccountData{
-		Business:        GetBusiness(r),
+		Entity:          GetEntity(r),
 		User:            GetUser(r),
 		Balance:         &types.BalanceLimit{},
 		CurrentPassword: r.FormValue("current_password"),
@@ -27,13 +27,13 @@ func GetUpdateData(r *http.Request) *types.UpdateAccountData {
 	}
 }
 
-func GetBusiness(r *http.Request) *types.BusinessData {
+func GetEntity(r *http.Request) *types.EntityData {
 	turnover, _ := strconv.Atoi(r.FormValue("turnover"))
-	b := &types.BusinessData{
-		BusinessName:       r.FormValue("business_name"),        // 100 chars
+	b := &types.EntityData{
+		EntityName:         r.FormValue("entity_name"),          // 100 chars
 		IncType:            r.FormValue("inc_type"),             // 25 chars
 		CompanyNumber:      r.FormValue("company_number"),       // 20 chars
-		BusinessPhone:      r.FormValue("business_phone"),       // 25 chars
+		EntityPhone:        r.FormValue("entity_phone"),         // 25 chars
 		Website:            r.FormValue("website"),              // 100 chars
 		Turnover:           turnover,                            // 20 chars
 		Offers:             GetTags(r.FormValue("offers")),      // 500 chars (max 50 chars per tag)

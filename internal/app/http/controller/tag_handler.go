@@ -275,7 +275,7 @@ func (h *tagHandler) renameTag() func(http.ResponseWriter, *http.Request) {
 		oldName := tag.Name
 
 		go func() {
-			err := logic.Business.RenameTag(oldName, req.Name)
+			err := logic.Entity.RenameTag(oldName, req.Name)
 			if err != nil {
 				l.Logger.Error("RenameTag failed", zap.Error(err))
 			}
@@ -336,7 +336,7 @@ func (h *tagHandler) deleteTag() func(http.ResponseWriter, *http.Request) {
 		}
 
 		go func() {
-			err := logic.Business.DeleteTag(tag.Name)
+			err := logic.Entity.DeleteTag(tag.Name)
 			if err != nil {
 				l.Logger.Error("DeleteTag failed", zap.Error(err))
 			}

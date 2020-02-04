@@ -25,8 +25,8 @@ func (a *account) FindByID(accountID uint) (*types.Account, error) {
 	return account, nil
 }
 
-func (a *account) FindByBusinessID(businessID string) (*types.Account, error) {
-	account, err := pg.Account.FindByBusinessID(businessID)
+func (a *account) FindByEntityID(entityID string) (*types.Account, error) {
+	account, err := pg.Account.FindByEntityID(entityID)
 	if err != nil {
 		return nil, err
 	}

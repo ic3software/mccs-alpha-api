@@ -58,9 +58,9 @@
                     <td>{{$t.Amount}}</td>
                     <td style="max-width: 225px;word-wrap: break-word;">{{$t.Description}}</td>
                     {{if lt $t.Amount 0.0}}
-                        <td>{{$t.ToEmail}} ({{$t.ToBusinessName}})</td>
+                        <td>{{$t.ToEmail}} ({{$t.ToEntityName}})</td>
                     {{else}}
-                        <td>{{$t.FromEmail}} ({{$t.FromBusinessName}})</td>
+                        <td>{{$t.FromEmail}} ({{$t.FromEntityName}})</td>
                     {{end}}
                     <td>{{FormatTime $t.CreatedAt}}</td>
                 </tr>

@@ -61,7 +61,7 @@ func TestTagDifference(t *testing.T) {
 		removed []string
 	}{
 		{
-			"should create tags for a new business",
+			"should create tags for a new entity",
 			[]*types.TagField{
 				&types.TagField{Name: "newTag1"},
 				&types.TagField{Name: "newTag2"},
@@ -71,7 +71,7 @@ func TestTagDifference(t *testing.T) {
 			[]string{},
 		},
 		{
-			"should update tags of a existed business",
+			"should update tags of a existed entity",
 			[]*types.TagField{
 				&types.TagField{Name: "oldTag1"},
 				&types.TagField{Name: "oldTag2"},

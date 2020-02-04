@@ -72,19 +72,19 @@ func (e *Email) send(d emailData) error {
 // External APIs
 
 // SendWelcomeEmail sends the welcome email once a new account is created.
-func SendWelcomeEmail(businessName string, user *types.User) error {
-	return e.sendWelcomeEmail(businessName, user)
+func SendWelcomeEmail(entityName string, user *types.User) error {
+	return e.sendWelcomeEmail(entityName, user)
 }
-func (e *Email) sendWelcomeEmail(businessName string, user *types.User) error {
+func (e *Email) sendWelcomeEmail(entityName string, user *types.User) error {
 	t, err := template.NewEmailView("welcome")
 	if err != nil {
 		return err
 	}
 
 	data := struct {
-		BusinessName string
+		EntityName string
 	}{
-		BusinessName: businessName,
+		EntityName: entityName,
 	}
 
 	var tpl bytes.Buffer
@@ -144,16 +144,16 @@ func (e *Email) sendThankYouEmail(firstName, lastName, email string) error {
 }
 
 // SendNewMemberSignupEmail sends the email to the OCN Admin email address.
-func SendNewMemberSignupEmail(businessName, email string) error {
-	return e.sendNewMemberSignupEmail(businessName, email)
+func SendNewMemberSignupEmail(entityName, email string) error {
+	return e.sendNewMemberSignupEmail(entityName, email)
 }
-func (e *Email) sendNewMemberSignupEmail(businessName, email string) error {
+func (e *Email) sendNewMemberSignupEmail(entityName, email string) error {
 	d := emailData{
 		receiver:      viper.GetString("email_from"),
 		receiverEmail: viper.GetString("sendgrid.sender_email"),
 		subject:       "New Trading Member Application",
 		text:          "New Trading Member Application",
-		html:          "Business Name: " + businessName + ", Email Address: " + email,
+		html:          "Entity Name: " + entityName + ", Email Address: " + email,
 	}
 	if err := e.send(d); err != nil {
 		return err
@@ -223,11 +223,11 @@ func (e *Email) sendDailyEmailList(user *types.User, matchedTags *types.MatchedT
 	return nil
 }
 
-// SendContactBusiness sends the contact to the business owner.
-func SendContactBusiness(receiver, receiverEmail, replyToName, replyToEmail, body string) error {
-	return e.sendContactBusiness(receiver, receiverEmail, replyToName, replyToEmail, body)
+// SendContactEntity sends the contact to the entity owner.
+func SendContactEntity(receiver, receiverEmail, replyToName, replyToEmail, body string) error {
+	return e.sendContactEntity(receiver, receiverEmail, replyToName, replyToEmail, body)
 }
-func (e *Email) sendContactBusiness(receiver, receiverEmail, replyToName, replyToEmail, body string) error {
+func (e *Email) sendContactEntity(receiver, receiverEmail, replyToName, replyToEmail, body string) error {
 	d := emailData{
 		receiver:      receiver,
 		receiverEmail: receiverEmail,
@@ -264,15 +264,15 @@ func (e *Email) sendContactBusiness(receiver, receiverEmail, replyToName, replyT
 }
 
 // SendSignupNotification sends an email notification as each new signup occurs.
-func SendSignupNotification(businessName string, contactEmail string) error {
-	return e.sendSignupNotification(businessName, contactEmail)
+func SendSignupNotification(entityName string, contactEmail string) error {
+	return e.sendSignupNotification(entityName, contactEmail)
 }
-func (e *Email) sendSignupNotification(businessName string, contactEmail string) error {
-	body := "Business Name: " + businessName + ", Contact Email: " + contactEmail
+func (e *Email) sendSignupNotification(entityName string, contactEmail string) error {
+	body := "Entity Name: " + entityName + ", Contact Email: " + contactEmail
 	d := emailData{
 		receiver:      viper.GetString("email_from"),
 		receiverEmail: viper.GetString("sendgrid.sender_email"),
-		subject:       "A new business has been signed up!",
+		subject:       "A new entity has been signed up!",
 		text:          body,
 		html:          body,
 	}

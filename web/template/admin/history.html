@@ -1,7 +1,7 @@
 {{ define "content" }}
 <div>
     <h1 class="ui primary header">Transfer History</h1>
-    <form action="/admin/history/{{.BusinessID}}#results" method="get" class="ui form">
+    <form action="/admin/history/{{.EntityID}}#results" method="get" class="ui form">
         <input maxlength="255" name="page" value="1" hidden>
         <div class="fields">
             <div class="field">
@@ -58,9 +58,9 @@
                     <td>{{$t.Amount}}</td>
                     <td style="max-width: 225px;word-wrap: break-word;">{{$t.Description}}</td>
                     {{if lt $t.Amount 0.0}}
-                        <td>{{$t.ToEmail}} ({{$t.ToBusinessName}})</td>
+                        <td>{{$t.ToEmail}} ({{$t.ToEntityName}})</td>
                     {{else}}
-                        <td>{{$t.FromEmail}} ({{$t.FromBusinessName}})</td>
+                        <td>{{$t.FromEmail}} ({{$t.FromEntityName}})</td>
                     {{end}}
                     <td>{{FormatTime $t.CreatedAt}}</td>
                 </tr>
@@ -74,7 +74,7 @@
                             {{/* < */}}
                             {{if gt .FormData.Page 1}}
                             <a class="icon item left-chevron"
-                                href="/admin/history/{{.BusinessID}}?page={{Minus .FormData.Page 1}}&date-from={{.FormData.DateFrom}}&date-to={{.FormData.DateTo}}#results">
+                                href="/admin/history/{{.EntityID}}?page={{Minus .FormData.Page 1}}&date-from={{.FormData.DateFrom}}&date-to={{.FormData.DateTo}}#results">
                                 <i class="left chevron icon"></i>
                             </a>
                             {{else}}
@@ -85,7 +85,7 @@
 
                             {{/* FirstPage */}}
                             <a class="{{if eq .FormData.Page 1}}active{{end}} item"
-                                href="/admin/history/{{.BusinessID}}?page=1&date-from={{.FormData.DateFrom}}&date-to={{.FormData.DateTo}}#results">
+                                href="/admin/history/{{.EntityID}}?page=1&date-from={{.FormData.DateFrom}}&date-to={{.FormData.DateTo}}#results">
                                 1
                             </a>
 
@@ -102,7 +102,7 @@
                             {{if and (gt .TotalPages 1) (lt .TotalPages 10)}}
                             {{range $_, $v := N 2 .TotalPages}}
                             <a class="{{if eq $v $.FormData.Page}}active{{end}} item"
-                                href="/admin/history/{{$.BusinessID}}?page={{$v}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
+                                href="/admin/history/{{$.EntityID}}?page={{$v}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
                                 {{$v}}
                             </a>
                             {{end}}
@@ -114,14 +114,14 @@
                                     {{if ge .FormData.Page 4}}
                                         {{range $_, $v := N (Minus .FormData.Page 2) (Add .FormData.Page 2)}}
                                             <a class="{{if eq $v $.FormData.Page}}active{{end}} item"
-                                                href="/admin/history/{{$.BusinessID}}?page={{$v}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
+                                                href="/admin/history/{{$.EntityID}}?page={{$v}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
                                             {{$v}}
                                             </a>
                                         {{end}}
                                     {{else}}
                                         {{range $_, $v := N 2 5}}
                                             <a class="{{if eq $v $.FormData.Page}}active{{end}} item"
-                                                href="/admin/history/{{$.BusinessID}}?page={{$v}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
+                                                href="/admin/history/{{$.EntityID}}?page={{$v}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
                                             {{$v}}
                                             </a>
                                         {{end}}
@@ -130,14 +130,14 @@
                                     {{if le (Add .FormData.Page 3) .TotalPages}}
                                         {{range $_, $v := N (Minus .FormData.Page 2) (Add .FormData.Page 2)}}
                                             <a class="{{if eq $v $.FormData.Page}}active{{end}} item"
-                                                href="/admin/history/{{$.BusinessID}}?page={{$v}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
+                                                href="/admin/history/{{$.EntityID}}?page={{$v}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
                                                 {{$v}}
                                             </a>
                                         {{end}}
                                     {{else}}
                                         {{range $_, $v := N (Minus .TotalPages 4) (Minus .TotalPages 1)}}
                                             <a class="{{if eq $v $.FormData.Page}}active{{end}} item"
-                                                href="/admin/history/{{$.BusinessID}}?page={{$v}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
+                                                href="/admin/history/{{$.EntityID}}?page={{$v}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
                                                 {{$v}}
                                             </a>
                                         {{end}}
@@ -157,7 +157,7 @@
                             {{/* lastPage */}}
                             {{if gt .TotalPages 9}}
                             <a class="{{if eq .FormData.Page .TotalPages}}active{{end}} item"
-                                href="/admin/history/{{$.BusinessID}}?page={{.TotalPages}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
+                                href="/admin/history/{{$.EntityID}}?page={{.TotalPages}}&date-from={{$.FormData.DateFrom}}&date-to={{$.FormData.DateTo}}#results">
                                 {{.TotalPages}}
                             </a>
                             {{end}}
@@ -165,7 +165,7 @@
                             {{/* > */}}
                             {{if lt .FormData.Page .TotalPages}}
                             <a class="icon item right-chevron"
-                                href="/admin/history/{{.BusinessID}}?page={{Add .FormData.Page 1}}&date-from={{.FormData.DateFrom}}&date-to={{.FormData.DateTo}}#results">
+                                href="/admin/history/{{.EntityID}}?page={{Add .FormData.Page 1}}&date-from={{.FormData.DateFrom}}&date-to={{.FormData.DateTo}}#results">
                                 <i class="right chevron icon"></i>
                             </a>
                             {{else}}
@@ -275,7 +275,7 @@
 
   // ************  Get Pending Transactions ****************
     const getPendingTransactions = () => $.ajax({
-        url: "/admin/api/pendingTransactions?business_id={{.BusinessID}}",
+        url: "/admin/api/pendingTransactions?entity_id={{.EntityID}}",
         contentType: "application/json",
         dataType: "json",
         success: data => {
@@ -315,8 +315,8 @@
                     <td>${t.Description}</td>
                     <td>${
                         t.IsInitiator ?
-                            t.InitiatedBy === t.FromID ? `${t.ToEmail} (${t.ToBusinessName})` : `${t.FromEmail} (${t.FromBusinessName})` :
-                            t.InitiatedBy === t.FromID ? `${t.FromEmail} (${t.FromBusinessName})` : `${t.ToEmail} (${t.ToBusinessName})`
+                            t.InitiatedBy === t.FromID ? `${t.ToEmail} (${t.ToEntityName})` : `${t.FromEmail} (${t.FromEntityName})` :
+                            t.InitiatedBy === t.FromID ? `${t.FromEmail} (${t.FromEntityName})` : `${t.ToEmail} (${t.ToEntityName})`
                     }</td>
                     <td>${formatTime(t.CreatedAt)}</td>
                     <td style="text-align: center"><button onclick="cancelTransaction(${t.ID})" class='ui negative basic button '>Cancel</button></td>
