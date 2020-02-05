@@ -108,7 +108,7 @@ func Run() {
 		}
 
 		u := userData[i]
-		u.CompanyID = b.ID
+		u.Entities = append(u.Entities, b.ID)
 		hashedPassword, _ := bcrypt.Hash(u.Password)
 		u.Password = hashedPassword
 		res, err = mongo.DB().Collection("users").InsertOne(context.Background(), u)

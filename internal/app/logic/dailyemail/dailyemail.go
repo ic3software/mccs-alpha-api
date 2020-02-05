@@ -52,7 +52,7 @@ func createEmailWorker(u *types.User) func() {
 }
 
 func getMatchTags(user *types.User) (*types.MatchedTags, error) {
-	entity, err := logic.Entity.FindByID(user.CompanyID)
+	entity, err := logic.Entity.FindByID(user.Entities[0])
 	if err != nil {
 		return nil, e.Wrap(err, "getMatchTags failed")
 	}

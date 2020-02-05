@@ -21,12 +21,12 @@ type User struct {
 	UpdatedAt time.Time          `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
 	DeletedAt time.Time          `json:"deletedAt,omitempty" bson:"deletedAt,omitempty"`
 
-	FirstName string             `json:"firstName,omitempty" bson:"firstName,omitempty"`
-	LastName  string             `json:"lastName,omitempty" bson:"lastName,omitempty"`
-	Email     string             `json:"email,omitempty" bson:"email,omitempty"`
-	Password  string             `json:"password,omitempty" bson:"password,omitempty"`
-	Telephone string             `json:"telephone,omitempty" bson:"telephone,omitempty"`
-	CompanyID primitive.ObjectID `json:"companyID,omitempty" bson:"companyID,omitempty"`
+	FirstName string               `json:"firstName,omitempty" bson:"firstName,omitempty"`
+	LastName  string               `json:"lastName,omitempty" bson:"lastName,omitempty"`
+	Email     string               `json:"email,omitempty" bson:"email,omitempty"`
+	Password  string               `json:"password,omitempty" bson:"password,omitempty"`
+	Telephone string               `json:"telephone,omitempty" bson:"telephone,omitempty"`
+	Entities  []primitive.ObjectID `json:"entities,omitempty" bson:"entities,omitempty"`
 
 	CurrentLoginIP   string    `json:"currentLoginIP,omitempty" bson:"currentLoginIP,omitempty"`
 	CurrentLoginDate time.Time `json:"currentLoginDate,omitempty" bson:"currentLoginDate,omitempty"`

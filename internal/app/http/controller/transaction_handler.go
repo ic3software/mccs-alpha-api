@@ -212,7 +212,7 @@ func (tr *transactionHandler) proposeTransaction() func(http.ResponseWriter, *ht
 			return
 		}
 		// Decide the initiator and receiver.
-		initiatorEntity, err := logic.Entity.FindByID(initiator.CompanyID)
+		initiatorEntity, err := logic.Entity.FindByID(initiator.Entities[0])
 		if err != nil {
 			l.Logger.Info("Transfer failed", zap.Error(err))
 			t.Error(w, r, res, err)
@@ -246,7 +246,7 @@ func (tr *transactionHandler) proposeTransaction() func(http.ResponseWriter, *ht
 		}
 
 		transaction, err := logic.Transaction.Propose(
-			initiator.CompanyID.Hex(),
+			initiator.Entities[0].Hex(),
 			proposeInfo.FromID,
 			proposeInfo.FromEmail,
 			proposeInfo.FromEntityName,

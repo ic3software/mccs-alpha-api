@@ -89,7 +89,7 @@ func (h *historyHandler) searchHistory() func(http.ResponseWriter, *http.Request
 		}
 
 		// Get the account balance.
-		account, err := logic.Account.FindByEntityID(user.CompanyID.Hex())
+		account, err := logic.Account.FindByEntityID(user.Entities[0].Hex())
 		if err != nil {
 			l.Logger.Error("controller.History.HistoryPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)

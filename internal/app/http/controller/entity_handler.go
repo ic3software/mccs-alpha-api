@@ -69,7 +69,7 @@ func (b *entityHandler) FindByEmail(email string) (*types.Entity, error) {
 	if err != nil {
 		return nil, err
 	}
-	bs, err := logic.Entity.FindByID(user.CompanyID)
+	bs, err := logic.Entity.FindByID(user.Entities[0])
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (b *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	if err != nil {
 		return nil, err
 	}
-	bs, err := logic.Entity.FindByID(user.CompanyID)
+	bs, err := logic.Entity.FindByID(user.Entities[0])
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +343,7 @@ func (b *entityHandler) getEntityName() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		entity, err := logic.Entity.FindByID(user.CompanyID)
+		entity, err := logic.Entity.FindByID(user.Entities[0])
 		if err != nil {
 			l.Logger.Error("EntityHandler.getEntityName failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)

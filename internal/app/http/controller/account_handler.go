@@ -215,7 +215,7 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 
 		// Find the entity and account balance.
 		for _, user := range findUserResult.Users {
-			entity, err := logic.Entity.FindByID(user.CompanyID)
+			entity, err := logic.Entity.FindByID(user.Entities[0])
 			if err != nil {
 				l.Logger.Error("SearchAccount failed", zap.Error(err))
 				t.Error(w, r, res, err)
@@ -252,7 +252,7 @@ func (a *accountHandler) accountPage() func(http.ResponseWriter, *http.Request) 
 			t.Error(w, r, nil, err)
 			return
 		}
-		entity, err := logic.Entity.FindByID(user.CompanyID)
+		entity, err := logic.Entity.FindByID(user.Entities[0])
 		if err != nil {
 			l.Logger.Error("AccountPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -275,7 +275,7 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 			t.Error(w, r, formData, err)
 			return
 		}
-		oldEntity, err := logic.Entity.FindByID(user.CompanyID)
+		oldEntity, err := logic.Entity.FindByID(user.Entities[0])
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 			return
@@ -318,7 +318,7 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		formData.Entity.WantsAdded = wantsAdded
 		formData.Entity.WantsRemoved = wantsRemoved
 
-		err = logic.Entity.UpdateEntity(user.CompanyID, formData.Entity, false)
+		err = logic.Entity.UpdateEntity(user.Entities[0], formData.Entity, false)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
 			t.Error(w, r, formData, err)

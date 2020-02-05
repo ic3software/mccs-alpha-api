@@ -13,6 +13,8 @@ type Entity struct {
 	UpdatedAt time.Time          `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
 	DeletedAt time.Time          `json:"deletedAt,omitempty" bson:"deletedAt,omitempty"`
 
+	Users []primitive.ObjectID `json:"users,omitempty" bson:"users,omitempty"`
+
 	EntityName         string      `json:"entityName,omitempty" bson:"entityName,omitempty"`
 	EntityPhone        string      `json:"entityPhone,omitempty" bson:"entityPhone,omitempty"`
 	IncType            string      `json:"incType,omitempty" bson:"incType,omitempty"`
