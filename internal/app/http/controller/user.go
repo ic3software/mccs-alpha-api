@@ -148,21 +148,39 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
+		entityID, err := logic.Entity.New()
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
 		userID, err := logic.User.Create(req.Email, req.Password)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-
-		token, err := jwt.GenerateToken(userID, false)
+		err = logic.Entity.AssociateUser(entityID, userID)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		err = logic.User.AssociateEntity(userID, entityID)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		w.Header().Set("Location", viper.GetString("url")+"/api/v1/users/"+userID)
+		token, err := jwt.GenerateToken(userID.Hex(), false)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.Header().Set("Location", viper.GetString("url")+"/api/v1/users/"+userID.Hex())
 		api.Respond(w, r, http.StatusCreated, respond{Data: data{Token: token}})
 	}
 }

@@ -17,6 +17,40 @@ type user struct{}
 
 var User = &user{}
 
+func (u *user) Create(email, password string) (primitive.ObjectID, error) {
+	_, err := mongo.User.FindByEmail(email)
+	if err == nil {
+		return primitive.ObjectID{}, e.New(e.EmailExisted, "email existed")
+	}
+
+	hashedPassword, err := bcrypt.Hash(password)
+	if err != nil {
+		return primitive.ObjectID{}, e.Wrap(err, "create user failed")
+	}
+
+	userID, err := mongo.User.Create(email, hashedPassword)
+	if err != nil {
+		return primitive.ObjectID{}, e.Wrap(err, "create user failed")
+	}
+
+	err = es.User.Create(userID, email)
+	if err != nil {
+		return primitive.ObjectID{}, e.Wrap(err, "create user failed")
+	}
+
+	return userID, nil
+}
+
+func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
+	err := mongo.User.AssociateEntity(userID, entityID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// OLD CODE
+
 func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 	user, err := mongo.User.FindByID(id)
 	if err != nil {
@@ -39,30 +73,6 @@ func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
 		return nil, err
 	}
 	return user, nil
-}
-
-func (u *user) Create(email, password string) (string, error) {
-	_, err := mongo.User.FindByEmail(email)
-	if err == nil {
-		return "", e.New(e.EmailExisted, "email existed")
-	}
-
-	hashedPassword, err := bcrypt.Hash(password)
-	if err != nil {
-		return "", e.Wrap(err, "create user failed")
-	}
-
-	userID, err := mongo.User.Create(email, hashedPassword)
-	if err != nil {
-		return "", e.Wrap(err, "create user failed")
-	}
-
-	err = es.User.Create(userID, email)
-	if err != nil {
-		return "", e.Wrap(err, "create user failed")
-	}
-
-	return userID, nil
 }
 
 func (u *user) Login(email string, password string) (*types.User, error) {

@@ -19,9 +19,40 @@ type entity struct {
 
 var Entity = &entity{}
 
-func (b *entity) Register(db *mongo.Database) {
-	b.c = db.Collection("entities")
+func (en *entity) Register(db *mongo.Database) {
+	en.c = db.Collection("entities")
 }
+
+func (en *entity) New() (primitive.ObjectID, error) {
+	doc := bson.M{
+		"status":    constant.Entity.Pending,
+		"createdAt": time.Now(),
+	}
+	res, err := en.c.InsertOne(context.Background(), doc)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	return res.InsertedID.(primitive.ObjectID), nil
+}
+
+func (en *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
+	filter := bson.M{"_id": entityID}
+	update := bson.M{
+		"$addToSet": bson.M{"users": userID},
+		"$set":      bson.M{"updatedAt": time.Now()},
+	}
+	_, err := en.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// OLD CODE
 
 func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
 	ctx := context.Background()

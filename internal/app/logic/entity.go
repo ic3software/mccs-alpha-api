@@ -14,6 +14,28 @@ type entity struct{}
 
 var Entity = &entity{}
 
+func (_ *entity) New() (primitive.ObjectID, error) {
+	id, err := mongo.Entity.New()
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	err = es.Entity.New(id)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	return id, nil
+}
+
+func (_ *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
+	err := mongo.Entity.AssociateUser(entityID, userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// OLD CODE
+
 func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
 	bs, err := mongo.Entity.FindByID(id)
 	if err != nil {
