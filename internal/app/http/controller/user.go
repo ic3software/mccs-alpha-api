@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
@@ -47,6 +48,7 @@ func (u *userHandler) RegisterRoutes(
 		public.Path("/api/v1/password-reset").HandlerFunc(u.requestPasswordReset()).Methods("POST")
 		public.Path("/api/v1/password-reset/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
 		private.Path("/api/v1/password-change").HandlerFunc(u.passwordChange()).Methods("POST")
+		private.Path("/api/v1/user").HandlerFunc(u.userProfile()).Methods("GET")
 
 		private.Path("/api/v1/users/removeFromFavoriteEntities").HandlerFunc(u.removeFromFavoriteEntities()).Methods("POST")
 		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
@@ -55,13 +57,10 @@ func (u *userHandler) RegisterRoutes(
 }
 
 func (u *userHandler) FindByID(id string) (*types.User, error) {
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, e.Wrap(err, "controller.User.FindByID failed")
-	}
+	objID, _ := primitive.ObjectIDFromHex(id)
 	user, err := logic.User.FindByID(objID)
 	if err != nil {
-		return nil, e.Wrap(err, "controller.User.FindByID failed")
+		return nil, err
 	}
 	return user, nil
 }
@@ -360,6 +359,42 @@ func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) 
 		}
 
 		api.Respond(w, r, http.StatusOK)
+	}
+}
+
+func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
+	type data struct {
+		ID                            string    `json:"id"`
+		Email                         string    `json:"email"`
+		UserPhone                     string    `json:"userPhone"`
+		FirstName                     string    `json:"firstName"`
+		LastName                      string    `json:"lastName"`
+		LastLoginIP                   string    `json:"lastLoginIP"`
+		LastLoginDate                 time.Time `json:"lastLoginDate"`
+		DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
+		ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
+	}
+	type respond struct {
+		Data data `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, err := u.FindByID(r.Header.Get("userID"))
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.userProfile failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		api.Respond(w, r, http.StatusOK, respond{Data: data{
+			ID:                            user.ID.Hex(),
+			Email:                         user.Email,
+			UserPhone:                     user.Telephone,
+			FirstName:                     user.FirstName,
+			LastName:                      user.LastName,
+			LastLoginIP:                   user.LastLoginIP,
+			LastLoginDate:                 user.LastLoginDate,
+			DailyEmailMatchNotification:   user.DailyNotification,
+			ShowTagsMatchedSinceLastLogin: user.ShowRecentMatchedTags,
+		}})
 	}
 }
 
