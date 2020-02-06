@@ -166,8 +166,13 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 		userID, err := logic.User.Create(&types.User{
-			Email:    req.Email,
-			Password: req.Password,
+			Email:                 req.Email,
+			Password:              req.Password,
+			FirstName:             req.FirstName,
+			LastName:              req.LastName,
+			Telephone:             req.UserPhone,
+			ShowRecentMatchedTags: req.ShowRecentMatchedTags,
+			DailyNotification:     req.DailyNotification,
 		})
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
