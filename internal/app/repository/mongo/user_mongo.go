@@ -108,18 +108,12 @@ func (u *user) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegis
 }
 
 // Create creates a user record in the table
-func (u *user) Create(email, password string) (primitive.ObjectID, error) {
-	doc := bson.M{
-		"email":     strings.ToLower(email),
-		"password":  password,
-		"createdAt": time.Now(),
-	}
-
-	res, err := u.c.InsertOne(context.Background(), doc)
+func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
+	user.CreatedAt = time.Now()
+	res, err := u.c.InsertOne(context.Background(), user)
 	if err != nil {
 		return primitive.ObjectID{}, err
 	}
-
 	return res.InsertedID.(primitive.ObjectID), nil
 }
 

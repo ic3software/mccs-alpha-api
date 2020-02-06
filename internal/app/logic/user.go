@@ -17,23 +17,24 @@ type user struct{}
 
 var User = &user{}
 
-func (u *user) Create(email, password string) (primitive.ObjectID, error) {
-	_, err := mongo.User.FindByEmail(email)
+func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
+	_, err := mongo.User.FindByEmail(user.Email)
 	if err == nil {
 		return primitive.ObjectID{}, e.New(e.EmailExisted, "email existed")
 	}
 
-	hashedPassword, err := bcrypt.Hash(password)
+	hashedPassword, err := bcrypt.Hash(user.Password)
+	if err != nil {
+		return primitive.ObjectID{}, e.Wrap(err, "create user failed")
+	}
+	user.Password = hashedPassword
+
+	userID, err := mongo.User.Create(user)
 	if err != nil {
 		return primitive.ObjectID{}, e.Wrap(err, "create user failed")
 	}
 
-	userID, err := mongo.User.Create(email, hashedPassword)
-	if err != nil {
-		return primitive.ObjectID{}, e.Wrap(err, "create user failed")
-	}
-
-	err = es.User.Create(userID, email)
+	err = es.User.Create(user.ID, user)
 	if err != nil {
 		return primitive.ObjectID{}, e.Wrap(err, "create user failed")
 	}

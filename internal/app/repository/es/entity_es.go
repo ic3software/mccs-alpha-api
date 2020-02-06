@@ -46,7 +46,7 @@ func (es *entity) New(id primitive.ObjectID) error {
 
 // OLD CODE
 
-func (es *entity) Create(id primitive.ObjectID, data *types.EntityData) error {
+func (es *entity) Create(id primitive.ObjectID, data *types.Entity) error {
 	body := types.EntityESRecord{
 		EntityID:        id.Hex(),
 		EntityName:      data.EntityName,

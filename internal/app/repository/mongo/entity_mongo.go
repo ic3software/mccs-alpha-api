@@ -23,12 +23,10 @@ func (en *entity) Register(db *mongo.Database) {
 	en.c = db.Collection("entities")
 }
 
-func (en *entity) New() (primitive.ObjectID, error) {
-	doc := bson.M{
-		"status":    constant.Entity.Pending,
-		"createdAt": time.Now(),
-	}
-	res, err := en.c.InsertOne(context.Background(), doc)
+func (b *entity) Create(data *types.Entity) (primitive.ObjectID, error) {
+	data.Status = constant.Entity.Pending
+	data.CreatedAt = time.Now()
+	res, err := b.c.InsertOne(context.Background(), data)
 	if err != nil {
 		return primitive.ObjectID{}, err
 	}
@@ -176,33 +174,6 @@ func (b *entity) SetMemberStartedAt(id primitive.ObjectID) error {
 		return e.Wrap(err, "EntityMongo SetMemberStartedAt failed")
 	}
 	return nil
-}
-
-// Create creates a entity record in the table.
-func (b *entity) Create(data *types.EntityData) (primitive.ObjectID, error) {
-	doc := bson.M{
-		"entityName":         data.EntityName,
-		"entityPhone":        data.EntityPhone,
-		"incType":            data.IncType,
-		"companyNumber":      data.CompanyNumber,
-		"website":            data.Website,
-		"turnover":           data.Turnover,
-		"offers":             data.Offers,
-		"wants":              data.Wants,
-		"description":        data.Description,
-		"locationAddress":    data.LocationAddress,
-		"locationCity":       data.LocationCity,
-		"locationRegion":     data.LocationRegion,
-		"locationPostalCode": data.LocationPostalCode,
-		"locationCountry":    data.LocationCountry,
-		"status":             constant.Entity.Pending,
-		"createdAt":          time.Now(),
-	}
-	res, err := b.c.InsertOne(context.Background(), doc)
-	if err != nil {
-		return primitive.ObjectID{}, err
-	}
-	return res.InsertedID.(primitive.ObjectID), nil
 }
 
 func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {

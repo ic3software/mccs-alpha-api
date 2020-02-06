@@ -119,18 +119,16 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 }
 
 func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
 	type data struct {
-		Token string `json:"token"`
+		UserID   string `json:"userID"`
+		EntityID string `json:"entityID"`
+		Token    string `json:"token"`
 	}
 	type respond struct {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
+		var req types.SignupRequest
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -139,7 +137,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.SignUp(req.Email, req.Password)
+		errs := validate.SignUp(req)
 		if logic.User.UserEmailExists(req.Email) {
 			errs = append(errs, errors.New("Email address is already registered."))
 		}
@@ -148,13 +146,29 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		entityID, err := logic.Entity.New()
+		entityID, err := logic.Entity.Create(&types.Entity{
+			EntityName:         req.EntityName,
+			IncType:            req.IncType,
+			CompanyNumber:      req.CompanyNumber,
+			EntityPhone:        req.EntityPhone,
+			Website:            req.Website,
+			Turnover:           req.Turnover,
+			Description:        req.Description,
+			LocationAddress:    req.LocationAddress,
+			LocationCity:       req.LocationCity,
+			LocationRegion:     req.LocationRegion,
+			LocationPostalCode: req.LocationPostalCode,
+			LocationCountry:    req.LocationCountry,
+		})
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		userID, err := logic.User.Create(req.Email, req.Password)
+		userID, err := logic.User.Create(&types.User{
+			Email:    req.Email,
+			Password: req.Password,
+		})
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
@@ -180,8 +194,11 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		w.Header().Set("Location", viper.GetString("url")+"/api/v1/users/"+userID.Hex())
-		api.Respond(w, r, http.StatusCreated, respond{Data: data{Token: token}})
+		api.Respond(w, r, http.StatusOK, respond{Data: data{
+			UserID:   userID.Hex(),
+			EntityID: entityID.Hex(),
+			Token:    token,
+		}})
 	}
 }
 
