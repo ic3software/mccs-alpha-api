@@ -23,6 +23,25 @@ func (u *user) Register(db *mongo.Database) {
 	u.c = db.Collection("users")
 }
 
+func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
+	filter := bson.M{"_id": userID}
+	update := bson.M{
+		"$addToSet": bson.M{"entities": entityID},
+		"$set":      bson.M{"updatedAt": time.Now()},
+	}
+	_, err := u.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// OLD CODe
+
 func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 	ctx := context.Background()
 	user := types.User{}
@@ -89,19 +108,13 @@ func (u *user) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegis
 }
 
 // Create creates a user record in the table
-func (u *user) Create(email, password string) (string, error) {
-	doc := bson.M{
-		"email":     strings.ToLower(email),
-		"password":  password,
-		"createdAt": time.Now(),
-	}
-
-	res, err := u.c.InsertOne(context.Background(), doc)
+func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
+	user.CreatedAt = time.Now()
+	res, err := u.c.InsertOne(context.Background(), user)
 	if err != nil {
-		return "", err
+		return primitive.ObjectID{}, err
 	}
-
-	return res.InsertedID.(primitive.ObjectID).Hex(), nil
+	return res.InsertedID.(primitive.ObjectID), nil
 }
 
 func (u *user) FindByDailyNotification() ([]*types.User, error) {

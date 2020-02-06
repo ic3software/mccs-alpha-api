@@ -8,13 +8,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
-	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/recaptcha"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -37,47 +34,10 @@ func (th *tradingHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	th.once.Do(func() {
-		private.Path("/member-signup").HandlerFunc(th.signupPage()).Methods("GET")
 		private.Path("/member-signup").HandlerFunc(th.signup()).Methods("POST")
 
 		private.Path("/api/is-trading-member").HandlerFunc(th.isMember()).Methods("GET")
 	})
-}
-
-func (th *tradingHandler) signupPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("member-signup")
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Check if the entity has the status of "accepted".
-		entity, err := EntityHandler.FindByUserID(r.Header.Get("userID"))
-		if err != nil || entity.Status != constant.Entity.Accepted {
-			http.Redirect(w, r, "/", http.StatusFound)
-			return
-		}
-		user, err := UserHandler.FindByID(r.Header.Get("userID"))
-		if err != nil {
-			http.Redirect(w, r, "/", http.StatusFound)
-			return
-		}
-		data := &types.TradingRegisterData{
-			EntityName:         entity.EntityName,
-			IncType:            entity.IncType,
-			CompanyNumber:      entity.CompanyNumber,
-			EntityPhone:        entity.EntityPhone,
-			Website:            entity.Website,
-			Turnover:           entity.Turnover,
-			Description:        entity.Description,
-			LocationAddress:    entity.LocationAddress,
-			LocationCity:       entity.LocationCity,
-			LocationRegion:     entity.LocationRegion,
-			LocationPostalCode: entity.LocationPostalCode,
-			LocationCountry:    entity.LocationCountry,
-			FirstName:          user.FirstName,
-			LastName:           user.LastName,
-			Telephone:          user.Telephone,
-		}
-		data.RecaptchaSitekey = viper.GetString("recaptcha.site_key")
-		t.Render(w, r, data, nil)
-	}
 }
 
 func (th *tradingHandler) signup() func(http.ResponseWriter, *http.Request) {
@@ -87,14 +47,7 @@ func (th *tradingHandler) signup() func(http.ResponseWriter, *http.Request) {
 
 		// Validate user inputs.
 		data := helper.Trading.GetRegisterData(r)
-		data.RecaptchaSitekey = viper.GetString("recaptcha.site_key")
 		errorMessages := data.Validate()
-		if viper.GetString("env") == "production" {
-			isValid := recaptcha.Verify(*r)
-			if !isValid {
-				errorMessages = append(errorMessages, recaptcha.Error()...)
-			}
-		}
 		if len(errorMessages) > 0 {
 			l.Logger.Info("TradingHandler.Signup failed", zap.Strings("input invalid", errorMessages))
 			t.Render(w, r, data, errorMessages)

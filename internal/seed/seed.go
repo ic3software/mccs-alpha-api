@@ -12,6 +12,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -108,7 +109,7 @@ func Run() {
 		}
 
 		u := userData[i]
-		u.CompanyID = b.ID
+		u.Entities = append(u.Entities, b.ID)
 		hashedPassword, _ := bcrypt.Hash(u.Password)
 		u.Password = hashedPassword
 		res, err = mongo.DB().Collection("users").InsertOne(context.Background(), u)
@@ -116,6 +117,16 @@ func Run() {
 			log.Fatal(err)
 		}
 		u.ID = res.InsertedID.(primitive.ObjectID)
+
+		// Associate User with Entity
+		{
+			_, err := mongo.DB().Collection("entities").UpdateOne(context.Background(), bson.M{"_id": b.ID}, bson.M{
+				"$addToSet": bson.M{"users": u.ID},
+			})
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 
 		{
 			userID := u.ID.Hex()

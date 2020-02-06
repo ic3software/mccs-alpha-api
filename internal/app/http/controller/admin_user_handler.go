@@ -13,7 +13,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/recaptcha"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -40,7 +39,6 @@ func (a *adminUserHandler) RegisterRoutes(
 ) {
 	a.once.Do(func() {
 		adminPrivate.Path("").HandlerFunc(a.dashboardPage()).Methods("GET")
-		adminPublic.Path("/login").HandlerFunc(a.loginPage()).Methods("GET")
 		adminPublic.Path("/login").HandlerFunc(a.loginHandler()).Methods("POST")
 		adminPrivate.Path("/logout").HandlerFunc(a.logoutHandler()).Methods("GET")
 		adminPrivate.Path("/users/{id}").HandlerFunc(a.userPage()).Methods("GET")
@@ -66,18 +64,6 @@ func (a *adminUserHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 	}
 }
 
-func (a *adminUserHandler) loginPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("/admin/login")
-	type formData struct {
-		Email            string
-		Password         string
-		RecaptchaSitekey string
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		t.Render(w, r, formData{RecaptchaSitekey: viper.GetString("recaptcha.site_key")}, nil)
-	}
-}
-
 func (a *adminUserHandler) loginHandler() func(http.ResponseWriter, *http.Request) {
 	t := template.NewView("/admin/login")
 	type formData struct {
@@ -92,15 +78,6 @@ func (a *adminUserHandler) loginHandler() func(http.ResponseWriter, *http.Reques
 			Email:            r.FormValue("email"),
 			Password:         r.FormValue("password"),
 			RecaptchaSitekey: viper.GetString("recaptcha.site_key"),
-		}
-
-		if viper.GetString("env") == "production" {
-			isValid := recaptcha.Verify(*r)
-			if !isValid {
-				l.Logger.Error("AdminLoginHandler failed", zap.Strings("errs", recaptcha.Error()))
-				t.Render(w, r, f, recaptcha.Error())
-				return
-			}
 		}
 
 		user, err := logic.AdminUser.Login(f.Email, f.Password)

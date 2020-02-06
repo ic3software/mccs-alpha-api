@@ -28,7 +28,25 @@ func (es *entity) Register(client *elastic.Client) {
 	es.index = "entities"
 }
 
-func (es *entity) Create(id primitive.ObjectID, data *types.EntityData) error {
+func (es *entity) New(id primitive.ObjectID) error {
+	body := types.EntityESRecord{
+		EntityID: id.Hex(),
+		Status:   constant.Entity.Pending,
+	}
+	_, err := es.c.Index().
+		Index(es.index).
+		Id(id.Hex()).
+		BodyJson(body).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// OLD CODE
+
+func (es *entity) Create(id primitive.ObjectID, data *types.Entity) error {
 	body := types.EntityESRecord{
 		EntityID:        id.Hex(),
 		EntityName:      data.EntityName,

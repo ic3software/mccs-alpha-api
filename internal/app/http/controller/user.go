@@ -119,18 +119,16 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 }
 
 func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
 	type data struct {
-		Token string `json:"token"`
+		UserID   string `json:"userID"`
+		EntityID string `json:"entityID"`
+		Token    string `json:"token"`
 	}
 	type respond struct {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
+		var req types.SignupRequest
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -139,7 +137,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.SignUp(req.Email, req.Password)
+		errs := validate.SignUp(req)
 		if logic.User.UserEmailExists(req.Email) {
 			errs = append(errs, errors.New("Email address is already registered."))
 		}
@@ -148,22 +146,64 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		userID, err := logic.User.Create(req.Email, req.Password)
+		entityID, err := logic.Entity.Create(&types.Entity{
+			EntityName:         req.EntityName,
+			IncType:            req.IncType,
+			CompanyNumber:      req.CompanyNumber,
+			EntityPhone:        req.EntityPhone,
+			Website:            req.Website,
+			Turnover:           req.Turnover,
+			Description:        req.Description,
+			LocationAddress:    req.LocationAddress,
+			LocationCity:       req.LocationCity,
+			LocationRegion:     req.LocationRegion,
+			LocationPostalCode: req.LocationPostalCode,
+			LocationCountry:    req.LocationCountry,
+		})
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		userID, err := logic.User.Create(&types.User{
+			Email:                 req.Email,
+			Password:              req.Password,
+			FirstName:             req.FirstName,
+			LastName:              req.LastName,
+			Telephone:             req.UserPhone,
+			ShowRecentMatchedTags: req.ShowRecentMatchedTags,
+			DailyNotification:     req.DailyNotification,
+		})
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		err = logic.Entity.AssociateUser(entityID, userID)
+		if err != nil {
+			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		err = logic.User.AssociateEntity(userID, entityID)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		token, err := jwt.GenerateToken(userID, false)
+		token, err := jwt.GenerateToken(userID.Hex(), false)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		w.Header().Set("Location", viper.GetString("url")+"/api/v1/users/"+userID)
-		api.Respond(w, r, http.StatusCreated, respond{Data: data{Token: token}})
+		api.Respond(w, r, http.StatusOK, respond{Data: data{
+			UserID:   userID.Hex(),
+			EntityID: entityID.Hex(),
+			Token:    token,
+		}})
 	}
 }
 

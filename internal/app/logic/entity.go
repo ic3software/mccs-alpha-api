@@ -14,24 +14,34 @@ type entity struct{}
 
 var Entity = &entity{}
 
+func (_ *entity) Create(entity *types.Entity) (primitive.ObjectID, error) {
+	id, err := mongo.Entity.Create(entity)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	err = es.Entity.Create(id, entity)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	return id, nil
+}
+
+func (_ *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
+	err := mongo.Entity.AssociateUser(entityID, userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// OLD CODE
+
 func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
 	bs, err := mongo.Entity.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
 	return bs, nil
-}
-
-func (b *entity) Create(entity *types.EntityData) (primitive.ObjectID, error) {
-	id, err := mongo.Entity.Create(entity)
-	if err != nil {
-		return primitive.ObjectID{}, e.Wrap(err, "create entity failed")
-	}
-	err = es.Entity.Create(id, entity)
-	if err != nil {
-		return primitive.ObjectID{}, e.Wrap(err, "create entity failed")
-	}
-	return id, nil
 }
 
 func (b *entity) UpdateEntity(

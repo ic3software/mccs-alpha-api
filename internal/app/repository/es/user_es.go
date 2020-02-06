@@ -24,16 +24,16 @@ func (es *user) Register(client *elastic.Client) {
 	es.index = "users"
 }
 
-// Create creates an UserESRecord in Elasticsearch.
-func (es *user) Create(userID, email string) error {
+func (es *user) Create(userID primitive.ObjectID, user *types.User) error {
 	body := types.UserESRecord{
-		UserID: userID,
-		Email:  email,
+		UserID:    userID.Hex(),
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
 	}
-
 	_, err := es.c.Index().
 		Index(es.index).
-		Id(userID).
+		Id(userID.Hex()).
 		BodyJson(body).
 		Do(context.Background())
 	if err != nil {

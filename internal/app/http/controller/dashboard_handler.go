@@ -55,7 +55,7 @@ func (d *dashBoardHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 			return
 		}
 
-		entity, err := logic.Entity.FindByID(user.CompanyID)
+		entity, err := logic.Entity.FindByID(user.Entities[0])
 		if err != nil {
 			l.Logger.Error("DashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
@@ -88,7 +88,7 @@ func (d *dashBoardHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 		}
 
 		// Get the account balance.
-		account, err := logic.Account.FindByEntityID(user.CompanyID.Hex())
+		account, err := logic.Account.FindByEntityID(user.Entities[0].Hex())
 		if err != nil {
 			l.Logger.Error("DashboardPage failed", zap.Error(err))
 			t.Error(w, r, nil, err)
