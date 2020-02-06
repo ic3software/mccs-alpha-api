@@ -19,6 +19,19 @@ type user struct {
 
 var User = &user{}
 
+func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
+	user := types.User{}
+	filter := bson.M{
+		"_id":       id,
+		"deletedAt": bson.M{"$exists": false},
+	}
+	err := u.c.FindOne(context.Background(), filter).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (u *user) Register(db *mongo.Database) {
 	u.c = db.Collection("users")
 }
@@ -41,20 +54,6 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 }
 
 // OLD CODe
-
-func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
-	ctx := context.Background()
-	user := types.User{}
-	filter := bson.M{
-		"_id":       id,
-		"deletedAt": bson.M{"$exists": false},
-	}
-	err := u.c.FindOne(ctx, filter).Decode(&user)
-	if err != nil {
-		return nil, e.New(e.UserNotFound, "user not found")
-	}
-	return &user, nil
-}
 
 func (u *user) FindByEmail(email string) (*types.User, error) {
 	email = strings.ToLower(email)

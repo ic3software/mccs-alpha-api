@@ -17,6 +17,14 @@ type user struct{}
 
 var User = &user{}
 
+func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
+	user, err := mongo.User.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
 	_, err := mongo.User.FindByEmail(user.Email)
 	if err == nil {
@@ -51,14 +59,6 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 }
 
 // OLD CODE
-
-func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
-	user, err := mongo.User.FindByID(id)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
 
 func (u *user) FindByEmail(email string) (*types.User, error) {
 	user, err := mongo.User.FindByEmail(email)
