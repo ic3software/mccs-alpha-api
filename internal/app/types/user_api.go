@@ -21,3 +21,11 @@ type SignupRequest struct {
 	LocationPostalCode    string `json:"locationPostalCode"`
 	LocationCountry       string `json:"locationCountry"`
 }
+
+type UpdateUser struct {
+	FirstName                     string `json:"firstName"`
+	LastName                      string `json:"lastName"`
+	UserPhone                     string `json:"userPhone"`
+	DailyEmailMatchNotification   *bool  `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin *bool  `json:"showTagsMatchedSinceLastLogin"`
+}

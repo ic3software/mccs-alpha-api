@@ -400,13 +400,6 @@ func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 }
 
 func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		FirstName                     string `json:"firstName"`
-		LastName                      string `json:"lastName"`
-		UserPhone                     string `json:"userPhone"`
-		DailyEmailMatchNotification   *bool  `json:"dailyEmailMatchNotification"`
-		ShowTagsMatchedSinceLastLogin *bool  `json:"showTagsMatchedSinceLastLogin"`
-	}
 	type data struct {
 		ID                            string    `json:"id"`
 		Email                         string    `json:"email"`
@@ -422,12 +415,18 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
+		var req types.UpdateUser
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.updateUser failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		errs := validate.UpdateUser(req)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 

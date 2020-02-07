@@ -26,32 +26,36 @@ func SignUp(req types.SignupRequest) []error {
 		errs = append(errs, errors.New("Email is invalid."))
 	}
 
-	if req.Password == "" {
-		errs = append(errs, errors.New("Password is missing."))
-	} else {
-		errs = append(errs, validatePassword(req.Password)...)
-	}
+	errs = append(errs, validatePassword(req.Password)...)
 
 	return errs
 }
 
 func Login(password string) []error {
 	errs := []error{}
-
 	if password == "" {
 		errs = append(errs, errors.New("Password is missing."))
 	}
-
 	return errs
 }
 
 func ResetPassword(password string) []error {
 	errs := []error{}
+	errs = append(errs, validatePassword(password)...)
+	return errs
+}
 
-	if password == "" {
-		errs = append(errs, errors.New("Password is missing."))
-	} else {
-		errs = append(errs, validatePassword(password)...)
+func UpdateUser(update types.UpdateUser) []error {
+	errs := []error{}
+
+	if len(update.FirstName) > 100 {
+		errs = append(errs, errors.New("FirstName length cannot exceed 100 characters."))
+	}
+	if len(update.LastName) > 100 {
+		errs = append(errs, errors.New("LastName length cannot exceed 100 characters."))
+	}
+	if len(update.UserPhone) > 100 {
+		errs = append(errs, errors.New("UserPhone length cannot exceed 100 characters."))
 	}
 
 	return errs
