@@ -49,13 +49,13 @@ func UpdateUser(update types.UpdateUser) []error {
 	errs := []error{}
 
 	if len(update.FirstName) > 100 {
-		errs = append(errs, errors.New("FirstName length cannot exceed 100 characters."))
+		errs = append(errs, errors.New("First name length cannot exceed 100 characters."))
 	}
 	if len(update.LastName) > 100 {
-		errs = append(errs, errors.New("LastName length cannot exceed 100 characters."))
+		errs = append(errs, errors.New("Last name length cannot exceed 100 characters."))
 	}
-	if len(update.UserPhone) > 100 {
-		errs = append(errs, errors.New("UserPhone length cannot exceed 100 characters."))
+	if len(update.UserPhone) > 25 {
+		errs = append(errs, errors.New("Telephone length cannot exceed 25 characters."))
 	}
 
 	return errs
