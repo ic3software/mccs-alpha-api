@@ -51,12 +51,13 @@ func GetEntity(r *http.Request) *types.EntityData {
 }
 
 func GetUser(r *http.Request) *types.User {
+	dailyNotification := r.FormValue("daily_notification") == "true"
 	return &types.User{
 		FirstName:         r.FormValue("first_name"),   // 100 chars
 		LastName:          r.FormValue("last_name"),    // 100 chars
 		Email:             r.FormValue("email"),        // 100 chars
 		Telephone:         r.FormValue("telephone"),    // 25 chars
 		Password:          r.FormValue("new_password"), // 100 chars
-		DailyNotification: r.FormValue("daily_notification") == "true",
+		DailyNotification: &dailyNotification,
 	}
 }

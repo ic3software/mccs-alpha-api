@@ -6,8 +6,8 @@ type SignupRequest struct {
 	FirstName             string `json:"firstName"`
 	LastName              string `json:"lastName"`
 	UserPhone             string `json:"userPhone"`
-	ShowRecentMatchedTags bool   `json:"showRecentMatchedTags"`
-	DailyNotification     bool   `json:"DailyNotification"`
+	ShowRecentMatchedTags *bool  `json:"showRecentMatchedTags"`
+	DailyNotification     *bool  `json:"DailyNotification"`
 	EntityName            string `json:"entityName"`
 	IncType               string `json:"incType"`
 	CompanyNumber         string `json:"companyNumber"`

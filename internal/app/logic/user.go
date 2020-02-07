@@ -28,23 +28,23 @@ func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
 	_, err := mongo.User.FindByEmail(user.Email)
 	if err == nil {
-		return primitive.ObjectID{}, e.New(e.EmailExisted, "email existed")
+		return primitive.ObjectID{}, err
 	}
 
 	hashedPassword, err := bcrypt.Hash(user.Password)
 	if err != nil {
-		return primitive.ObjectID{}, e.Wrap(err, "create user failed")
+		return primitive.ObjectID{}, err
 	}
 	user.Password = hashedPassword
 
 	userID, err := mongo.User.Create(user)
 	if err != nil {
-		return primitive.ObjectID{}, e.Wrap(err, "create user failed")
+		return primitive.ObjectID{}, err
 	}
 
-	err = es.User.Create(user.ID, user)
+	err = es.User.Create(userID, user)
 	if err != nil {
-		return primitive.ObjectID{}, e.Wrap(err, "create user failed")
+		return primitive.ObjectID{}, err
 	}
 
 	return userID, nil
@@ -56,6 +56,18 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 		return err
 	}
 	return nil
+}
+
+func (u *user) FindOneAndUpdate(user *types.User) (*types.User, error) {
+	err := es.User.Update(user)
+	if err != nil {
+		return nil, err
+	}
+	user, err = mongo.User.FindOneAndUpdate(user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 // OLD CODE

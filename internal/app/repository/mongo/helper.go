@@ -5,6 +5,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// A helper function which converts a struct value to a bson.Document.
+func toDoc(v interface{}) (doc interface{}, err error) {
+	data, err := bson.Marshal(v)
+	if err != nil {
+		return
+	}
+	err = bson.Unmarshal(data, &doc)
+	return
+}
+
 func toObjectIDs(ids []string) ([]primitive.ObjectID, error) {
 	objectIDs := make([]primitive.ObjectID, 0, len(ids))
 	for _, id := range ids {
