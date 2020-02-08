@@ -19,6 +19,10 @@ type user struct {
 
 var User = &user{}
 
+func (u *user) Register(db *mongo.Database) {
+	u.c = db.Collection("users")
+}
+
 func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 	user := types.User{}
 	filter := bson.M{
@@ -32,8 +36,13 @@ func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 	return &user, nil
 }
 
-func (u *user) Register(db *mongo.Database) {
-	u.c = db.Collection("users")
+func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
+	user.CreatedAt = time.Now()
+	res, err := u.c.InsertOne(context.Background(), user)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	return res.InsertedID.(primitive.ObjectID), nil
 }
 
 func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
@@ -51,6 +60,35 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 		return err
 	}
 	return nil
+}
+
+func (u *user) FindOneAndUpdate(update *types.User) (*types.User, error) {
+	filter := bson.M{"_id": update.ID}
+	update.Email = strings.ToLower(update.Email)
+	update.UpdatedAt = time.Now()
+
+	doc, err := toDoc(update)
+	if err != nil {
+		return nil, err
+	}
+
+	result := u.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{"$set": doc},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	user := types.User{}
+	err = result.Decode(&user)
+	if err != nil {
+		return nil, result.Err()
+	}
+
+	return &user, nil
 }
 
 // OLD CODe
@@ -104,16 +142,6 @@ func (u *user) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegis
 		return e.Wrap(err, "UserMongo UpdateTradingInfo failed")
 	}
 	return nil
-}
-
-// Create creates a user record in the table
-func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
-	user.CreatedAt = time.Now()
-	res, err := u.c.InsertOne(context.Background(), user)
-	if err != nil {
-		return primitive.ObjectID{}, err
-	}
-	return res.InsertedID.(primitive.ObjectID), nil
 }
 
 func (u *user) FindByDailyNotification() ([]*types.User, error) {

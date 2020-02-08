@@ -240,7 +240,6 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 }
 
 func (a *accountHandler) accountPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("account")
 	type request struct {
 		User   *types.User
 		Entity *types.Entity
@@ -249,21 +248,17 @@ func (a *accountHandler) accountPage() func(http.ResponseWriter, *http.Request) 
 		user, err := UserHandler.FindByID(r.Header.Get("userID"))
 		if err != nil {
 			l.Logger.Error("AccountPage failed", zap.Error(err))
-			t.Error(w, r, nil, err)
 			return
 		}
-		entity, err := logic.Entity.FindByID(user.Entities[0])
+		_, err = logic.Entity.FindByID(user.Entities[0])
 		if err != nil {
 			l.Logger.Error("AccountPage failed", zap.Error(err))
-			t.Error(w, r, nil, err)
 			return
 		}
-		t.Render(w, r, request{User: user, Entity: entity}, nil)
 	}
 }
 
 func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("account")
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		formData := helper.GetUpdateData(r)
@@ -272,7 +267,6 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		user, err := logic.User.FindByEmail(formData.User.Email)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
-			t.Error(w, r, formData, err)
 			return
 		}
 		oldEntity, err := logic.Entity.FindByID(user.Entities[0])
@@ -287,7 +281,6 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 			_, err := logic.User.Login(formData.User.Email, formData.CurrentPassword)
 			if err != nil {
 				l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
-				t.Error(w, r, formData, err)
 				return
 			}
 		}
@@ -299,7 +292,6 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		}
 		if len(errorMessages) > 0 {
 			l.Logger.Info("appServer UpdateAccount failed", zap.Strings("input invalid", errorMessages))
-			t.Render(w, r, formData, errorMessages)
 			return
 		}
 
@@ -307,7 +299,6 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		err = logic.User.UpdateUserInfo(formData.User)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
-			t.Error(w, r, formData, err)
 			return
 		}
 
@@ -321,7 +312,6 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 		err = logic.Entity.UpdateEntity(user.Entities[0], formData.Entity, false)
 		if err != nil {
 			l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
-			t.Error(w, r, formData, err)
 			return
 		}
 
@@ -329,7 +319,6 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 			err = logic.User.ResetPassword(user.Email, formData.ConfirmPassword)
 			if err != nil {
 				l.Logger.Error("appServer UpdateAccount failed", zap.Error(err))
-				t.Error(w, r, formData, err)
 				return
 			}
 		}
@@ -356,7 +345,6 @@ func (a *accountHandler) updateAccount() func(http.ResponseWriter, *http.Request
 			}
 		}()
 
-		t.Success(w, r, formData, "Your account has been updated!")
 	}
 }
 

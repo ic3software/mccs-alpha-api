@@ -49,6 +49,7 @@ func (u *userHandler) RegisterRoutes(
 		public.Path("/api/v1/password-reset/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
 		private.Path("/api/v1/password-change").HandlerFunc(u.passwordChange()).Methods("POST")
 		private.Path("/api/v1/user").HandlerFunc(u.userProfile()).Methods("GET")
+		private.Path("/api/v1/user").HandlerFunc(u.updateUser()).Methods("PATCH")
 
 		private.Path("/api/v1/users/removeFromFavoriteEntities").HandlerFunc(u.removeFromFavoriteEntities()).Methods("POST")
 		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
@@ -366,13 +367,13 @@ func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 	type data struct {
 		ID                            string    `json:"id"`
 		Email                         string    `json:"email"`
-		UserPhone                     string    `json:"userPhone"`
 		FirstName                     string    `json:"firstName"`
 		LastName                      string    `json:"lastName"`
+		UserPhone                     string    `json:"userPhone"`
 		LastLoginIP                   string    `json:"lastLoginIP"`
 		LastLoginDate                 time.Time `json:"lastLoginDate"`
-		DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
-		ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
+		DailyEmailMatchNotification   *bool     `json:"dailyEmailMatchNotification"`
+		ShowTagsMatchedSinceLastLogin *bool     `json:"showTagsMatchedSinceLastLogin"`
 	}
 	type respond struct {
 		Data data `json:"data"`
@@ -384,6 +385,66 @@ func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
+		api.Respond(w, r, http.StatusOK, respond{Data: data{
+			ID:                            user.ID.Hex(),
+			Email:                         user.Email,
+			UserPhone:                     user.Telephone,
+			FirstName:                     user.FirstName,
+			LastName:                      user.LastName,
+			LastLoginIP:                   user.LastLoginIP,
+			LastLoginDate:                 user.LastLoginDate,
+			DailyEmailMatchNotification:   user.DailyNotification,
+			ShowTagsMatchedSinceLastLogin: user.ShowRecentMatchedTags,
+		}})
+	}
+}
+
+func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
+	type data struct {
+		ID                            string    `json:"id"`
+		Email                         string    `json:"email"`
+		FirstName                     string    `json:"firstName"`
+		LastName                      string    `json:"lastName"`
+		UserPhone                     string    `json:"userPhone"`
+		LastLoginIP                   string    `json:"lastLoginIP"`
+		LastLoginDate                 time.Time `json:"lastLoginDate"`
+		DailyEmailMatchNotification   *bool     `json:"dailyEmailMatchNotification"`
+		ShowTagsMatchedSinceLastLogin *bool     `json:"showTagsMatchedSinceLastLogin"`
+	}
+	type respond struct {
+		Data data `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.UpdateUser
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&req)
+		if err != nil {
+			l.Logger.Info("[INFO] UserHandler.updateUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		errs := validate.UpdateUser(req)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
+		user, err := logic.User.FindOneAndUpdate(&types.User{
+			ID:                    userID,
+			FirstName:             req.FirstName,
+			LastName:              req.LastName,
+			Telephone:             req.UserPhone,
+			DailyNotification:     req.DailyEmailMatchNotification,
+			ShowRecentMatchedTags: req.ShowTagsMatchedSinceLastLogin,
+		})
+		if err != nil {
+			l.Logger.Info("[INFO] UserHandler.updateUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
 		api.Respond(w, r, http.StatusOK, respond{Data: data{
 			ID:                            user.ID.Hex(),
 			Email:                         user.Email,

@@ -25,7 +25,9 @@ func validatePassword(password string) []error {
 		}
 	}
 
-	if len(password) < minLen {
+	if password == "" {
+		errs = append(errs, errors.New("Password is missing."))
+	} else if len(password) < minLen {
 		errs = append(errs, errors.New("Password must be at least "+strconv.Itoa(minLen)+" characters long."))
 	} else if len(password) > 100 {
 		errs = append(errs, errors.New("Password cannot exceed 100 characters."))

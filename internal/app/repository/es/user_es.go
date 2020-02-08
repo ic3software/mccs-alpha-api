@@ -43,6 +43,26 @@ func (es *user) Create(userID primitive.ObjectID, user *types.User) error {
 	return nil
 }
 
+func (es *user) Update(u *types.User) error {
+	doc := map[string]interface{}{
+		"email":     u.Email,
+		"firstName": u.FirstName,
+		"lastName":  u.LastName,
+	}
+
+	_, err := es.c.Update().
+		Index(es.index).
+		Id(u.ID.Hex()).
+		Doc(doc).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// OLD
+
 // Find finds users from Elasticsearch.
 func (es *user) Find(u *types.User, page int64) ([]string, int, int, error) {
 	if page < 0 || page == 0 {
@@ -86,24 +106,6 @@ func (es *user) Find(u *types.User, page int64) ([]string, int, int, error) {
 	totalPages := pagination.Pages(numberOfResults, viper.GetInt64("page_size"))
 
 	return ids, int(numberOfResults), totalPages, nil
-}
-
-func (es *user) Update(u *types.User) error {
-	doc := map[string]interface{}{
-		"email":     u.Email,
-		"firstName": u.FirstName,
-		"lastName":  u.LastName,
-	}
-
-	_, err := es.c.Update().
-		Index(es.index).
-		Id(u.ID.Hex()).
-		Doc(doc).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (es *user) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {

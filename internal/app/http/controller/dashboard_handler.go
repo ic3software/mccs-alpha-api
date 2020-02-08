@@ -63,7 +63,7 @@ func (d *dashBoardHandler) dashboardPage() func(http.ResponseWriter, *http.Reque
 		}
 
 		lastLoginDate := time.Time{}
-		if user.ShowRecentMatchedTags {
+		if *user.ShowRecentMatchedTags {
 			lastLoginDate = user.LastLoginDate
 		}
 
