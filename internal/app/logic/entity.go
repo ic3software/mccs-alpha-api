@@ -34,6 +34,18 @@ func (_ *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
 	return nil
 }
 
+func (b *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
+	// err := es.Entity.Update(update)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	entity, err := mongo.Entity.FindOneAndUpdate(update)
+	if err != nil {
+		return nil, err
+	}
+	return entity, nil
+}
+
 // OLD CODE
 
 func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {

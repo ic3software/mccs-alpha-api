@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type entity struct {
@@ -78,6 +79,34 @@ func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 	cur.Close(context.TODO())
 
 	return results, nil
+}
+
+func (b *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
+	filter := bson.M{"_id": update.ID}
+	update.UpdatedAt = time.Now()
+
+	doc, err := toDoc(update)
+	if err != nil {
+		return nil, err
+	}
+
+	result := b.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{"$set": doc},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	entity := types.Entity{}
+	err = result.Decode(&entity)
+	if err != nil {
+		return nil, result.Err()
+	}
+
+	return &entity, nil
 }
 
 // OLD CODE

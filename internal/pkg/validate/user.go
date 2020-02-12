@@ -54,6 +54,11 @@ func UpdateUser(update types.UpdateUser) []error {
 	return errs
 }
 
+func UpdateUserEntity(update types.UpdateUserEntity) []error {
+	errs := []error{}
+	return errs
+}
+
 func checkEmail(email string) []error {
 	errs := []error{}
 	email = strings.ToLower(email)
