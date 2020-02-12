@@ -50,6 +50,7 @@ func (u *userHandler) RegisterRoutes(
 		private.Path("/api/v1/password-change").HandlerFunc(u.passwordChange()).Methods("POST")
 		private.Path("/api/v1/user").HandlerFunc(u.userProfile()).Methods("GET")
 		private.Path("/api/v1/user").HandlerFunc(u.updateUser()).Methods("PATCH")
+		private.Path("/api/v1/user/entities").HandlerFunc(u.listUserEntities()).Methods("GET")
 
 		private.Path("/api/v1/users/removeFromFavoriteEntities").HandlerFunc(u.removeFromFavoriteEntities()).Methods("POST")
 		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
@@ -456,6 +457,64 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 			DailyEmailMatchNotification:   user.DailyNotification,
 			ShowTagsMatchedSinceLastLogin: user.ShowRecentMatchedTags,
 		}})
+	}
+}
+
+func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request) {
+	type data struct {
+		ID                 string            `json:"id"`
+		EntityName         string            `json:"entityName"`
+		EntityPhone        string            `json:"entityPhone"`
+		IncType            string            `json:"incType"`
+		CompanyNumber      string            `json:"companyNumber"`
+		Website            string            `json:"website"`
+		Turnover           int               `json:"turnover"`
+		Description        string            `json:"description"`
+		LocationAddress    string            `json:"locationAddress"`
+		LocationCity       string            `json:"locationCity"`
+		LocationRegion     string            `json:"locationRegion"`
+		LocationPostalCode string            `json:"locationPostalCode"`
+		LocationCountry    string            `json:"locationCountry"`
+		Status             string            `json:"status"`
+		Offers             []*types.TagField `json:"offers"`
+		Wants              []*types.TagField `json:"wants"`
+	}
+	type respond struct {
+		Data []data `json:"data"`
+	}
+	toData := func(entities []*types.Entity) []data {
+		result := []data{}
+		for _, entity := range entities {
+			result = append(result, data{
+				ID:                 entity.ID.Hex(),
+				EntityName:         entity.EntityName,
+				EntityPhone:        entity.EntityPhone,
+				IncType:            entity.IncType,
+				CompanyNumber:      entity.CompanyNumber,
+				Website:            entity.Website,
+				Turnover:           entity.Turnover,
+				Description:        entity.Description,
+				LocationAddress:    entity.LocationAddress,
+				LocationCity:       entity.LocationCity,
+				LocationRegion:     entity.LocationRegion,
+				LocationPostalCode: entity.LocationPostalCode,
+				LocationCountry:    entity.LocationCountry,
+				Status:             entity.Status,
+				Offers:             entity.Offers,
+				Wants:              entity.Wants,
+			})
+		}
+		return result
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
+		entities, err := logic.User.FindEntities(userID)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.listUserEntities failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+		api.Respond(w, r, http.StatusOK, respond{Data: toData(entities)})
 	}
 }
 

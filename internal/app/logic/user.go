@@ -70,6 +70,18 @@ func (u *user) FindOneAndUpdate(user *types.User) (*types.User, error) {
 	return user, nil
 }
 
+func (u *user) FindEntities(userID primitive.ObjectID) ([]*types.Entity, error) {
+	user, err := mongo.User.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	entities, err := mongo.Entity.FindByIDs(toIDStrings(user.Entities))
+	if err != nil {
+		return nil, err
+	}
+	return entities, nil
+}
+
 // OLD CODE
 
 func (u *user) FindByEmail(email string) (*types.User, error) {

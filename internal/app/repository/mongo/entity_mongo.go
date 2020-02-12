@@ -50,6 +50,36 @@ func (en *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
 	return nil
 }
 
+func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
+	var results []*types.Entity
+
+	objectIDs, err := toObjectIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+
+	pipeline := newFindByIDsPipeline(objectIDs)
+	cur, err := b.c.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	for cur.Next(context.TODO()) {
+		var elem types.Entity
+		err := cur.Decode(&elem)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	cur.Close(context.TODO())
+
+	return results, nil
+}
+
 // OLD CODE
 
 func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
@@ -187,36 +217,6 @@ func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) erro
 		return e.Wrap(err, "entityMongo UpdateAllTagsCreatedAt failed")
 	}
 	return nil
-}
-
-func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
-	var results []*types.Entity
-
-	objectIDs, err := toObjectIDs(ids)
-	if err != nil {
-		return nil, e.Wrap(err, "find entity failed")
-	}
-
-	pipeline := newFindByIDsPipeline(objectIDs)
-	cur, err := b.c.Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return nil, e.Wrap(err, "find entity failed")
-	}
-
-	for cur.Next(context.TODO()) {
-		var elem types.Entity
-		err := cur.Decode(&elem)
-		if err != nil {
-			return nil, e.Wrap(err, "find entity failed")
-		}
-		results = append(results, &elem)
-	}
-	if err := cur.Err(); err != nil {
-		return nil, e.Wrap(err, "find entity failed")
-	}
-	cur.Close(context.TODO())
-
-	return results, nil
 }
 
 func (b *entity) DeleteByID(id primitive.ObjectID) error {

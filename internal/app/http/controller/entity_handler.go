@@ -40,9 +40,7 @@ func (b *entityHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	b.once.Do(func() {
-		public.Path("/entities").HandlerFunc(b.searchEntityPage()).Methods("GET")
 		public.Path("/entities/search").HandlerFunc(b.searchEntity()).Methods("GET")
-		public.Path("/entityPage/{id}").HandlerFunc(b.entityPage()).Methods("GET")
 		private.Path("/entities/search/match-tags").HandlerFunc(b.searhMatchTags()).Methods("GET")
 
 		private.Path("/api/entityStatus").HandlerFunc(b.entityStatus()).Methods("GET")
@@ -103,26 +101,6 @@ type searchEntityResponse struct {
 	Categories       []string
 	Result           *types.FindEntityResult
 	FavoriteEntities []primitive.ObjectID
-}
-
-func (b *entityHandler) searchEntityPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("entities")
-	return func(w http.ResponseWriter, r *http.Request) {
-		adminTags, err := logic.AdminTag.GetAll()
-		if err != nil {
-			l.Logger.Error("SearchEntityPage failed", zap.Error(err))
-			t.Error(w, r, nil, err)
-			return
-		}
-		res := searchEntityResponse{Categories: helper.GetAdminTagNames(adminTags)}
-		_, err = UserHandler.FindByID(r.Header.Get("userID"))
-		if err != nil {
-			res.IsUserLoggedIn = false
-		} else {
-			res.IsUserLoggedIn = true
-		}
-		t.Render(w, r, res, nil)
-	}
 }
 
 func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) {
@@ -186,48 +164,6 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 		res.Categories = helper.GetAdminTagNames(adminTags)
 
 		t.Render(w, r, res, nil)
-	}
-}
-
-func (b *entityHandler) entityPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("entity")
-	type formData struct {
-		IsUserLoggedIn bool
-		EntityEmail    string
-		Entity         *types.Entity
-		User           *types.User
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		bID := vars["id"]
-		entity, err := b.FindByID(bID)
-		if err != nil {
-			l.Logger.Error("EntityPage failed", zap.Error(err))
-			t.Error(w, r, nil, err)
-			return
-		}
-
-		f := formData{
-			Entity: entity,
-		}
-
-		entityUser, err := UserHandler.FindByEntityID(bID)
-		if err != nil {
-			l.Logger.Error("EntityPage failed", zap.Error(err))
-			t.Error(w, r, nil, err)
-			return
-		}
-		f.EntityEmail = entityUser.Email
-
-		user, err := UserHandler.FindByID(r.Header.Get("userID"))
-		if err != nil {
-			f.IsUserLoggedIn = false
-		} else {
-			f.IsUserLoggedIn = true
-			f.User = user
-		}
-
-		t.Render(w, r, f, nil)
 	}
 }
 
