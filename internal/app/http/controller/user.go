@@ -131,7 +131,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.SignupRequest
+		var req types.SignupReqBody
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -140,7 +140,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.SignUp(req)
+		errs := validate.SignUp(&req)
 		if logic.User.UserEmailExists(req.Email) {
 			errs = append(errs, errors.New("Email address is already registered."))
 		}
@@ -418,7 +418,7 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.UpdateUser
+		var req types.UpdateUserReqBody
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -427,7 +427,7 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.UpdateUser(req)
+		errs := validate.UpdateUser(&req)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -594,7 +594,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.UpdateUserEntity
+		var req types.UpdateUserEntityReqBody
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -603,7 +603,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		errs := validate.UpdateUserEntity(req)
+		errs := validate.UpdateUserEntity(&req)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
