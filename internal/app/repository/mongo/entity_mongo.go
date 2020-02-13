@@ -51,34 +51,18 @@ func (en *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
 	return nil
 }
 
-func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
-	var results []*types.Entity
-
-	objectIDs, err := toObjectIDs(ids)
+func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
+	ctx := context.Background()
+	entity := types.Entity{}
+	filter := bson.M{
+		"_id":       id,
+		"deletedAt": bson.M{"$exists": false},
+	}
+	err := b.c.FindOne(ctx, filter).Decode(&entity)
 	if err != nil {
 		return nil, err
 	}
-
-	pipeline := newFindByIDsPipeline(objectIDs)
-	cur, err := b.c.Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return nil, err
-	}
-
-	for cur.Next(context.TODO()) {
-		var elem types.Entity
-		err := cur.Decode(&elem)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, &elem)
-	}
-	if err := cur.Err(); err != nil {
-		return nil, err
-	}
-	cur.Close(context.TODO())
-
-	return results, nil
+	return &entity, nil
 }
 
 func (b *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
@@ -109,20 +93,76 @@ func (b *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 	return &entity, nil
 }
 
+func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
+	updates := []bson.M{
+		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
+	}
+
+	push := bson.M{}
+	if len(difference.OffersAdded) != 0 {
+		push["offers"] = bson.M{"$each": helper.ToTagFields(difference.OffersAdded)}
+	}
+	if len(difference.WantsAdded) != 0 {
+		push["wants"] = bson.M{"$each": helper.ToTagFields(difference.WantsAdded)}
+	}
+	if len(push) != 0 {
+		updates = append(updates, bson.M{"$push": push})
+	}
+
+	pull := bson.M{}
+	if len(difference.OffersRemoved) != 0 {
+		pull["offers"] = bson.M{"name": bson.M{"$in": difference.OffersRemoved}}
+	}
+	if len(difference.WantsRemoved) != 0 {
+		pull["wants"] = bson.M{"name": bson.M{"$in": difference.WantsRemoved}}
+	}
+	if len(pull) != 0 {
+		updates = append(updates, bson.M{"$pull": pull})
+	}
+
+	var writes []mongo.WriteModel
+	for _, update := range updates {
+		model := mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": id}).SetUpdate(update)
+		writes = append(writes, model)
+	}
+
+	_, err := b.c.BulkWrite(context.Background(), writes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // OLD CODE
 
-func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
-	ctx := context.Background()
-	entity := types.Entity{}
-	filter := bson.M{
-		"_id":       id,
-		"deletedAt": bson.M{"$exists": false},
-	}
-	err := b.c.FindOne(ctx, filter).Decode(&entity)
+func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
+	var results []*types.Entity
+
+	objectIDs, err := toObjectIDs(ids)
 	if err != nil {
-		return nil, e.New(e.EntityNotFound, "entity not found")
+		return nil, err
 	}
-	return &entity, nil
+
+	pipeline := newFindByIDsPipeline(objectIDs)
+	cur, err := b.c.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	for cur.Next(context.TODO()) {
+		var elem types.Entity
+		err := cur.Decode(&elem)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	cur.Close(context.TODO())
+
+	return results, nil
 }
 
 func (b *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
@@ -150,71 +190,6 @@ func (b *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingReg
 	)
 	if err != nil {
 		return e.Wrap(err, "EntityMongo UpdateTradingInfo failed")
-	}
-	return nil
-}
-
-func (b *entity) UpdateEntity(
-	id primitive.ObjectID,
-	data *types.EntityData,
-	isAdmin bool,
-) error {
-	updates := []bson.M{}
-
-	u := bson.M{
-		"entityName":         data.EntityName,
-		"entityPhone":        data.EntityPhone,
-		"incType":            data.IncType,
-		"companyNumber":      data.CompanyNumber,
-		"website":            data.Website,
-		"turnover":           data.Turnover,
-		"description":        data.Description,
-		"locationAddress":    data.LocationAddress,
-		"locationCity":       data.LocationCity,
-		"locationRegion":     data.LocationRegion,
-		"locationPostalCode": data.LocationPostalCode,
-		"locationCountry":    data.LocationCountry,
-		"updatedAt":          time.Now(),
-	}
-	if data.Status != "" {
-		u["status"] = data.Status
-	}
-	if isAdmin {
-		u["adminTags"] = data.AdminTags
-	}
-	updates = append(updates, bson.M{"$set": u})
-
-	push := bson.M{}
-	if len(data.OffersAdded) != 0 {
-		push["offers"] = bson.M{"$each": helper.ToTagFields(data.OffersAdded)}
-	}
-	if len(data.WantsAdded) != 0 {
-		push["wants"] = bson.M{"$each": helper.ToTagFields(data.WantsAdded)}
-	}
-	if len(push) != 0 {
-		updates = append(updates, bson.M{"$push": push})
-	}
-
-	pull := bson.M{}
-	if len(data.OffersRemoved) != 0 {
-		pull["offers"] = bson.M{"name": bson.M{"$in": data.OffersRemoved}}
-	}
-	if len(data.WantsRemoved) != 0 {
-		pull["wants"] = bson.M{"name": bson.M{"$in": data.WantsRemoved}}
-	}
-	if len(pull) != 0 {
-		updates = append(updates, bson.M{"$pull": pull})
-	}
-
-	var writes []mongo.WriteModel
-	for _, upd := range updates {
-		model := mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": id}).SetUpdate(upd)
-		writes = append(writes, model)
-	}
-
-	_, err := b.c.BulkWrite(context.Background(), writes)
-	if err != nil {
-		return e.Wrap(err, "entityMongo updateEntity failed")
 	}
 	return nil
 }

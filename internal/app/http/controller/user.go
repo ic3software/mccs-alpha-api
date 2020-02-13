@@ -464,22 +464,22 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 
 func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request) {
 	type data struct {
-		ID                 string            `json:"id"`
-		EntityName         string            `json:"entityName"`
-		EntityPhone        string            `json:"entityPhone"`
-		IncType            string            `json:"incType"`
-		CompanyNumber      string            `json:"companyNumber"`
-		Website            string            `json:"website"`
-		Turnover           int               `json:"turnover"`
-		Description        string            `json:"description"`
-		LocationAddress    string            `json:"locationAddress"`
-		LocationCity       string            `json:"locationCity"`
-		LocationRegion     string            `json:"locationRegion"`
-		LocationPostalCode string            `json:"locationPostalCode"`
-		LocationCountry    string            `json:"locationCountry"`
-		Status             string            `json:"status"`
-		Offers             []*types.TagField `json:"offers"`
-		Wants              []*types.TagField `json:"wants"`
+		ID                 string   `json:"id"`
+		EntityName         string   `json:"entityName"`
+		EntityPhone        string   `json:"entityPhone"`
+		IncType            string   `json:"incType"`
+		CompanyNumber      string   `json:"companyNumber"`
+		Website            string   `json:"website"`
+		Turnover           int      `json:"turnover"`
+		Description        string   `json:"description"`
+		LocationAddress    string   `json:"locationAddress"`
+		LocationCity       string   `json:"locationCity"`
+		LocationRegion     string   `json:"locationRegion"`
+		LocationPostalCode string   `json:"locationPostalCode"`
+		LocationCountry    string   `json:"locationCountry"`
+		Status             string   `json:"status"`
+		Offers             []string `json:"offers"`
+		Wants              []string `json:"wants"`
 	}
 	type respond struct {
 		Data []data `json:"data"`
@@ -502,8 +502,8 @@ func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request
 				LocationPostalCode: entity.LocationPostalCode,
 				LocationCountry:    entity.LocationCountry,
 				Status:             entity.Status,
-				Offers:             entity.Offers,
-				Wants:              entity.Wants,
+				Offers:             util.GetTagNames(entity.Offers),
+				Wants:              util.GetTagNames(entity.Wants),
 			})
 		}
 		return result
@@ -533,24 +533,53 @@ func isEntityBelongsToUser(entityID, userID primitive.ObjectID) bool {
 	return false
 }
 
+func updateTags(old *types.Entity, offers, wants []string) {
+	offersAdded, offersRemoved := util.TagDifference(offers, util.GetTagNames(old.Offers))
+	wantsAdded, wantsRemoved := util.TagDifference(wants, util.GetTagNames(old.Wants))
+
+	err := logic.Entity.UpdateTags(old.ID, &types.TagDifference{
+		OffersAdded:   offersAdded,
+		OffersRemoved: offersRemoved,
+		WantsAdded:    wantsAdded,
+		WantsRemoved:  wantsRemoved,
+	})
+	if err != nil {
+		l.Logger.Error("[Error] UpdateTags failed:", zap.Error(err))
+		return
+	}
+
+	// User Update tags logic:
+	// 	1. Update the tags collection only when the entity is in accepted status.
+	if util.IsAcceptedStatus(old.Status) {
+		err := TagHandler.SaveOfferTags(offersAdded)
+		if err != nil {
+			l.Logger.Error("[Error] SaveOfferTags failed:", zap.Error(err))
+		}
+		err = TagHandler.SaveWantTags(wantsAdded)
+		if err != nil {
+			l.Logger.Error("[Error] SaveWantTags failed:", zap.Error(err))
+		}
+	}
+}
+
 func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request) {
 	type data struct {
-		ID                 string            `json:"id"`
-		EntityName         string            `json:"entityName"`
-		EntityPhone        string            `json:"entityPhone"`
-		IncType            string            `json:"incType"`
-		CompanyNumber      string            `json:"companyNumber"`
-		Website            string            `json:"website"`
-		Turnover           int               `json:"turnover"`
-		Description        string            `json:"description"`
-		LocationAddress    string            `json:"locationAddress"`
-		LocationCity       string            `json:"locationCity"`
-		LocationRegion     string            `json:"locationRegion"`
-		LocationPostalCode string            `json:"locationPostalCode"`
-		LocationCountry    string            `json:"locationCountry"`
-		Status             string            `json:"status"`
-		Offers             []*types.TagField `json:"offers"`
-		Wants              []*types.TagField `json:"wants"`
+		ID                 string   `json:"id"`
+		EntityName         string   `json:"entityName"`
+		EntityPhone        string   `json:"entityPhone"`
+		IncType            string   `json:"incType"`
+		CompanyNumber      string   `json:"companyNumber"`
+		Website            string   `json:"website"`
+		Turnover           int      `json:"turnover"`
+		Description        string   `json:"description"`
+		LocationAddress    string   `json:"locationAddress"`
+		LocationCity       string   `json:"locationCity"`
+		LocationRegion     string   `json:"locationRegion"`
+		LocationPostalCode string   `json:"locationPostalCode"`
+		LocationCountry    string   `json:"locationCountry"`
+		Status             string   `json:"status"`
+		Offers             []string `json:"offers"`
+		Wants              []string `json:"wants"`
 	}
 	type respond struct {
 		Data data `json:"data"`
@@ -579,6 +608,13 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			return
 		}
 
+		oldEntity, err := logic.Entity.FindByID(entityID)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.updateUserEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
 		entity, err := logic.Entity.FindOneAndUpdate(&types.Entity{
 			ID:                 entityID,
 			EntityName:         req.EntityName,
@@ -593,14 +629,14 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			LocationRegion:     req.LocationRegion,
 			LocationPostalCode: req.LocationPostalCode,
 			LocationCountry:    req.LocationCountry,
-			Offers:             util.GetTags(req.Offers),
-			Wants:              util.GetTags(req.Wants),
 		})
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.updateUserEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		go updateTags(oldEntity, req.Offers, req.Wants)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: data{
 			ID:                 entity.ID.Hex(),
@@ -617,8 +653,8 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			LocationPostalCode: entity.LocationPostalCode,
 			LocationCountry:    entity.LocationCountry,
 			Status:             entity.Status,
-			Offers:             entity.Offers,
-			Wants:              entity.Wants,
+			Offers:             req.Offers,
+			Wants:              req.Wants,
 		}})
 	}
 }

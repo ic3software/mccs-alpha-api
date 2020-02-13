@@ -54,6 +54,35 @@ type EntityESRecord struct {
 
 // Helper types
 
+type TagDifference struct {
+	OffersAdded   []string
+	OffersRemoved []string
+	WantsAdded    []string
+	WantsRemoved  []string
+}
+
+type SearchCriteria struct {
+	TagType          string
+	Tags             []*TagField
+	CreatedOnOrAfter time.Time
+
+	Statuses              []string // accepted", "pending", rejected", "tradingPending", "tradingAccepted", "tradingRejected"
+	EntityName            string
+	LocationCountry       string
+	LocationCity          string
+	ShowUserFavoritesOnly bool
+	FavoriteEntities      []primitive.ObjectID
+	AdminTag              string
+}
+
+type FindEntityResult struct {
+	Entities        []*Entity
+	NumberOfResults int
+	TotalPages      int
+}
+
+// TO BE REMOVED
+
 type EntityData struct {
 	ID                 primitive.ObjectID
 	EntityName         string
@@ -76,24 +105,4 @@ type EntityData struct {
 	LocationCountry    string
 	Status             string
 	AdminTags          []string
-}
-
-type SearchCriteria struct {
-	TagType          string
-	Tags             []*TagField
-	CreatedOnOrAfter time.Time
-
-	Statuses              []string // accepted", "pending", rejected", "tradingPending", "tradingAccepted", "tradingRejected"
-	EntityName            string
-	LocationCountry       string
-	LocationCity          string
-	ShowUserFavoritesOnly bool
-	FavoriteEntities      []primitive.ObjectID
-	AdminTag              string
-}
-
-type FindEntityResult struct {
-	Entities        []*Entity
-	NumberOfResults int
-	TotalPages      int
 }
