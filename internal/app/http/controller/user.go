@@ -534,12 +534,17 @@ func isEntityBelongsToUser(entityID, userID primitive.ObjectID) bool {
 }
 
 func updateTags(old *types.Entity, offers, wants []string) {
-	if len(offers) == 0 || len(wants) == 0 {
+	if len(offers) == 0 && len(wants) == 0 {
 		return
 	}
 
-	offersAdded, offersRemoved := util.TagDifference(offers, util.GetTagNames(old.Offers))
-	wantsAdded, wantsRemoved := util.TagDifference(wants, util.GetTagNames(old.Wants))
+	var offersAdded, offersRemoved, wantsAdded, wantsRemoved []string
+	if len(offers) != 0 {
+		offersAdded, offersRemoved = util.TagDifference(offers, util.GetTagNames(old.Offers))
+	}
+	if len(wants) != 0 {
+		wantsAdded, wantsRemoved = util.TagDifference(wants, util.GetTagNames(old.Wants))
+	}
 
 	err := logic.Entity.UpdateTags(old.ID, &types.TagDifference{
 		OffersAdded:   offersAdded,
@@ -650,7 +655,6 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 		if len(wants) == 0 {
 			wants = util.GetTagNames(entity.Wants)
 		}
-
 		api.Respond(w, r, http.StatusOK, respond{Data: data{
 			ID:                 entity.ID.Hex(),
 			EntityName:         entity.EntityName,
