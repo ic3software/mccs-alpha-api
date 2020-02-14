@@ -17,6 +17,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -50,6 +51,8 @@ func (u *userHandler) RegisterRoutes(
 		private.Path("/api/v1/password-change").HandlerFunc(u.passwordChange()).Methods("POST")
 		private.Path("/api/v1/user").HandlerFunc(u.userProfile()).Methods("GET")
 		private.Path("/api/v1/user").HandlerFunc(u.updateUser()).Methods("PATCH")
+		private.Path("/api/v1/user/entities").HandlerFunc(u.listUserEntities()).Methods("GET")
+		private.Path("/api/v1/user/entities/{entityID}").HandlerFunc(u.updateUserEntity()).Methods("PATCH")
 
 		private.Path("/api/v1/users/removeFromFavoriteEntities").HandlerFunc(u.removeFromFavoriteEntities()).Methods("POST")
 		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
@@ -128,7 +131,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.SignupRequest
+		var req types.SignupReqBody
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -137,7 +140,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.SignUp(req)
+		errs := validate.SignUp(&req)
 		if logic.User.UserEmailExists(req.Email) {
 			errs = append(errs, errors.New("Email address is already registered."))
 		}
@@ -415,7 +418,7 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.UpdateUser
+		var req types.UpdateUserReqBody
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -424,7 +427,7 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.UpdateUser(req)
+		errs := validate.UpdateUser(&req)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -455,6 +458,222 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 			LastLoginDate:                 user.LastLoginDate,
 			DailyEmailMatchNotification:   user.DailyNotification,
 			ShowTagsMatchedSinceLastLogin: user.ShowRecentMatchedTags,
+		}})
+	}
+}
+
+func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request) {
+	type data struct {
+		ID                 string   `json:"id"`
+		EntityName         string   `json:"entityName"`
+		EntityPhone        string   `json:"entityPhone"`
+		IncType            string   `json:"incType"`
+		CompanyNumber      string   `json:"companyNumber"`
+		Website            string   `json:"website"`
+		Turnover           int      `json:"turnover"`
+		Description        string   `json:"description"`
+		LocationAddress    string   `json:"locationAddress"`
+		LocationCity       string   `json:"locationCity"`
+		LocationRegion     string   `json:"locationRegion"`
+		LocationPostalCode string   `json:"locationPostalCode"`
+		LocationCountry    string   `json:"locationCountry"`
+		Status             string   `json:"status"`
+		Offers             []string `json:"offers"`
+		Wants              []string `json:"wants"`
+	}
+	type respond struct {
+		Data []data `json:"data"`
+	}
+	toData := func(entities []*types.Entity) []data {
+		result := []data{}
+		for _, entity := range entities {
+			result = append(result, data{
+				ID:                 entity.ID.Hex(),
+				EntityName:         entity.EntityName,
+				EntityPhone:        entity.EntityPhone,
+				IncType:            entity.IncType,
+				CompanyNumber:      entity.CompanyNumber,
+				Website:            entity.Website,
+				Turnover:           entity.Turnover,
+				Description:        entity.Description,
+				LocationAddress:    entity.LocationAddress,
+				LocationCity:       entity.LocationCity,
+				LocationRegion:     entity.LocationRegion,
+				LocationPostalCode: entity.LocationPostalCode,
+				LocationCountry:    entity.LocationCountry,
+				Status:             entity.Status,
+				Offers:             util.GetTagNames(entity.Offers),
+				Wants:              util.GetTagNames(entity.Wants),
+			})
+		}
+		return result
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
+		entities, err := logic.User.FindEntities(userID)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.listUserEntities failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+		api.Respond(w, r, http.StatusOK, respond{Data: toData(entities)})
+	}
+}
+
+func isEntityBelongsToUser(entityID, userID primitive.ObjectID) bool {
+	user, err := logic.User.FindByID(userID)
+	if err != nil {
+		return false
+	}
+	for _, entity := range user.Entities {
+		if entity.Hex() == entityID.Hex() {
+			return true
+		}
+	}
+	return false
+}
+
+func updateTags(old *types.Entity, offers, wants []string) {
+	if len(offers) == 0 && len(wants) == 0 {
+		return
+	}
+
+	var offersAdded, offersRemoved, wantsAdded, wantsRemoved []string
+	if len(offers) != 0 {
+		offersAdded, offersRemoved = util.TagDifference(offers, util.GetTagNames(old.Offers))
+	}
+	if len(wants) != 0 {
+		wantsAdded, wantsRemoved = util.TagDifference(wants, util.GetTagNames(old.Wants))
+	}
+
+	err := logic.Entity.UpdateTags(old.ID, &types.TagDifference{
+		OffersAdded:   offersAdded,
+		OffersRemoved: offersRemoved,
+		WantsAdded:    wantsAdded,
+		WantsRemoved:  wantsRemoved,
+	})
+	if err != nil {
+		l.Logger.Error("[Error] UpdateTags failed:", zap.Error(err))
+		return
+	}
+
+	// User Update tags logic:
+	// 	1. Update the tags collection only when the entity is in accepted status.
+	if util.IsAcceptedStatus(old.Status) {
+		err := TagHandler.SaveOfferTags(offersAdded)
+		if err != nil {
+			l.Logger.Error("[Error] SaveOfferTags failed:", zap.Error(err))
+		}
+		err = TagHandler.SaveWantTags(wantsAdded)
+		if err != nil {
+			l.Logger.Error("[Error] SaveWantTags failed:", zap.Error(err))
+		}
+	}
+}
+
+func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request) {
+	type data struct {
+		ID                 string   `json:"id"`
+		EntityName         string   `json:"entityName"`
+		EntityPhone        string   `json:"entityPhone"`
+		IncType            string   `json:"incType"`
+		CompanyNumber      string   `json:"companyNumber"`
+		Website            string   `json:"website"`
+		Turnover           int      `json:"turnover"`
+		Description        string   `json:"description"`
+		LocationAddress    string   `json:"locationAddress"`
+		LocationCity       string   `json:"locationCity"`
+		LocationRegion     string   `json:"locationRegion"`
+		LocationPostalCode string   `json:"locationPostalCode"`
+		LocationCountry    string   `json:"locationCountry"`
+		Status             string   `json:"status"`
+		Offers             []string `json:"offers"`
+		Wants              []string `json:"wants"`
+	}
+	type respond struct {
+		Data data `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.UpdateUserEntityReqBody
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&req)
+		if err != nil {
+			l.Logger.Info("[INFO] UserHandler.updateUserEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		errs := validate.UpdateUserEntity(&req)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
+
+		vars := mux.Vars(r)
+		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
+		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
+		if !isEntityBelongsToUser(entityID, userID) {
+			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
+			return
+		}
+
+		oldEntity, err := logic.Entity.FindByID(entityID)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.updateUserEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		entity, err := logic.Entity.FindOneAndUpdate(&types.Entity{
+			ID:                 entityID,
+			EntityName:         req.EntityName,
+			EntityPhone:        req.EntityPhone,
+			IncType:            req.IncType,
+			CompanyNumber:      req.CompanyNumber,
+			Website:            req.Website,
+			Turnover:           req.Turnover,
+			Description:        req.Description,
+			LocationAddress:    req.LocationAddress,
+			LocationCity:       req.LocationCity,
+			LocationRegion:     req.LocationRegion,
+			LocationPostalCode: req.LocationPostalCode,
+			LocationCountry:    req.LocationCountry,
+		})
+		if err != nil {
+			l.Logger.Info("[INFO] UserHandler.updateUserEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		go updateTags(oldEntity, req.Offers, req.Wants)
+
+		offers := req.Offers
+		if len(offers) == 0 {
+			offers = util.GetTagNames(entity.Offers)
+		}
+		wants := req.Wants
+		if len(wants) == 0 {
+			wants = util.GetTagNames(entity.Wants)
+		}
+		api.Respond(w, r, http.StatusOK, respond{Data: data{
+			ID:                 entity.ID.Hex(),
+			EntityName:         entity.EntityName,
+			EntityPhone:        entity.EntityPhone,
+			IncType:            entity.IncType,
+			CompanyNumber:      entity.CompanyNumber,
+			Website:            entity.Website,
+			Turnover:           entity.Turnover,
+			Description:        entity.Description,
+			LocationAddress:    entity.LocationAddress,
+			LocationCity:       entity.LocationCity,
+			LocationRegion:     entity.LocationRegion,
+			LocationPostalCode: entity.LocationPostalCode,
+			LocationCountry:    entity.LocationCountry,
+			Status:             entity.Status,
+			Offers:             offers,
+			Wants:              wants,
 		}})
 	}
 }

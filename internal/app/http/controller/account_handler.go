@@ -39,9 +39,7 @@ func (a *accountHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	a.once.Do(func() {
-		private.Path("/account").HandlerFunc(a.accountPage()).Methods("GET")
 		private.Path("/account").HandlerFunc(a.updateAccount()).Methods("POST")
-		adminPrivate.Path("/accounts").HandlerFunc(a.searchAccountPage()).Methods("GET")
 		adminPrivate.Path("/accounts/search").HandlerFunc(a.searchAccount()).Methods("GET")
 	})
 }
@@ -77,20 +75,6 @@ type sreachResponse struct {
 	FormData  searchAccountFormData
 	AdminTags []*types.AdminTag
 	Result    *findAccountResult
-}
-
-func (a *accountHandler) searchAccountPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("admin/accounts")
-	return func(w http.ResponseWriter, r *http.Request) {
-		adminTags, err := logic.AdminTag.GetAll()
-		if err != nil {
-			l.Logger.Error("SearchAccountPage failed", zap.Error(err))
-			t.Error(w, r, nil, err)
-			return
-		}
-		res := sreachResponse{AdminTags: adminTags}
-		t.Render(w, r, res, nil)
-	}
 }
 
 func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request) {
@@ -236,25 +220,6 @@ func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request
 		res.Result.Accounts = accounts
 
 		t.Render(w, r, res, nil)
-	}
-}
-
-func (a *accountHandler) accountPage() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		User   *types.User
-		Entity *types.Entity
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		user, err := UserHandler.FindByID(r.Header.Get("userID"))
-		if err != nil {
-			l.Logger.Error("AccountPage failed", zap.Error(err))
-			return
-		}
-		_, err = logic.Entity.FindByID(user.Entities[0])
-		if err != nil {
-			l.Logger.Error("AccountPage failed", zap.Error(err))
-			return
-		}
 	}
 }
 

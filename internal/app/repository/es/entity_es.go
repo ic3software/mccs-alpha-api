@@ -28,24 +28,6 @@ func (es *entity) Register(client *elastic.Client) {
 	es.index = "entities"
 }
 
-func (es *entity) New(id primitive.ObjectID) error {
-	body := types.EntityESRecord{
-		EntityID: id.Hex(),
-		Status:   constant.Entity.Pending,
-	}
-	_, err := es.c.Index().
-		Index(es.index).
-		Id(id.Hex()).
-		BodyJson(body).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// OLD CODE
-
 func (es *entity) Create(id primitive.ObjectID, data *types.Entity) error {
 	body := types.EntityESRecord{
 		EntityID:        id.Hex(),
@@ -67,6 +49,82 @@ func (es *entity) Create(id primitive.ObjectID, data *types.Entity) error {
 	}
 	return nil
 }
+
+func (es *entity) Update(update *types.Entity) error {
+	doc := map[string]interface{}{
+		"entityName":      update.EntityName,
+		"locationCity":    update.LocationCity,
+		"locationCountry": update.LocationCountry,
+	}
+	_, err := es.c.Update().
+		Index(es.index).
+		Id(update.ID.Hex()).
+		Doc(doc).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (es *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
+	params := map[string]interface{}{
+		"offersAdded":   helper.ToTagFields(difference.OffersAdded),
+		"wantsAdded":    helper.ToTagFields(difference.WantsAdded),
+		"offersRemoved": difference.OffersRemoved,
+		"wantsRemoved":  difference.WantsRemoved,
+	}
+	script := elastic.
+		NewScript(`
+			if (ctx._source.offers === null) {
+				ctx._source["offers"] = [];
+			}
+			if (ctx._source.wants === null) {
+				ctx._source["wants"] = [];
+			}
+
+			if (params.offersRemoved !== null && params.offersRemoved.length !== 0) {
+				for (int i = 0; i < ctx._source.offers.length; i++) {
+					if (params.offersRemoved.contains(ctx._source.offers[i].name)) {
+						ctx._source.offers.remove(i);
+						i--
+					}
+				}
+			}
+			if (params.wantsRemoved !== null && params.wantsRemoved.length !== 0) {
+				for (int i = 0; i < ctx._source.wants.length; i++) {
+					if (params.wantsRemoved.contains(ctx._source.wants[i].name)) {
+						ctx._source.wants.remove(i);
+						i--
+					}
+				}
+			}
+
+			if (params.offersAdded !== null && params.offersAdded.length !== 0) {
+				for (int i = 0; i < params.offersAdded.length; i++) {
+					ctx._source.offers.add(params.offersAdded[i]);
+				}
+			}
+			if (params.wantsAdded !== null && params.wantsAdded.length !== 0) {
+				for (int i = 0; i < params.wantsAdded.length; i++) {
+					ctx._source.wants.add(params.wantsAdded[i]);
+				}
+			}
+		`).
+		Params(params)
+
+	_, err := es.c.Update().
+		Index(es.index).
+		Id(id.Hex()).
+		Script(script).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// OLD CODE
 
 func (es *entity) Find(c *types.SearchCriteria, page int64) ([]string, int, int, error) {
 	if page < 0 || page == 0 {
@@ -155,80 +213,6 @@ func (es *entity) Find(c *types.SearchCriteria, page int64) ([]string, int, int,
 	totalPages := pagination.Pages(numberOfResults, viper.GetInt64("page_size"))
 
 	return ids, int(numberOfResults), totalPages, nil
-}
-
-func (es *entity) UpdateEntity(id primitive.ObjectID, data *types.EntityData) error {
-	params := map[string]interface{}{
-		"entityName":      data.EntityName,
-		"locationCity":    data.LocationCity,
-		"locationCountry": data.LocationCountry,
-		"offersAdded":     helper.ToTagFields(data.OffersAdded),
-		"wantsAdded":      helper.ToTagFields(data.WantsAdded),
-		"offersRemoved":   data.OffersRemoved,
-		"wantsRemoved":    data.WantsRemoved,
-	}
-	if data.Status != "" {
-		params["status"] = data.Status
-	}
-	params["adminTags"] = data.AdminTags
-
-	script := elastic.
-		NewScript(`
-			ctx._source.entityName = params.entityName;
-			ctx._source.locationCity = params.locationCity;
-			ctx._source.locationCountry = params.locationCountry;
-
-			if (params.status !== null) {
-				ctx._source.status = params.status;
-			}
-
-			if (params.adminTags !== null) {
-				if (params.adminTags.length !== 0) {
-					ctx._source.adminTags = params.adminTags;
-				} else {
-					ctx._source.adminTags = [];
-				}
-			}
-
-			if (params.offersRemoved !== null && params.offersRemoved.length !== 0) {
-				for (int i = 0; i < ctx._source.offers.length; i++) {
-					if (params.offersRemoved.contains(ctx._source.offers[i].name)) {
-						ctx._source.offers.remove(i);
-						i--
-					}
-				}
-			}
-			if (params.wantsRemoved !== null && params.wantsRemoved.length !== 0) {
-				for (int i = 0; i < ctx._source.wants.length; i++) {
-					if (params.wantsRemoved.contains(ctx._source.wants[i].name)) {
-						ctx._source.wants.remove(i);
-						i--
-					}
-				}
-			}
-
-			if (params.offersAdded !== null && params.offersAdded.length !== 0) {
-				for (int i = 0; i < params.offersAdded.length; i++) {
-					ctx._source.offers.add(params.offersAdded[i]);
-				}
-			}
-			if (params.wantsAdded !== null && params.wantsAdded.length !== 0) {
-				for (int i = 0; i < params.wantsAdded.length; i++) {
-					ctx._source.wants.add(params.wantsAdded[i]);
-				}
-			}
-		`).
-		Params(params)
-
-	_, err := es.c.Update().
-		Index(es.index).
-		Id(id.Hex()).
-		Script(script).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {

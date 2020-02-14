@@ -34,29 +34,41 @@ func (_ *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
 	return nil
 }
 
-// OLD CODE
-
-func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
-	bs, err := mongo.Entity.FindByID(id)
+func (_ *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
+	entity, err := mongo.Entity.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
-	return bs, nil
+	return entity, nil
 }
 
-func (b *entity) UpdateEntity(
-	id primitive.ObjectID,
-	entity *types.EntityData,
-	isAdmin bool,
-) error {
-	err := es.Entity.UpdateEntity(id, entity)
+func (_ *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
+	err := es.Entity.Update(update)
 	if err != nil {
-		return e.Wrap(err, "update entity failed")
+		return nil, err
 	}
-	err = mongo.Entity.UpdateEntity(id, entity, isAdmin)
+	entity, err := mongo.Entity.FindOneAndUpdate(update)
 	if err != nil {
-		return e.Wrap(err, "update entity failed")
+		return nil, err
 	}
+	return entity, nil
+}
+
+func (_ *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
+	err := mongo.Entity.UpdateTags(id, difference)
+	if err != nil {
+		return err
+	}
+	err = es.Entity.UpdateTags(id, difference)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// TO BE REMOVED
+
+func (b *entity) UpdateEntity(id primitive.ObjectID, difference *types.EntityData, isAdmin bool) error {
 	return nil
 }
 
