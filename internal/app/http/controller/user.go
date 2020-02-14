@@ -609,6 +609,8 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			return
 		}
 
+		req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
+
 		vars := mux.Vars(r)
 		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
 		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))

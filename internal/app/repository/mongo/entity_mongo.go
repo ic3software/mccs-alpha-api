@@ -7,7 +7,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -100,10 +100,10 @@ func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 
 	push := bson.M{}
 	if len(difference.OffersAdded) != 0 {
-		push["offers"] = bson.M{"$each": helper.ToTagFields(difference.OffersAdded)}
+		push["offers"] = bson.M{"$each": util.ToTagFields(difference.OffersAdded)}
 	}
 	if len(difference.WantsAdded) != 0 {
-		push["wants"] = bson.M{"$each": helper.ToTagFields(difference.WantsAdded)}
+		push["wants"] = bson.M{"$each": util.ToTagFields(difference.WantsAdded)}
 	}
 	if len(push) != 0 {
 		updates = append(updates, bson.M{"$push": push})

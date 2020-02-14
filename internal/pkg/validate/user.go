@@ -70,15 +70,21 @@ func UpdateUserEntity(update *types.UpdateUserEntityReqBody) []error {
 		errs = append(errs, errors.New("The status cannot be changed."))
 	}
 	errs = append(errs, checkEntity(&types.Entity{
-		EntityName:      update.EntityName,
-		EntityPhone:     update.EntityPhone,
-		IncType:         update.IncType,
-		CompanyNumber:   update.CompanyNumber,
-		Website:         update.Website,
-		Turnover:        update.Turnover,
-		Description:     update.Description,
-		LocationAddress: update.LocationAddress,
+		EntityName:         update.EntityName,
+		EntityPhone:        update.EntityPhone,
+		IncType:            update.IncType,
+		CompanyNumber:      update.CompanyNumber,
+		Website:            update.Website,
+		Turnover:           update.Turnover,
+		Description:        update.Description,
+		LocationCity:       update.LocationCity,
+		LocationCountry:    update.LocationCountry,
+		LocationAddress:    update.LocationAddress,
+		LocationRegion:     update.LocationRegion,
+		LocationPostalCode: update.LocationPostalCode,
 	})...)
+	errs = append(errs, checkTags(update.Offers)...)
+	errs = append(errs, checkTags(update.Wants)...)
 
 	return errs
 }
@@ -130,8 +136,34 @@ func checkEntity(entity *types.Entity) []error {
 	if len(entity.Description) > 500 {
 		errs = append(errs, errors.New("Description length cannot exceed 500 characters."))
 	}
+	if len(entity.LocationCountry) > 10 {
+		errs = append(errs, errors.New("Country length cannot exceed 50 characters."))
+	}
+	if len(entity.LocationCity) > 10 {
+		errs = append(errs, errors.New("City length cannot exceed 50 characters."))
+	}
 	if len(entity.LocationAddress) > 255 {
 		errs = append(errs, errors.New("Address length cannot exceed 255 characters."))
+	}
+	if len(entity.LocationRegion) > 50 {
+		errs = append(errs, errors.New("Region length cannot exceed 50 characters."))
+	}
+	if len(entity.LocationPostalCode) > 10 {
+		errs = append(errs, errors.New("Postal code length cannot exceed 10 characters."))
+	}
+	return errs
+}
+
+func checkTags(tags []string) []error {
+	errs := []error{}
+	if len(tags) > 10 {
+		errs = append(errs, errors.New("You can only specify a maximum of 10 tags."))
+	}
+	for _, tag := range tags {
+		if len(tag) > 50 {
+			errs = append(errs, errors.New("Tag length cannot exceed 50 characters."))
+			break
+		}
 	}
 	return errs
 }

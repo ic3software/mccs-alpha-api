@@ -24,11 +24,11 @@ func init() {
 
 // GetTags transforms tags from the user inputs into a standard format.
 // dog walking -> dog-walking (one word)
-func GetTags(tagArray []string) []*types.TagField {
+func FormatTags(tags []string) []string {
 	encountered := map[string]bool{}
-	tags := make([]*types.TagField, 0, len(tagArray))
+	formatted := make([]string, 0, len(tags))
 
-	for _, tag := range tagArray {
+	for _, tag := range tags {
 		tag = strings.ToLower(tag)
 		tag = strings.Replace(tag, " ", "-", -1)
 		tag = specialCharRe.ReplaceAllString(tag, "")
@@ -39,15 +39,25 @@ func GetTags(tagArray []string) []*types.TagField {
 		}
 		// remove duplicates
 		if !encountered[tag] {
-			tags = append(tags, &types.TagField{
-				Name:      tag,
-				CreatedAt: time.Now(),
-			})
+			formatted = append(formatted, tag)
 			encountered[tag] = true
 		}
 	}
 
-	return tags
+	return formatted
+}
+
+// ToTagFields converts tags into TagFields.
+func ToTagFields(tags []string) []*types.TagField {
+	tagFields := make([]*types.TagField, 0, len(tags))
+	for _, tagName := range tags {
+		tagField := &types.TagField{
+			Name:      tagName,
+			CreatedAt: time.Now(),
+		}
+		tagFields = append(tagFields, tagField)
+	}
+	return tagFields
 }
 
 // TagDifference finds out the new added tags.
