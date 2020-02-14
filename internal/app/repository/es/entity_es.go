@@ -7,7 +7,6 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/pagination"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
@@ -124,24 +123,7 @@ func (es *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDiffere
 	return nil
 }
 
-// OLD CODE
-
-func (es *entity) Find(c *types.SearchCriteria, page int64) ([]string, int, int, error) {
-	if page < 0 || page == 0 {
-		return nil, 0, 0, e.New(e.InvalidPageNumber, "find entity failed")
-	}
-
-	var ids []string
-	size := viper.GetInt("page_size")
-	from := viper.GetInt("page_size") * (int(page) - 1)
-
-	q := elastic.NewBoolQuery()
-
-	if c.ShowUserFavoritesOnly {
-		idQuery := elastic.NewIdsQuery().Ids(util.ToIDStrings(c.FavoriteEntities)...)
-		q.Must(idQuery)
-	}
-
+func seachByStatus(q *elastic.BoolQuery, c *types.SearchCriteria) *elastic.BoolQuery {
 	if len(c.Statuses) != 0 {
 		qq := elastic.NewBoolQuery()
 		for _, status := range c.Statuses {
@@ -149,7 +131,10 @@ func (es *entity) Find(c *types.SearchCriteria, page int64) ([]string, int, int,
 		}
 		q.Must(qq)
 	}
+	return q
+}
 
+func seachByAddress(q *elastic.BoolQuery, c *types.SearchCriteria) *elastic.BoolQuery {
 	if c.EntityName != "" {
 		q.Must(newFuzzyWildcardQuery("entityName", c.EntityName))
 	}
@@ -159,61 +144,92 @@ func (es *entity) Find(c *types.SearchCriteria, page int64) ([]string, int, int,
 	if c.LocationCity != "" {
 		q.Must(newFuzzyWildcardQuery("locationCity", c.LocationCity))
 	}
+	return q
+}
 
-	if c.AdminTag != "" {
-		q.Must(elastic.NewMatchQuery("adminTags", c.AdminTag))
-	}
-
+func seachByTags(q *elastic.BoolQuery, c *types.SearchCriteria) *elastic.BoolQuery {
 	// "Tag Added After" will associate with "tags".
-	if c.TagType == constant.OFFERS && len(c.Tags) != 0 {
+	if len(c.Offers) != 0 {
 		qq := elastic.NewBoolQuery()
 		// weighted is used to make sure the tags are shown in order.
 		weighted := 2.0
-		for _, o := range c.Tags {
-			qq.Should(newFuzzyWildcardTimeQueryForTag("offers", o.Name, c.CreatedOnOrAfter).
-				Boost(weighted))
-			weighted *= 0.9
-		}
-		// Must match one of the "Should" queries.
-		q.Must(qq)
-	} else if c.TagType == constant.WANTS && len(c.Tags) != 0 {
-		qq := elastic.NewBoolQuery()
-		// weighted is used to make sure the tags are shown in order.
-		weighted := 2.0
-		for _, w := range c.Tags {
-			qq.Should(newFuzzyWildcardTimeQueryForTag("wants", w.Name, c.CreatedOnOrAfter).
+		for _, offer := range c.Offers {
+			qq.Should(newFuzzyWildcardTimeQueryForTag("offers", offer, c.TaggedSince).
 				Boost(weighted))
 			weighted *= 0.9
 		}
 		// Must match one of the "Should" queries.
 		q.Must(qq)
 	}
+	if len(c.Wants) != 0 {
+		qq := elastic.NewBoolQuery()
+		// weighted is used to make sure the tags are shown in order.
+		weighted := 2.0
+		for _, want := range c.Wants {
+			qq.Should(newFuzzyWildcardTimeQueryForTag("wants", want, c.TaggedSince).
+				Boost(weighted))
+			weighted *= 0.9
+		}
+		// Must match one of the "Should" queries.
+		q.Must(qq)
+	}
+	return q
+}
+
+func (es *entity) Find(c *types.SearchCriteria) (*types.ESFindEntityResult, error) {
+	var ids []string
+
+	pageSize := viper.GetInt("page_size")
+	if c.PageSize != 0 {
+		pageSize = c.PageSize
+	}
+	from := pageSize * (c.Page - 1)
+
+	q := elastic.NewBoolQuery()
+
+	if c.FavoritesOnly {
+		idQuery := elastic.NewIdsQuery().Ids(util.ToIDStrings(c.FavoriteEntities)...)
+		q.Must(idQuery)
+	}
+	if c.Category != "" {
+		q.Must(elastic.NewMatchQuery("adminTags", c.Category))
+	}
+
+	seachByStatus(q, c)
+	seachByAddress(q, c)
+	seachByTags(q, c)
 
 	res, err := es.c.Search().
 		Index(es.index).
 		From(from).
-		Size(size).
+		Size(pageSize).
 		Query(q).
 		Do(context.Background())
 
 	if err != nil {
-		return nil, 0, 0, e.Wrap(err, "EntityES Find failed")
+		return nil, err
 	}
 
 	for _, hit := range res.Hits.Hits {
 		var record types.EntityESRecord
 		err := json.Unmarshal(hit.Source, &record)
 		if err != nil {
-			return nil, 0, 0, e.Wrap(err, "EntityES Find failed")
+			return nil, err
 		}
 		ids = append(ids, record.EntityID)
 	}
 
-	numberOfResults := res.Hits.TotalHits.Value
-	totalPages := pagination.Pages(numberOfResults, viper.GetInt64("page_size"))
+	numberOfResults := int(res.Hits.TotalHits.Value)
+	totalPages := pagination.Pages(numberOfResults, pageSize)
 
-	return ids, int(numberOfResults), totalPages, nil
+	return &types.ESFindEntityResult{
+		IDs:             ids,
+		NumberOfResults: int(numberOfResults),
+		TotalPages:      totalPages,
+	}, nil
 }
+
+// OLD CODE
 
 func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
 	doc := map[string]interface{}{

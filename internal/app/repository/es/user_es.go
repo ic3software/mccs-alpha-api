@@ -102,8 +102,8 @@ func (es *user) Find(u *types.User, page int64) ([]string, int, int, error) {
 		ids = append(ids, record.UserID)
 	}
 
-	numberOfResults := res.Hits.TotalHits.Value
-	totalPages := pagination.Pages(numberOfResults, viper.GetInt64("page_size"))
+	numberOfResults := int(res.Hits.TotalHits.Value)
+	totalPages := pagination.Pages(numberOfResults, viper.GetInt("page_size"))
 
 	return ids, int(numberOfResults), totalPages, nil
 }

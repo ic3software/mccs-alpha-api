@@ -1,8 +1,8 @@
-package logic
+package util
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
-func toIDStrings(ids []primitive.ObjectID) []string {
+func ToIDStrings(ids []primitive.ObjectID) []string {
 	idStrings := []string{}
 	for _, objID := range ids {
 		idStrings = append(idStrings, objID.Hex())

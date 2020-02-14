@@ -47,6 +47,16 @@ func FormatTags(tags []string) []string {
 	return formatted
 }
 
+// ToSearchTags transforms tags from user inputs into searching tags.
+// dog walking -> dog, walking (two words)
+func ToSearchTags(words string) []string {
+	splitFn := func(c rune) bool {
+		return c == ',' || c == ' '
+	}
+	tags := strings.FieldsFunc(strings.ToLower(words), splitFn)
+	return FormatTags(tags)
+}
+
 // ToTagFields converts tags into TagFields.
 func ToTagFields(tags []string) []*types.TagField {
 	tagFields := make([]*types.TagField, 0, len(tags))

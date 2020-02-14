@@ -99,7 +99,7 @@ func (u *userAction) Find(c *types.UserActionSearchCriteria, page int64) ([]*typ
 	if err != nil {
 		return nil, 0, e.Wrap(err, "mongo.userAction.Find failed")
 	}
-	totalPages := pagination.Pages(totalCount, viper.GetInt64("page_size"))
+	totalPages := pagination.Pages(int(totalCount), viper.GetInt("page_size"))
 
 	return results, totalPages, nil
 }

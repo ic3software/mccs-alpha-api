@@ -106,7 +106,7 @@ func (a *adminTag) FindTags(name string, page int64) (*types.FindAdminTagResult,
 	if err != nil {
 		return nil, e.Wrap(err, "AdminTagMongo FindTags failed")
 	}
-	totalPages := pagination.Pages(totalCount, viper.GetInt64("page_size"))
+	totalPages := pagination.Pages(int(totalCount), viper.GetInt("page_size"))
 
 	return &types.FindAdminTagResult{
 		AdminTags:       results,

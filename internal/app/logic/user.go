@@ -9,6 +9,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -58,6 +59,44 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 	return nil
 }
 
+func (u *user) Login(email string, password string) (*types.User, error) {
+	user, err := mongo.User.FindByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	if time.Now().Sub(user.LastLoginFailDate).Seconds() <= viper.GetFloat64("login_attempts_timeout") {
+		return nil, e.New(e.AccountLocked, "")
+	}
+
+	err = bcrypt.CompareHash(user.Password, password)
+	if err != nil {
+		return nil, errors.New("Invalid password.")
+	}
+
+	return user, nil
+}
+
+func (u *user) ResetPassword(email string, newPassword string) error {
+	user, err := mongo.User.FindByEmail(email)
+	if err != nil {
+		return err
+	}
+
+	hashedPassword, err := bcrypt.Hash(newPassword)
+	if err != nil {
+		return err
+	}
+
+	user.Password = hashedPassword
+	err = mongo.User.UpdatePassword(user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (u *user) FindOneAndUpdate(user *types.User) (*types.User, error) {
 	err := es.User.Update(user)
 	if err != nil {
@@ -75,7 +114,7 @@ func (u *user) FindEntities(userID primitive.ObjectID) ([]*types.Entity, error) 
 	if err != nil {
 		return nil, err
 	}
-	entities, err := mongo.Entity.FindByIDs(toIDStrings(user.Entities))
+	entities, err := mongo.Entity.FindByIDs(util.ToIDStrings(user.Entities))
 	if err != nil {
 		return nil, err
 	}
@@ -97,24 +136,6 @@ func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
-}
-
-func (u *user) Login(email string, password string) (*types.User, error) {
-	user, err := mongo.User.FindByEmail(email)
-	if err != nil {
-		return nil, err
-	}
-
-	if time.Now().Sub(user.LastLoginFailDate).Seconds() <= viper.GetFloat64("login_attempts_timeout") {
-		return nil, e.New(e.AccountLocked, "")
-	}
-
-	err = bcrypt.CompareHash(user.Password, password)
-	if err != nil {
-		return nil, errors.New("Invalid password.")
-	}
-
 	return user, nil
 }
 
@@ -153,38 +174,6 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 
 // Logout logs out the user.
 func (u *user) Logout() error {
-	return nil
-}
-
-func (u *user) ResetPassword(email string, newPassword string) error {
-	user, err := mongo.User.FindByEmail(email)
-	if err != nil {
-		return err
-	}
-
-	hashedPassword, err := bcrypt.Hash(newPassword)
-	if err != nil {
-		return e.Wrap(err, "reset password failed")
-	}
-
-	user.Password = hashedPassword
-	err = mongo.User.UpdatePassword(user)
-	if err != nil {
-		return e.Wrap(err, "reset password failed")
-	}
-
-	return nil
-}
-
-func (u *user) UpdateUserInfo(user *types.User) error {
-	err := es.User.Update(user)
-	if err != nil {
-		return e.Wrap(err, "update user info failed")
-	}
-	err = mongo.User.UpdateUserInfo(user)
-	if err != nil {
-		return e.Wrap(err, "update user info failed")
-	}
 	return nil
 }
 

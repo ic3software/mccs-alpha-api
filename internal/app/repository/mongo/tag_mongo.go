@@ -167,7 +167,7 @@ func (t *tag) FindTags(name string, page int64) (*types.FindTagResult, error) {
 	if err != nil {
 		return nil, e.Wrap(err, "TagMongo FindTags failed")
 	}
-	totalPages := pagination.Pages(totalCount, viper.GetInt64("page_size"))
+	totalPages := pagination.Pages(int(totalCount), viper.GetInt("page_size"))
 
 	return &types.FindTagResult{
 		Tags:            results,

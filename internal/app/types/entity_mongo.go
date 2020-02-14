@@ -40,18 +40,6 @@ type TagField struct {
 	CreatedAt time.Time `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
 }
 
-// EntityESRecord is the data that will store into the elastic search.
-type EntityESRecord struct {
-	EntityID        string      `json:"entityID,omitempty"`
-	EntityName      string      `json:"entityName,omitempty"`
-	Offers          []*TagField `json:"offers,omitempty"`
-	Wants           []*TagField `json:"wants,omitempty"`
-	LocationCity    string      `json:"locationCity,omitempty"`
-	LocationCountry string      `json:"locationCountry,omitempty"`
-	Status          string      `json:"status,omitempty"`
-	AdminTags       []string    `json:"adminTags,omitempty"`
-}
-
 // Helper types
 
 type TagDifference struct {
@@ -59,20 +47,6 @@ type TagDifference struct {
 	OffersRemoved []string
 	WantsAdded    []string
 	WantsRemoved  []string
-}
-
-type SearchCriteria struct {
-	TagType          string
-	Tags             []*TagField
-	CreatedOnOrAfter time.Time
-
-	Statuses              []string // accepted", "pending", rejected", "tradingPending", "tradingAccepted", "tradingRejected"
-	EntityName            string
-	LocationCountry       string
-	LocationCity          string
-	ShowUserFavoritesOnly bool
-	FavoriteEntities      []primitive.ObjectID
-	AdminTag              string
 }
 
 type FindEntityResult struct {

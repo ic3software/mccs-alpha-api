@@ -66,6 +66,22 @@ func (_ *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 	return nil
 }
 
+func (b *entity) Find(c *types.SearchCriteria) (*types.FindEntityResult, error) {
+	result, err := es.Entity.Find(c)
+	if err != nil {
+		return nil, err
+	}
+	entities, err := mongo.Entity.FindByIDs(result.IDs)
+	if err != nil {
+		return nil, err
+	}
+	return &types.FindEntityResult{
+		Entities:        entities,
+		NumberOfResults: result.NumberOfResults,
+		TotalPages:      result.TotalPages,
+	}, nil
+}
+
 // TO BE REMOVED
 
 func (b *entity) UpdateEntity(id primitive.ObjectID, difference *types.EntityData, isAdmin bool) error {
@@ -90,22 +106,6 @@ func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) erro
 		return e.Wrap(err, "EntityService UpdateAllTagsCreatedAt failed")
 	}
 	return nil
-}
-
-func (b *entity) FindEntity(c *types.SearchCriteria, page int64) (*types.FindEntityResult, error) {
-	ids, numberOfResults, totalPages, err := es.Entity.Find(c, page)
-	if err != nil {
-		return nil, e.Wrap(err, "EntityService FindEntity failed")
-	}
-	entities, err := mongo.Entity.FindByIDs(ids)
-	if err != nil {
-		return nil, e.Wrap(err, "EntityService FindEntity failed")
-	}
-	return &types.FindEntityResult{
-		Entities:        entities,
-		NumberOfResults: numberOfResults,
-		TotalPages:      totalPages,
-	}, nil
 }
 
 func (b *entity) DeleteByID(id primitive.ObjectID) error {

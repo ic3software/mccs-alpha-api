@@ -278,7 +278,7 @@ func (t *transaction) FindInRange(id uint, dateFrom time.Time, dateTo time.Time,
 
 	var numberOfResults int64
 	db.Model(&types.Posting{}).Where("account_id = ? AND (created_at BETWEEN ? AND ?)", id, dateFrom, dateTo).Count(&numberOfResults)
-	totalPages := pagination.Pages(numberOfResults, viper.GetInt64("page_size"))
+	totalPages := pagination.Pages(int(numberOfResults), viper.GetInt("page_size"))
 
 	if err != nil {
 		return nil, 0, e.Wrap(err, "pg.Transaction.Find failed")

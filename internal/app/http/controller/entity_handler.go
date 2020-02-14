@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"sync"
 
 	"strconv"
@@ -11,10 +12,10 @@ import (
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 
@@ -40,9 +41,9 @@ func (b *entityHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	b.once.Do(func() {
-		public.Path("/entities/search").HandlerFunc(b.searchEntity()).Methods("GET")
-		private.Path("/entities/search/match-tags").HandlerFunc(b.searhMatchTags()).Methods("GET")
+		public.Path("/api/v1/entities").HandlerFunc(b.searchEntity()).Methods("GET")
 
+		private.Path("/entities/search/match-tags").HandlerFunc(b.searhMatchTags()).Methods("GET")
 		private.Path("/api/entityStatus").HandlerFunc(b.entityStatus()).Methods("GET")
 		private.Path("/api/getEntityName").HandlerFunc(b.getEntityName()).Methods("GET")
 		private.Path("/api/tradingMemberStatus").HandlerFunc(b.tradingMemberStatus()).Methods("GET")
@@ -86,84 +87,131 @@ func (b *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	return bs, nil
 }
 
-type searchEntityFormData struct {
-	TagType               string
-	Tags                  []*types.TagField
-	CreatedOnOrAfter      string
-	Category              string
-	ShowUserFavoritesOnly bool
-	Page                  int
+func getSearchEntityQuertParams(q url.Values) (*types.SearchEntityQuery, error) {
+	page, err := strconv.Atoi(q.Get("page"))
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := strconv.Atoi(q.Get("page_size"))
+	if err != nil {
+		return nil, err
+	}
+	return &types.SearchEntityQuery{
+		Page:          page,
+		PageSize:      pageSize,
+		Category:      q.Get("category"),
+		Offers:        util.ToSearchTags(q.Get("offers")),
+		Wants:         util.ToSearchTags(q.Get("wants")),
+		TaggedSince:   util.ParseTime(q.Get("tagged_since")),
+		FavoritesOnly: q.Get("favorites_only") == "true",
+	}, nil
 }
 
-type searchEntityResponse struct {
-	IsUserLoggedIn   bool
-	FormData         searchEntityFormData
-	Categories       []string
-	Result           *types.FindEntityResult
-	FavoriteEntities []primitive.ObjectID
+func getSearchCriteria(query *types.SearchEntityQuery, favoriteEntities []primitive.ObjectID) *types.SearchCriteria {
+	return &types.SearchCriteria{
+		Page:             query.Page,
+		PageSize:         query.PageSize,
+		Category:         query.Category,
+		Offers:           query.Offers,
+		Wants:            query.Wants,
+		TaggedSince:      query.TaggedSince,
+		FavoritesOnly:    query.FavoritesOnly,
+		FavoriteEntities: favoriteEntities,
+		Statuses: []string{
+			constant.Entity.Accepted,
+			constant.Trading.Pending,
+			constant.Trading.Accepted,
+			constant.Trading.Rejected,
+		},
+	}
 }
 
 func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("entities")
+	type data struct {
+		ID                 string   `json:"id"`
+		EntityName         string   `json:"entityName"`
+		EntityPhone        string   `json:"entityPhone"`
+		IncType            string   `json:"incType"`
+		CompanyNumber      string   `json:"companyNumber"`
+		Website            string   `json:"website"`
+		Turnover           int      `json:"turnover"`
+		Description        string   `json:"description"`
+		LocationAddress    string   `json:"locationAddress"`
+		LocationCity       string   `json:"locationCity"`
+		LocationRegion     string   `json:"locationRegion"`
+		LocationPostalCode string   `json:"locationPostalCode"`
+		LocationCountry    string   `json:"locationCountry"`
+		Status             string   `json:"status"`
+		Offers             []string `json:"offers"`
+		Wants              []string `json:"wants"`
+	}
+	type meta struct {
+		NumberOfResults int `json:"numberOfResults"`
+		TotalPages      int `json:"totalPages"`
+	}
+	type respond struct {
+		Data []*data `json:"data"`
+		Meta meta    `json:"meta"`
+	}
+	toData := func(entities []*types.Entity) []*data {
+		result := []*data{}
+		for _, entity := range entities {
+			result = append(result, &data{
+				ID:                 entity.ID.Hex(),
+				EntityName:         entity.EntityName,
+				EntityPhone:        entity.EntityPhone,
+				IncType:            entity.IncType,
+				CompanyNumber:      entity.CompanyNumber,
+				Website:            entity.Website,
+				Turnover:           entity.Turnover,
+				Description:        entity.Description,
+				LocationAddress:    entity.LocationAddress,
+				LocationCity:       entity.LocationCity,
+				LocationRegion:     entity.LocationRegion,
+				LocationPostalCode: entity.LocationPostalCode,
+				LocationCountry:    entity.LocationCountry,
+				Status:             entity.Status,
+				Offers:             util.GetTagNames(entity.Offers),
+				Wants:              util.GetTagNames(entity.Wants),
+			})
+		}
+		return result
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-
-		page, err := strconv.Atoi(q.Get("page"))
+		query, err := getSearchEntityQuertParams(r.URL.Query())
 		if err != nil {
-			l.Logger.Error("SearchEntity failed", zap.Error(err))
-			t.Error(w, r, nil, err)
+			l.Logger.Info("[INFO] EntityHandler.searchEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		f := searchEntityFormData{
-			TagType:               q.Get("tag_type"),
-			Tags:                  helper.ToSearchTags(q.Get("tags")),
-			CreatedOnOrAfter:      q.Get("created_on_or_after"),
-			Category:              q.Get("category"),
-			ShowUserFavoritesOnly: q.Get("show-favorites-only") == "true",
-			Page:                  page,
+		errs := validate.SearchBusiness(query)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
 		}
-		res := searchEntityResponse{FormData: f}
 
+		var favoriteEntities []primitive.ObjectID
 		user, err := UserHandler.FindByID(r.Header.Get("userID"))
+		if err == nil {
+			favoriteEntities = user.FavoriteEntities
+		}
+		criteria := getSearchCriteria(query, favoriteEntities)
+
+		found, err := logic.Entity.Find(criteria)
 		if err != nil {
-			res.IsUserLoggedIn = false
-		} else {
-			res.IsUserLoggedIn = true
-			res.FavoriteEntities = user.FavoriteEntities
+			l.Logger.Error("[Error] EntityHandler.searchEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
 		}
 
-		c := types.SearchCriteria{
-			TagType: f.TagType,
-			Tags:    f.Tags,
-			Statuses: []string{
-				constant.Entity.Accepted,
-				constant.Trading.Pending,
-				constant.Trading.Accepted,
-				constant.Trading.Rejected,
+		api.Respond(w, r, http.StatusOK, respond{
+			Data: toData(found.Entities),
+			Meta: meta{
+				TotalPages:      found.TotalPages,
+				NumberOfResults: found.NumberOfResults,
 			},
-			CreatedOnOrAfter:      util.ParseTime(f.CreatedOnOrAfter),
-			AdminTag:              f.Category,
-			ShowUserFavoritesOnly: f.ShowUserFavoritesOnly,
-			FavoriteEntities:      res.FavoriteEntities,
-		}
-		findResult, err := logic.Entity.FindEntity(&c, int64(f.Page))
-		res.Result = findResult
-		if err != nil {
-			l.Logger.Error("SearchEntity failed", zap.Error(err))
-			t.Error(w, r, res, err)
-			return
-		}
-
-		adminTags, err := logic.AdminTag.GetAll()
-		if err != nil {
-			l.Logger.Error("SearchEntity failed", zap.Error(err))
-			t.Error(w, r, nil, err)
-			return
-		}
-		res.Categories = helper.GetAdminTagNames(adminTags)
-
-		t.Render(w, r, res, nil)
+		})
 	}
 }
 
