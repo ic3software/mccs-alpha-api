@@ -144,6 +144,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 		Status             string   `json:"status"`
 		Offers             []string `json:"offers"`
 		Wants              []string `json:"wants"`
+		IsFavorite         bool     `json:"isFavorite"`
 	}
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
@@ -153,9 +154,10 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 		Data []*data `json:"data"`
 		Meta meta    `json:"meta"`
 	}
-	toData := func(entities []*types.Entity) []*data {
+	toData := func(entities []*types.Entity, favorites []primitive.ObjectID) []*data {
 		result := []*data{}
 		for _, entity := range entities {
+			isFavorite := util.ContainID(favorites, entity.ID)
 			result = append(result, &data{
 				ID:                 entity.ID.Hex(),
 				EntityName:         entity.EntityName,
@@ -173,6 +175,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 				Status:             entity.Status,
 				Offers:             util.GetTagNames(entity.Offers),
 				Wants:              util.GetTagNames(entity.Wants),
+				IsFavorite:         isFavorite,
 			})
 		}
 		return result
@@ -206,7 +209,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{
-			Data: toData(found.Entities),
+			Data: toData(found.Entities, favoriteEntities),
 			Meta: meta{
 				TotalPages:      found.TotalPages,
 				NumberOfResults: found.NumberOfResults,

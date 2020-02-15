@@ -9,3 +9,12 @@ func ToIDStrings(ids []primitive.ObjectID) []string {
 	}
 	return idStrings
 }
+
+func ContainID(list []primitive.ObjectID, str primitive.ObjectID) bool {
+	for _, item := range list {
+		if item == str {
+			return true
+		}
+	}
+	return false
+}
