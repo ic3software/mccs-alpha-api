@@ -6,8 +6,6 @@ import (
 	"net/url"
 	"sync"
 
-	"strconv"
-
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
@@ -16,6 +14,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 
@@ -88,11 +87,11 @@ func (b *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 }
 
 func getSearchEntityQuertParams(q url.Values) (*types.SearchEntityQuery, error) {
-	page, err := strconv.Atoi(q.Get("page"))
+	page, err := util.ToInt(q.Get("page"), 1)
 	if err != nil {
 		return nil, err
 	}
-	pageSize, err := strconv.Atoi(q.Get("page_size"))
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +106,16 @@ func getSearchEntityQuertParams(q url.Values) (*types.SearchEntityQuery, error) 
 	}, nil
 }
 
-func getSearchCriteria(query *types.SearchEntityQuery, favoriteEntities []primitive.ObjectID) *types.SearchCriteria {
+func getUserFavoriteEntities(userID string) []primitive.ObjectID {
+	favorites := []primitive.ObjectID{}
+	user, err := UserHandler.FindByID(userID)
+	if err == nil {
+		favorites = user.FavoriteEntities
+	}
+	return favorites
+}
+
+func generateSearchCriteria(query *types.SearchEntityQuery, favorites []primitive.ObjectID) *types.SearchCriteria {
 	return &types.SearchCriteria{
 		Page:             query.Page,
 		PageSize:         query.PageSize,
@@ -116,7 +124,7 @@ func getSearchCriteria(query *types.SearchEntityQuery, favoriteEntities []primit
 		Wants:            query.Wants,
 		TaggedSince:      query.TaggedSince,
 		FavoritesOnly:    query.FavoritesOnly,
-		FavoriteEntities: favoriteEntities,
+		FavoriteEntities: favorites,
 		Statuses: []string{
 			constant.Entity.Accepted,
 			constant.Trading.Pending,
@@ -127,38 +135,19 @@ func getSearchCriteria(query *types.SearchEntityQuery, favoriteEntities []primit
 }
 
 func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) {
-	type data struct {
-		ID                 string   `json:"id"`
-		EntityName         string   `json:"entityName"`
-		EntityPhone        string   `json:"entityPhone"`
-		IncType            string   `json:"incType"`
-		CompanyNumber      string   `json:"companyNumber"`
-		Website            string   `json:"website"`
-		Turnover           int      `json:"turnover"`
-		Description        string   `json:"description"`
-		LocationAddress    string   `json:"locationAddress"`
-		LocationCity       string   `json:"locationCity"`
-		LocationRegion     string   `json:"locationRegion"`
-		LocationPostalCode string   `json:"locationPostalCode"`
-		LocationCountry    string   `json:"locationCountry"`
-		Status             string   `json:"status"`
-		Offers             []string `json:"offers"`
-		Wants              []string `json:"wants"`
-		IsFavorite         bool     `json:"isFavorite"`
-	}
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
 		TotalPages      int `json:"totalPages"`
 	}
 	type respond struct {
-		Data []*data `json:"data"`
-		Meta meta    `json:"meta"`
+		Data []*types.EntitySearchRespond `json:"data"`
+		Meta meta                         `json:"meta"`
 	}
-	toData := func(entities []*types.Entity, favorites []primitive.ObjectID) []*data {
-		result := []*data{}
+	toData := func(entities []*types.Entity, favorites []primitive.ObjectID) []*types.EntitySearchRespond {
+		result := []*types.EntitySearchRespond{}
 		for _, entity := range entities {
 			isFavorite := util.ContainID(favorites, entity.ID)
-			result = append(result, &data{
+			result = append(result, &types.EntitySearchRespond{
 				ID:                 entity.ID.Hex(),
 				EntityName:         entity.EntityName,
 				EntityPhone:        entity.EntityPhone,
@@ -194,12 +183,8 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		var favoriteEntities []primitive.ObjectID
-		user, err := UserHandler.FindByID(r.Header.Get("userID"))
-		if err == nil {
-			favoriteEntities = user.FavoriteEntities
-		}
-		criteria := getSearchCriteria(query, favoriteEntities)
+		favoriteEntities := getUserFavoriteEntities(r.Header.Get("userID"))
+		criteria := generateSearchCriteria(query, favoriteEntities)
 
 		found, err := logic.Entity.Find(criteria)
 		if err != nil {

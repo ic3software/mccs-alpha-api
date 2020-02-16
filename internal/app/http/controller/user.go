@@ -367,19 +367,8 @@ func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) 
 }
 
 func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
-	type data struct {
-		ID                            string    `json:"id"`
-		Email                         string    `json:"email"`
-		FirstName                     string    `json:"firstName"`
-		LastName                      string    `json:"lastName"`
-		UserPhone                     string    `json:"userPhone"`
-		LastLoginIP                   string    `json:"lastLoginIP"`
-		LastLoginDate                 time.Time `json:"lastLoginDate"`
-		DailyEmailMatchNotification   *bool     `json:"dailyEmailMatchNotification"`
-		ShowTagsMatchedSinceLastLogin *bool     `json:"showTagsMatchedSinceLastLogin"`
-	}
 	type respond struct {
-		Data data `json:"data"`
+		Data *types.UserProfileRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := u.FindByID(r.Header.Get("userID"))
@@ -388,7 +377,7 @@ func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: data{
+		api.Respond(w, r, http.StatusOK, respond{Data: &types.UserProfileRespond{
 			ID:                            user.ID.Hex(),
 			Email:                         user.Email,
 			UserPhone:                     user.Telephone,
@@ -463,31 +452,13 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 }
 
 func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request) {
-	type data struct {
-		ID                 string   `json:"id"`
-		EntityName         string   `json:"entityName"`
-		EntityPhone        string   `json:"entityPhone"`
-		IncType            string   `json:"incType"`
-		CompanyNumber      string   `json:"companyNumber"`
-		Website            string   `json:"website"`
-		Turnover           int      `json:"turnover"`
-		Description        string   `json:"description"`
-		LocationAddress    string   `json:"locationAddress"`
-		LocationCity       string   `json:"locationCity"`
-		LocationRegion     string   `json:"locationRegion"`
-		LocationPostalCode string   `json:"locationPostalCode"`
-		LocationCountry    string   `json:"locationCountry"`
-		Status             string   `json:"status"`
-		Offers             []string `json:"offers"`
-		Wants              []string `json:"wants"`
-	}
 	type respond struct {
-		Data []data `json:"data"`
+		Data []*types.UserEntityRespond `json:"data"`
 	}
-	toData := func(entities []*types.Entity) []data {
-		result := []data{}
+	toData := func(entities []*types.Entity) []*types.UserEntityRespond {
+		result := []*types.UserEntityRespond{}
 		for _, entity := range entities {
-			result = append(result, data{
+			result = append(result, &types.UserEntityRespond{
 				ID:                 entity.ID.Hex(),
 				EntityName:         entity.EntityName,
 				EntityPhone:        entity.EntityPhone,
@@ -572,26 +543,8 @@ func updateTags(old *types.Entity, offers, wants []string) {
 }
 
 func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request) {
-	type data struct {
-		ID                 string   `json:"id"`
-		EntityName         string   `json:"entityName"`
-		EntityPhone        string   `json:"entityPhone"`
-		IncType            string   `json:"incType"`
-		CompanyNumber      string   `json:"companyNumber"`
-		Website            string   `json:"website"`
-		Turnover           int      `json:"turnover"`
-		Description        string   `json:"description"`
-		LocationAddress    string   `json:"locationAddress"`
-		LocationCity       string   `json:"locationCity"`
-		LocationRegion     string   `json:"locationRegion"`
-		LocationPostalCode string   `json:"locationPostalCode"`
-		LocationCountry    string   `json:"locationCountry"`
-		Status             string   `json:"status"`
-		Offers             []string `json:"offers"`
-		Wants              []string `json:"wants"`
-	}
 	type respond struct {
-		Data data `json:"data"`
+		Data *types.UserEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.UpdateUserEntityReqBody
@@ -657,7 +610,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 		if len(wants) == 0 {
 			wants = util.GetTagNames(entity.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: data{
+		api.Respond(w, r, http.StatusOK, respond{Data: &types.UserEntityRespond{
 			ID:                 entity.ID.Hex(),
 			EntityName:         entity.EntityName,
 			EntityPhone:        entity.EntityPhone,

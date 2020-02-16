@@ -8,10 +8,8 @@ import (
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/pagination"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 	"github.com/olivere/elastic/v7"
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -179,12 +177,6 @@ func seachByTags(q *elastic.BoolQuery, c *types.SearchCriteria) *elastic.BoolQue
 func (es *entity) Find(c *types.SearchCriteria) (*types.ESFindEntityResult, error) {
 	var ids []string
 
-	pageSize := viper.GetInt("page_size")
-	if c.PageSize != 0 {
-		pageSize = c.PageSize
-	}
-	from := pageSize * (c.Page - 1)
-
 	q := elastic.NewBoolQuery()
 
 	if c.FavoritesOnly {
@@ -199,13 +191,13 @@ func (es *entity) Find(c *types.SearchCriteria) (*types.ESFindEntityResult, erro
 	seachByAddress(q, c)
 	seachByTags(q, c)
 
+	from := c.PageSize * (c.Page - 1)
 	res, err := es.c.Search().
 		Index(es.index).
 		From(from).
-		Size(pageSize).
+		Size(c.PageSize).
 		Query(q).
 		Do(context.Background())
-
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +212,7 @@ func (es *entity) Find(c *types.SearchCriteria) (*types.ESFindEntityResult, erro
 	}
 
 	numberOfResults := int(res.Hits.TotalHits.Value)
-	totalPages := pagination.Pages(numberOfResults, pageSize)
+	totalPages := util.GetNumberOfPages(numberOfResults, c.PageSize)
 
 	return &types.ESFindEntityResult{
 		IDs:             ids,

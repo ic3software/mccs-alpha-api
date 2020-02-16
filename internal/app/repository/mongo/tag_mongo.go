@@ -6,7 +6,7 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/pagination"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -167,7 +167,7 @@ func (t *tag) FindTags(name string, page int64) (*types.FindTagResult, error) {
 	if err != nil {
 		return nil, e.Wrap(err, "TagMongo FindTags failed")
 	}
-	totalPages := pagination.Pages(int(totalCount), viper.GetInt("page_size"))
+	totalPages := util.GetNumberOfPages(int(totalCount), viper.GetInt("page_size"))
 
 	return &types.FindTagResult{
 		Tags:            results,
