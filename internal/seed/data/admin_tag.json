@@ -1,6 +1,10 @@
 [
     {
-        "name" : "Carpentry",
+        "name": "Carpentry",
         "createdAt": "2020-02-16T08:47:56.145Z"
+    },
+    {
+        "name": "Painting",
+        "createdAt": "2020-02-16T08:40:10.255Z"
     }
 ]

@@ -1,42 +1,76 @@
 [
     {
-        "entityName" : "Joe's Woodworking",
-        "incType" : "sole",
-        "companyNumber" : "none",
-        "website" : "https://joes-woodworking.null",
-        "entityPhone" : "+442089292929",
-        "turnover" : 50000,
-        "adminTags" : [ 
+        "entityName": "Pete's Painting",
+        "incType": "sole",
+        "companyNumber": "none",
+        "website": "https://petes-painting.null",
+        "entityPhone": "+442074848484",
+        "turnover": 150000,
+        "adminTags": [ 
+            "Painting"
+        ],
+        "offers": [ 
+            {
+                "name": "painting",
+                "createdAt": "2020-02-16T08:40:10.249Z"
+            }
+        ],
+        "wants": [ 
+            {
+                "name": "vegetables",
+                "createdAt": "2020-02-16T08:40:10.249Z"
+            }, 
+            {
+                "name": "wine",
+                "createdAt": "2020-02-16T08:40:10.249Z"
+            }
+        ],
+        "description": "Indoor and outdoor painting specialist.",
+        "locationAddress": "456 Main",
+        "locationCity": "London",
+        "locationRegion": "Greater London",
+        "locationPostalCode": "UK1 2ENG",
+        "locationCountry": "England",
+        "status": "tradingAccepted",
+        "createdAt": "2020-02-16T08:40:10.249Z"
+    },
+    {
+        "entityName": "Joe's Woodworking",
+        "incType": "sole",
+        "companyNumber": "none",
+        "website": "https://joes-woodworking.null",
+        "entityPhone": "+442089292929",
+        "turnover": 50000,
+        "adminTags": [ 
             "Carpentry"
         ],
-        "offers" : [ 
+        "offers": [ 
             {
-                "name" : "carpentry",
+                "name": "carpentry",
                 "createdAt": "2020-02-16T08:37:08.218Z"
             }, 
             {
-                "name" : "painting",
+                "name": "painting",
                 "createdAt": "2020-02-16T08:39:10.249Z"
             }
         ],
-        "wants" : [ 
+        "wants": [ 
             {
-                "name" : "pizza",
+                "name": "pizza",
                 "createdAt": "2020-02-16T08:37:08.218Z"
             }, 
             {
-                "name" : "beer",
+                "name": "beer",
                 "createdAt": "2020-02-16T08:37:08.218Z"
             }
         ],
-        "description" : "High quality carpentry at a reasonable price.",
-        "locationAddress" : "123 Main",
-        "locationCity" : "London",
-        "locationRegion" : "Greater London",
-        "locationPostalCode" : "UK1 2ENG",
-        "locationCountry" : "England",
-        "status" : "tradingAccepted",
-        "createdAt": "2020-02-16T08:35:55.758Z",
-        "updatedAt": "2020-02-16T08:47:56.142Z"
+        "description": "High quality carpentry at a reasonable price.",
+        "locationAddress": "123 Main",
+        "locationCity": "London",
+        "locationRegion": "Greater London",
+        "locationPostalCode": "UK1 2ENG",
+        "locationCountry": "England",
+        "status": "tradingAccepted",
+        "createdAt": "2020-02-16T08:35:55.758Z"
     }
 ]

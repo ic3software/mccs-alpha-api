@@ -6,24 +6,33 @@
         "updatedAt": "2020-02-16T08:37:08.382Z"
     },
     {
-        "_id": "5e48ff34167267b60411b37f",
-        "name" : "pizza",
+        "name": "pizza",
         "createdAt": "2020-02-16T08:37:08.423Z",
         "updatedAt": "2020-02-16T08:37:08.423Z",
         "wantAddedAt": "2020-02-16T08:37:08.423Z"
     },
     {
-        "_id": "5e48ff34167267b60411b381",
-        "name" : "beer",
+        "name": "beer",
         "createdAt": "2020-02-16T08:37:08.444Z",
         "updatedAt": "2020-02-16T08:37:08.444Z",
         "wantAddedAt": "2020-02-16T08:37:08.444Z"
     },
     {
-        "_id": "5e48ffae167267b60411b3c5",
-        "name" : "painting",
+        "name": "painting",
         "createdAt": "2020-02-16T08:39:10.251Z",
-        "offerAddedAt": "2020-02-16T08:39:10.251Z",
-        "updatedAt": "2020-02-16T08:39:10.251Z"
+        "offerAddedAt": "2020-02-16T08:40:10.251Z",
+        "updatedAt": "2020-02-16T08:40:10.251Z"
+    },
+    {
+        "name": "vegetables",
+        "createdAt": "2020-02-16T08:40:10.251Z",
+        "wantAddedAt": "2020-02-16T08:40:10.251Z",
+        "updatedAt": "2020-02-16T08:40:10.251Z"
+    },
+    {
+        "name": "wine",
+        "createdAt": "2020-02-16T08:40:10.251Z",
+        "wantAddedAt": "2020-02-16T08:40:10.251Z",
+        "updatedAt": "2020-02-16T08:40:10.251Z"
     }
 ]

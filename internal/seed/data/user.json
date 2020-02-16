@@ -1,12 +1,20 @@
 [
     {
-        "firstName" : "Joe",
-        "lastName" : "Carpenter",
-        "email" : "joe@dev.null",
-        "password" : "password",
-        "telephone" : "+442079191919",
+        "firstName": "Pete",
+        "lastName": "Painter",
+        "email": "pete@dev.null",
+        "password": "password",
+        "telephone": "+442083232323",
+        "createdAt": "2020-02-16T08:40:10.249Z",
+        "dailyNotification": true
+    },
+    {
+        "firstName": "Joe",
+        "lastName": "Carpenter",
+        "email": "joe@dev.null",
+        "password": "password",
+        "telephone": "+442079191919",
         "createdAt": "2020-02-16T08:35:55.849Z",
-        "updatedAt": "2020-02-16T08:47:41.571Z",
-        "dailyNotification" : true
+        "dailyNotification": true
     }
 ]
