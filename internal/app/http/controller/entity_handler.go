@@ -98,6 +98,7 @@ func getSearchEntityQuertParams(q url.Values) (*types.SearchEntityQuery, error) 
 	return &types.SearchEntityQuery{
 		Page:          page,
 		PageSize:      pageSize,
+		EntityName:    q.Get("entityName"),
 		Category:      q.Get("category"),
 		Offers:        util.ToSearchTags(q.Get("offers")),
 		Wants:         util.ToSearchTags(q.Get("wants")),
@@ -119,6 +120,7 @@ func generateSearchCriteria(query *types.SearchEntityQuery, favorites []primitiv
 	return &types.SearchCriteria{
 		Page:             query.Page,
 		PageSize:         query.PageSize,
+		EntityName:       query.EntityName,
 		Category:         query.Category,
 		Offers:           query.Offers,
 		Wants:            query.Wants,

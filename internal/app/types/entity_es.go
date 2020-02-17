@@ -21,6 +21,7 @@ type EntityESRecord struct {
 type SearchCriteria struct {
 	Page             int
 	PageSize         int
+	EntityName       string
 	Wants            []string
 	Offers           []string
 	Category         string
@@ -29,7 +30,6 @@ type SearchCriteria struct {
 	TaggedSince      time.Time
 	Statuses         []string // accepted", "pending", rejected", "tradingPending", "tradingAccepted", "tradingRejected"
 
-	EntityName      string
 	LocationCountry string
 	LocationCity    string
 }
