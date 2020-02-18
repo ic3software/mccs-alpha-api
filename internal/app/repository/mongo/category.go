@@ -33,12 +33,8 @@ func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryRe
 	findOptions.SetLimit(int64(query.PageSize))
 
 	filter := bson.M{
+		"name":      primitive.Regex{Pattern: "^" + query.Prefix + ".*" + query.Fragment + ".*", Options: "i"},
 		"deletedAt": bson.M{"$exists": false},
-	}
-	if len(query.Prefix) != 0 {
-		filter["name"] = primitive.Regex{Pattern: "^" + query.Prefix, Options: "i"}
-	} else {
-		filter["name"] = primitive.Regex{Pattern: query.Fragment, Options: "i"}
 	}
 	cur, err := a.c.Find(context.TODO(), filter)
 	if err != nil {
