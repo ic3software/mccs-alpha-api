@@ -46,9 +46,13 @@ func (u *userHandler) RegisterRoutes(
 		public.Path("/api/v1/login").HandlerFunc(u.login()).Methods("POST")
 		public.Path("/api/v1/signup").HandlerFunc(u.signup()).Methods("POST")
 		private.Path("/api/v1/logout").HandlerFunc(u.logout()).Methods("POST")
+
 		public.Path("/api/v1/password-reset").HandlerFunc(u.requestPasswordReset()).Methods("POST")
 		public.Path("/api/v1/password-reset/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
 		private.Path("/api/v1/password-change").HandlerFunc(u.passwordChange()).Methods("POST")
+
+		private.Path("/api/v1/users/{userID}").HandlerFunc(u.getUser()).Methods("GET")
+
 		private.Path("/api/v1/user").HandlerFunc(u.userProfile()).Methods("GET")
 		private.Path("/api/v1/user").HandlerFunc(u.updateUser()).Methods("PATCH")
 		private.Path("/api/v1/user/entities").HandlerFunc(u.listUserEntities()).Methods("GET")
@@ -400,8 +404,8 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 		UserPhone                     string    `json:"userPhone"`
 		LastLoginIP                   string    `json:"lastLoginIP"`
 		LastLoginDate                 time.Time `json:"lastLoginDate"`
-		DailyEmailMatchNotification   *bool     `json:"dailyEmailMatchNotification"`
-		ShowTagsMatchedSinceLastLogin *bool     `json:"showTagsMatchedSinceLastLogin"`
+		DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
+		ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
 	}
 	type respond struct {
 		Data data `json:"data"`
@@ -445,8 +449,47 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 			LastName:                      user.LastName,
 			LastLoginIP:                   user.LastLoginIP,
 			LastLoginDate:                 user.LastLoginDate,
-			DailyEmailMatchNotification:   user.DailyNotification,
-			ShowTagsMatchedSinceLastLogin: user.ShowRecentMatchedTags,
+			DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
+			ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
+		}})
+	}
+}
+
+func (u *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
+	type data struct {
+		ID                            string    `json:"id"`
+		Email                         string    `json:"email"`
+		FirstName                     string    `json:"firstName"`
+		LastName                      string    `json:"lastName"`
+		UserPhone                     string    `json:"userPhone"`
+		LastLoginIP                   string    `json:"lastLoginIP"`
+		LastLoginDate                 time.Time `json:"lastLoginDate"`
+		DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
+		ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
+	}
+	type respond struct {
+		Data data `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID, _ := primitive.ObjectIDFromHex(vars["userID"])
+		user, err := logic.User.FindByID(userID)
+		if err != nil {
+			l.Logger.Info("[INFO] UserHandler.getUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: data{
+			ID:                            user.ID.Hex(),
+			Email:                         user.Email,
+			UserPhone:                     user.Telephone,
+			FirstName:                     user.FirstName,
+			LastName:                      user.LastName,
+			LastLoginIP:                   user.LastLoginIP,
+			LastLoginDate:                 user.LastLoginDate,
+			DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
+			ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
 		}})
 	}
 }
