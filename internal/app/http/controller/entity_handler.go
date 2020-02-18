@@ -86,27 +86,6 @@ func (b *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	return bs, nil
 }
 
-func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
-	page, err := util.ToInt(q.Get("page"), 1)
-	if err != nil {
-		return nil, err
-	}
-	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
-	if err != nil {
-		return nil, err
-	}
-	return &types.SearchEntityQuery{
-		Page:          page,
-		PageSize:      pageSize,
-		EntityName:    q.Get("entityName"),
-		Category:      q.Get("category"),
-		Offers:        util.ToSearchTags(q.Get("offers")),
-		Wants:         util.ToSearchTags(q.Get("wants")),
-		TaggedSince:   util.ParseTime(q.Get("tagged_since")),
-		FavoritesOnly: q.Get("favorites_only") == "true",
-	}, nil
-}
-
 func getUserFavoriteEntities(userID string) []primitive.ObjectID {
 	favorites := []primitive.ObjectID{}
 	user, err := UserHandler.FindByID(userID)
@@ -116,24 +95,32 @@ func getUserFavoriteEntities(userID string) []primitive.ObjectID {
 	return favorites
 }
 
-func generateSearchCriteria(query *types.SearchEntityQuery, favorites []primitive.ObjectID) *types.SearchCriteria {
-	return &types.SearchCriteria{
-		Page:             query.Page,
-		PageSize:         query.PageSize,
-		EntityName:       query.EntityName,
-		Category:         query.Category,
-		Offers:           query.Offers,
-		Wants:            query.Wants,
-		TaggedSince:      query.TaggedSince,
-		FavoritesOnly:    query.FavoritesOnly,
+func getSearchEntityQueryParams(q url.Values, favorites []primitive.ObjectID) (*types.SearchEntityQuery, error) {
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, err
+	}
+	return &types.SearchEntityQuery{
+		Page:             page,
+		PageSize:         pageSize,
+		EntityName:       q.Get("entityName"),
+		Category:         q.Get("category"),
+		Offers:           util.ToSearchTags(q.Get("offers")),
+		Wants:            util.ToSearchTags(q.Get("wants")),
+		TaggedSince:      util.ParseTime(q.Get("tagged_since")),
 		FavoriteEntities: favorites,
+		FavoritesOnly:    q.Get("favorites_only") == "true",
 		Statuses: []string{
 			constant.Entity.Accepted,
 			constant.Trading.Pending,
 			constant.Trading.Accepted,
 			constant.Trading.Rejected,
 		},
-	}
+	}, nil
 }
 
 func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) {
@@ -172,7 +159,8 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 		return result
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := getSearchEntityQueryParams(r.URL.Query())
+		favoriteEntities := getUserFavoriteEntities(r.Header.Get("userID"))
+		query, err := getSearchEntityQueryParams(r.URL.Query(), favoriteEntities)
 		if err != nil {
 			l.Logger.Info("[INFO] EntityHandler.searchEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -185,10 +173,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		favoriteEntities := getUserFavoriteEntities(r.Header.Get("userID"))
-		criteria := generateSearchCriteria(query, favoriteEntities)
-
-		found, err := logic.Entity.Find(criteria)
+		found, err := logic.Entity.Find(query)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.searchEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)

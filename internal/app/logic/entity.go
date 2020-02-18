@@ -66,8 +66,8 @@ func (_ *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 	return nil
 }
 
-func (b *entity) Find(c *types.SearchCriteria) (*types.FindEntityResult, error) {
-	result, err := es.Entity.Find(c)
+func (b *entity) Find(query *types.SearchEntityQuery) (*types.FindEntityResult, error) {
+	result, err := es.Entity.Find(query)
 	if err != nil {
 		return nil, err
 	}

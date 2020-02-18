@@ -1,11 +1,5 @@
 package types
 
-import (
-	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
 // EntityESRecord is the data that will store into the elastic search.
 type EntityESRecord struct {
 	EntityID        string      `json:"entityID,omitempty"`
@@ -16,22 +10,6 @@ type EntityESRecord struct {
 	LocationCountry string      `json:"locationCountry,omitempty"`
 	Status          string      `json:"status,omitempty"`
 	AdminTags       []string    `json:"adminTags,omitempty"`
-}
-
-type SearchCriteria struct {
-	Page             int
-	PageSize         int
-	EntityName       string
-	Wants            []string
-	Offers           []string
-	Category         string
-	FavoriteEntities []primitive.ObjectID
-	FavoritesOnly    bool
-	TaggedSince      time.Time
-	Statuses         []string // accepted", "pending", rejected", "tradingPending", "tradingAccepted", "tradingRejected"
-
-	LocationCountry string
-	LocationCity    string
 }
 
 type ESFindEntityResult struct {

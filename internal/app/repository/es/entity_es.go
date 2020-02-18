@@ -121,10 +121,10 @@ func (es *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDiffere
 	return nil
 }
 
-func seachByStatus(q *elastic.BoolQuery, c *types.SearchCriteria) *elastic.BoolQuery {
-	if len(c.Statuses) != 0 {
+func seachByStatus(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elastic.BoolQuery {
+	if len(query.Statuses) != 0 {
 		qq := elastic.NewBoolQuery()
-		for _, status := range c.Statuses {
+		for _, status := range query.Statuses {
 			qq.Should(elastic.NewMatchQuery("status", status))
 		}
 		q.Must(qq)
@@ -132,39 +132,39 @@ func seachByStatus(q *elastic.BoolQuery, c *types.SearchCriteria) *elastic.BoolQ
 	return q
 }
 
-func seachByAddress(q *elastic.BoolQuery, c *types.SearchCriteria) *elastic.BoolQuery {
-	if c.EntityName != "" {
-		q.Must(newFuzzyWildcardQuery("entityName", c.EntityName))
+func seachByAddress(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elastic.BoolQuery {
+	if query.EntityName != "" {
+		q.Must(newFuzzyWildcardQuery("entityName", query.EntityName))
 	}
-	if c.LocationCountry != "" {
-		q.Must(elastic.NewMatchQuery("locationCountry", c.LocationCountry))
+	if query.LocationCountry != "" {
+		q.Must(elastic.NewMatchQuery("locationCountry", query.LocationCountry))
 	}
-	if c.LocationCity != "" {
-		q.Must(newFuzzyWildcardQuery("locationCity", c.LocationCity))
+	if query.LocationCity != "" {
+		q.Must(newFuzzyWildcardQuery("locationCity", query.LocationCity))
 	}
 	return q
 }
 
-func seachByTags(q *elastic.BoolQuery, c *types.SearchCriteria) *elastic.BoolQuery {
+func seachByTags(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elastic.BoolQuery {
 	// "Tag Added After" will associate with "tags".
-	if len(c.Offers) != 0 {
+	if len(query.Offers) != 0 {
 		qq := elastic.NewBoolQuery()
 		// weighted is used to make sure the tags are shown in order.
 		weighted := 2.0
-		for _, offer := range c.Offers {
-			qq.Should(newFuzzyWildcardTimeQueryForTag("offers", offer, c.TaggedSince).
+		for _, offer := range query.Offers {
+			qq.Should(newFuzzyWildcardTimeQueryForTag("offers", offer, query.TaggedSince).
 				Boost(weighted))
 			weighted *= 0.9
 		}
 		// Must match one of the "Should" queries.
 		q.Must(qq)
 	}
-	if len(c.Wants) != 0 {
+	if len(query.Wants) != 0 {
 		qq := elastic.NewBoolQuery()
 		// weighted is used to make sure the tags are shown in order.
 		weighted := 2.0
-		for _, want := range c.Wants {
-			qq.Should(newFuzzyWildcardTimeQueryForTag("wants", want, c.TaggedSince).
+		for _, want := range query.Wants {
+			qq.Should(newFuzzyWildcardTimeQueryForTag("wants", want, query.TaggedSince).
 				Boost(weighted))
 			weighted *= 0.9
 		}
@@ -174,28 +174,28 @@ func seachByTags(q *elastic.BoolQuery, c *types.SearchCriteria) *elastic.BoolQue
 	return q
 }
 
-func (es *entity) Find(c *types.SearchCriteria) (*types.ESFindEntityResult, error) {
+func (es *entity) Find(query *types.SearchEntityQuery) (*types.ESFindEntityResult, error) {
 	var ids []string
 
 	q := elastic.NewBoolQuery()
 
-	if c.FavoritesOnly {
-		idQuery := elastic.NewIdsQuery().Ids(util.ToIDStrings(c.FavoriteEntities)...)
+	if query.FavoritesOnly {
+		idQuery := elastic.NewIdsQuery().Ids(util.ToIDStrings(query.FavoriteEntities)...)
 		q.Must(idQuery)
 	}
-	if c.Category != "" {
-		q.Must(elastic.NewMatchQuery("adminTags", c.Category))
+	if query.Category != "" {
+		q.Must(elastic.NewMatchQuery("adminTags", query.Category))
 	}
 
-	seachByStatus(q, c)
-	seachByAddress(q, c)
-	seachByTags(q, c)
+	seachByStatus(q, query)
+	seachByAddress(q, query)
+	seachByTags(q, query)
 
-	from := c.PageSize * (c.Page - 1)
+	from := query.PageSize * (query.Page - 1)
 	res, err := es.c.Search().
 		Index(es.index).
 		From(from).
-		Size(c.PageSize).
+		Size(query.PageSize).
 		Query(q).
 		Do(context.Background())
 	if err != nil {
@@ -212,7 +212,7 @@ func (es *entity) Find(c *types.SearchCriteria) (*types.ESFindEntityResult, erro
 	}
 
 	numberOfResults := int(res.Hits.TotalHits.Value)
-	totalPages := util.GetNumberOfPages(numberOfResults, c.PageSize)
+	totalPages := util.GetNumberOfPages(numberOfResults, query.PageSize)
 
 	return &types.ESFindEntityResult{
 		IDs:             ids,
