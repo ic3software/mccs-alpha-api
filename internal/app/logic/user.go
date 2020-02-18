@@ -121,7 +121,7 @@ func (u *user) FindEntities(userID primitive.ObjectID) ([]*types.Entity, error) 
 	return entities, nil
 }
 
-// OLD CODE
+// TO BE REMOVED
 
 func (u *user) FindByEmail(email string) (*types.User, error) {
 	user, err := mongo.User.FindByEmail(email)

@@ -78,5 +78,5 @@ type EntityData struct {
 	LocationPostalCode string
 	LocationCountry    string
 	Status             string
-	AdminTags          []string
+	Categories         []string
 }

@@ -6,8 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// AdminTag is the model representation of an admin tag in the data model.
-type AdminTag struct {
+type Category struct {
 	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	CreatedAt time.Time          `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
 	UpdatedAt time.Time          `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
@@ -18,8 +17,8 @@ type AdminTag struct {
 
 // Helper types
 
-type FindAdminTagResult struct {
-	AdminTags       []*AdminTag
+type FindCategoryResult struct {
+	Categories      []*Category
 	NumberOfResults int
 	TotalPages      int
 }

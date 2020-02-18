@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"sync"
@@ -10,46 +11,103 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
 
-type adminTagHandler struct {
+type categoryHandler struct {
 	once *sync.Once
 }
 
-var AdminTagHandler = newAdminTagHandler()
+var CategoryHandler = newCategoryHandler()
 
-func newAdminTagHandler() *adminTagHandler {
-	return &adminTagHandler{
+func newCategoryHandler() *categoryHandler {
+	return &categoryHandler{
 		once: new(sync.Once),
 	}
 }
 
-func (a *adminTagHandler) RegisterRoutes(
+func (a *categoryHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
 	adminPublic *mux.Router,
 	adminPrivate *mux.Router,
 ) {
 	a.once.Do(func() {
-		adminPrivate.Path("/admin-tags").HandlerFunc(a.adminTagPage()).Methods("GET")
-		adminPrivate.Path("/admin-tags/search").HandlerFunc(a.searchAdminTags()).Methods("GET")
+		public.Path("/api/v1/{prefix}").HandlerFunc(a.searchCategory()).Methods("GET")
 
-		public.Path("/api/admin-tags/list/{prefix}").HandlerFunc(a.list()).Methods("GET")
+		adminPrivate.Path("​/categories").HandlerFunc(a.searchAdminTags()).Methods("GET")
 		adminPrivate.Path("/api/admin-tags").HandlerFunc(a.createAdminTag()).Methods("POST")
 		adminPrivate.Path("/api/admin-tags/{id}").HandlerFunc(a.renameAdminTag()).Methods("PUT")
 		adminPrivate.Path("/api/admin-tags/{id}").HandlerFunc(a.deleteAdminTag()).Methods("DELETE")
 	})
 }
 
-func (a *adminTagHandler) SaveAdminTags(adminTags []string) error {
+func getSearchCategoryQueryParams(q url.Values) (*types.SearchCategoryQuery, error) {
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, err
+	}
+	return &types.SearchCategoryQuery{
+		Fragment: q.Get("fragment"),
+		Prefix:   q.Get("prefix"),
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+func (a *categoryHandler) searchCategory() func(http.ResponseWriter, *http.Request) {
+	type meta struct {
+		NumberOfResults int `json:"numberOfResults"`
+		TotalPages      int `json:"totalPages"`
+	}
+	type respond struct {
+		Data []string `json:"data"`
+		Meta meta     `json:"meta"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		query, err := getSearchCategoryQueryParams(r.URL.Query())
+
+		errs := validate.SearchCategory(query)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		found, err := logic.Category.Find(query)
+		if err != nil {
+			l.Logger.Error("[Error] TagHandler.searchCategory failed:", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{
+			Data: util.CategoryToNames(found.Categories),
+			Meta: meta{
+				TotalPages:      found.TotalPages,
+				NumberOfResults: found.NumberOfResults,
+			},
+		})
+	}
+}
+
+// TO BE REMOVED
+
+func (a *categoryHandler) SaveAdminTags(adminTags []string) error {
 	for _, adminTag := range adminTags {
-		err := logic.AdminTag.Create(adminTag)
+		err := logic.Category.Create(adminTag)
 		if err != nil {
 			return err
 		}
@@ -57,14 +115,7 @@ func (a *adminTagHandler) SaveAdminTags(adminTags []string) error {
 	return nil
 }
 
-func (a *adminTagHandler) adminTagPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("admin/admin-tags")
-	return func(w http.ResponseWriter, r *http.Request) {
-		t.Render(w, r, nil, nil)
-	}
-}
-
-func (a *adminTagHandler) createAdminTag() func(http.ResponseWriter, *http.Request) {
+func (a *categoryHandler) createAdminTag() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		Name string `json:"name"`
 	}
@@ -87,7 +138,7 @@ func (a *adminTagHandler) createAdminTag() func(http.ResponseWriter, *http.Reque
 		}
 		req.Name = helper.FormatAdminTag(req.Name)
 
-		_, err = logic.AdminTag.FindByName(req.Name)
+		_, err = logic.Category.FindByName(req.Name)
 		if err == nil {
 			l.Logger.Info("Admin tag already exists!")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -95,7 +146,7 @@ func (a *adminTagHandler) createAdminTag() func(http.ResponseWriter, *http.Reque
 			return
 		}
 
-		err = logic.AdminTag.Create(req.Name)
+		err = logic.Category.Create(req.Name)
 		if err != nil {
 			l.Logger.Error("CreateAdminTag failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -120,7 +171,7 @@ func (a *adminTagHandler) createAdminTag() func(http.ResponseWriter, *http.Reque
 	}
 }
 
-func (a *adminTagHandler) searchAdminTags() func(http.ResponseWriter, *http.Request) {
+func (a *categoryHandler) searchAdminTags() func(http.ResponseWriter, *http.Request) {
 	t := template.NewView("admin/admin-tags")
 	type formData struct {
 		Name string
@@ -128,7 +179,7 @@ func (a *adminTagHandler) searchAdminTags() func(http.ResponseWriter, *http.Requ
 	}
 	type response struct {
 		FormData formData
-		Result   *types.FindAdminTagResult
+		Result   *types.FindCategoryResult
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		page, err := strconv.Atoi(r.URL.Query().Get("page"))
@@ -149,7 +200,7 @@ func (a *adminTagHandler) searchAdminTags() func(http.ResponseWriter, *http.Requ
 			return
 		}
 
-		findResult, err := logic.AdminTag.FindTags(f.Name, int64(f.Page))
+		findResult, err := logic.Category.FindTags(f.Name, int64(f.Page))
 		if err != nil {
 			l.Logger.Error("SearchAdminTags failed", zap.Error(err))
 			t.Error(w, r, res, err)
@@ -161,7 +212,7 @@ func (a *adminTagHandler) searchAdminTags() func(http.ResponseWriter, *http.Requ
 	}
 }
 
-func (a *adminTagHandler) renameAdminTag() func(http.ResponseWriter, *http.Request) {
+func (a *categoryHandler) renameAdminTag() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
@@ -185,7 +236,7 @@ func (a *adminTagHandler) renameAdminTag() func(http.ResponseWriter, *http.Reque
 		}
 		req.Name = helper.FormatAdminTag(req.Name)
 
-		_, err = logic.AdminTag.FindByName(req.Name)
+		_, err = logic.Category.FindByName(req.Name)
 		if err == nil {
 			l.Logger.Info("RenameAdminTag failed: Admin tag already exists")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -201,7 +252,7 @@ func (a *adminTagHandler) renameAdminTag() func(http.ResponseWriter, *http.Reque
 			return
 		}
 
-		adminTag, err := logic.AdminTag.FindByID(adminTagID)
+		adminTag, err := logic.Category.FindByID(adminTagID)
 		if err != nil {
 			l.Logger.Error("RenameAdminTag failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -217,11 +268,11 @@ func (a *adminTagHandler) renameAdminTag() func(http.ResponseWriter, *http.Reque
 			}
 		}()
 
-		adminTag = &types.AdminTag{
+		adminTag = &types.Category{
 			ID:   adminTagID,
 			Name: req.Name,
 		}
-		err = logic.AdminTag.Update(adminTag)
+		err = logic.Category.Update(adminTag)
 		if err != nil {
 			l.Logger.Error("RenameAdminTag failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -246,7 +297,7 @@ func (a *adminTagHandler) renameAdminTag() func(http.ResponseWriter, *http.Reque
 	}
 }
 
-func (a *adminTagHandler) deleteAdminTag() func(http.ResponseWriter, *http.Request) {
+func (a *categoryHandler) deleteAdminTag() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		id := vars["id"]
@@ -257,14 +308,14 @@ func (a *adminTagHandler) deleteAdminTag() func(http.ResponseWriter, *http.Reque
 			return
 		}
 
-		adminTag, err := logic.AdminTag.FindByID(adminTagID)
+		adminTag, err := logic.Category.FindByID(adminTagID)
 		if err != nil {
 			l.Logger.Error("DeleteAdminTag failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		err = logic.AdminTag.DeleteByID(adminTagID)
+		err = logic.Category.DeleteByID(adminTagID)
 		if err != nil {
 			l.Logger.Error("DeleteAdminTag failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -291,29 +342,5 @@ func (a *adminTagHandler) deleteAdminTag() func(http.ResponseWriter, *http.Reque
 		}()
 
 		w.WriteHeader(http.StatusOK)
-	}
-}
-
-func (a *adminTagHandler) list() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		prefix := vars["prefix"]
-
-		tags, err := logic.AdminTag.TagStartWith(prefix)
-		if err != nil {
-			l.Logger.Error("controller.AdminTagHandler.List failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		js, err := json.Marshal(tags)
-		if err != nil {
-			l.Logger.Error("controller.AdminTagHandler.List failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
 	}
 }

@@ -94,7 +94,7 @@ func daysBefore(days int) string {
 	return time.Now().AddDate(0, 0, -days).Format("2006-01-02")
 }
 
-func sortAdminTags(tags []*types.AdminTag) []*types.AdminTag {
+func sortCategories(tags []*types.Category) []*types.Category {
 	sort.Slice(tags, func(i, j int) bool {
 		return tags[i].Name < tags[j].Name
 	})

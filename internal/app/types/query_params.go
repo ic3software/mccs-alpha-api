@@ -27,3 +27,10 @@ type SearchTagQuery struct {
 	Page     int    `json:"page"`
 	PageSize int    `json:"pageSize"`
 }
+
+type SearchCategoryQuery struct {
+	Fragment string `json:"fragment"`
+	Prefix   string `json:"prefix"`
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
+}

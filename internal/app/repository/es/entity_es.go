@@ -221,7 +221,7 @@ func (es *entity) Find(query *types.SearchEntityQuery) (*types.ESFindEntityResul
 	}, nil
 }
 
-// OLD CODE
+// TO BE REMOVED
 
 func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
 	doc := map[string]interface{}{

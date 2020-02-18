@@ -5,6 +5,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+func SearchTag(query *types.SearchTagQuery) []error {
+	errs := []error{}
+	return errs
+}
+
 func validateTagsLimit(b *types.EntityData) []string {
 	errorMessages := []string{}
 

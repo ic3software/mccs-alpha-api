@@ -15,17 +15,64 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type adminTag struct {
+type category struct {
 	c *mongo.Collection
 }
 
-var AdminTag = &adminTag{}
+var Category = &category{}
 
-func (a *adminTag) Register(db *mongo.Database) {
+func (a *category) Register(db *mongo.Database) {
 	a.c = db.Collection("adminTags")
 }
 
-func (a *adminTag) Create(name string) error {
+func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryResult, error) {
+	var results []*types.Category
+
+	findOptions := options.Find()
+	findOptions.SetSkip(int64(query.PageSize * (query.Page - 1)))
+	findOptions.SetLimit(int64(query.PageSize))
+
+	filter := bson.M{
+		"deletedAt": bson.M{"$exists": false},
+	}
+	if len(query.Prefix) != 0 {
+		filter["name"] = primitive.Regex{Pattern: "^" + query.Fragment, Options: "i"}
+	} else {
+		filter["name"] = primitive.Regex{Pattern: query.Fragment, Options: "i"}
+	}
+	cur, err := a.c.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	for cur.Next(context.TODO()) {
+		var elem types.Category
+		err := cur.Decode(&elem)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	cur.Close(context.TODO())
+
+	totalCount, err := a.c.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.FindCategoryResult{
+		Categories:      results,
+		NumberOfResults: int(totalCount),
+		TotalPages:      util.GetNumberOfPages(int(totalCount), query.PageSize),
+	}, nil
+}
+
+// TO BE REMOVED
+
+func (a *category) Create(name string) error {
 	if name == "" || len(strings.TrimSpace(name)) == 0 {
 		return nil
 	}
@@ -41,8 +88,8 @@ func (a *adminTag) Create(name string) error {
 	return err
 }
 
-func (a *adminTag) FindByName(name string) (*types.AdminTag, error) {
-	adminTag := types.AdminTag{}
+func (a *category) FindByName(name string) (*types.Category, error) {
+	adminTag := types.Category{}
 	filter := bson.M{
 		"name":      name,
 		"deletedAt": bson.M{"$exists": false},
@@ -54,8 +101,8 @@ func (a *adminTag) FindByName(name string) (*types.AdminTag, error) {
 	return &adminTag, nil
 }
 
-func (a *adminTag) FindByID(id primitive.ObjectID) (*types.AdminTag, error) {
-	adminTag := types.AdminTag{}
+func (a *category) FindByID(id primitive.ObjectID) (*types.Category, error) {
+	adminTag := types.Category{}
 	filter := bson.M{
 		"_id":       id,
 		"deletedAt": bson.M{"$exists": false},
@@ -67,12 +114,12 @@ func (a *adminTag) FindByID(id primitive.ObjectID) (*types.AdminTag, error) {
 	return &adminTag, nil
 }
 
-func (a *adminTag) FindTags(name string, page int64) (*types.FindAdminTagResult, error) {
+func (a *category) FindTags(name string, page int64) (*types.FindCategoryResult, error) {
 	if page < 0 || page == 0 {
 		return nil, e.New(e.InvalidPageNumber, "AdminTagMongo FindTags failed")
 	}
 
-	var results []*types.AdminTag
+	var results []*types.Category
 
 	findOptions := options.Find()
 	findOptions.SetSkip(viper.GetInt64("page_size") * (page - 1))
@@ -89,7 +136,7 @@ func (a *adminTag) FindTags(name string, page int64) (*types.FindAdminTagResult,
 	}
 
 	for cur.Next(context.TODO()) {
-		var elem types.AdminTag
+		var elem types.Category
 		err := cur.Decode(&elem)
 		if err != nil {
 			return nil, e.Wrap(err, "AdminTagMongo FindTags failed")
@@ -108,44 +155,15 @@ func (a *adminTag) FindTags(name string, page int64) (*types.FindAdminTagResult,
 	}
 	totalPages := util.GetNumberOfPages(int(totalCount), viper.GetInt("page_size"))
 
-	return &types.FindAdminTagResult{
-		AdminTags:       results,
+	return &types.FindCategoryResult{
+		Categories:      results,
 		NumberOfResults: int(totalCount),
 		TotalPages:      totalPages,
 	}, nil
 }
 
-func (a *adminTag) TagStartWith(prefix string) ([]string, error) {
-	var results []string
-
-	filter := bson.M{
-		"name":      primitive.Regex{Pattern: "^" + prefix, Options: "i"},
-		"deletedAt": bson.M{"$exists": false},
-	}
-
-	cur, err := a.c.Find(context.TODO(), filter)
-	if err != nil {
-		return nil, e.Wrap(err, "mongo.AdminTag.FindTagStartWith failed")
-	}
-
-	for cur.Next(context.TODO()) {
-		var elem types.AdminTag
-		err := cur.Decode(&elem)
-		if err != nil {
-			return nil, e.Wrap(err, "mongo.AdminTag.FindTagStartWith failed")
-		}
-		results = append(results, elem.Name)
-	}
-	if err := cur.Err(); err != nil {
-		return nil, e.Wrap(err, "mongo.AdminTag.FindTagStartWith failed")
-	}
-	cur.Close(context.TODO())
-
-	return results, nil
-}
-
-func (a *adminTag) GetAll() ([]*types.AdminTag, error) {
-	var results []*types.AdminTag
+func (a *category) GetAll() ([]*types.Category, error) {
+	var results []*types.Category
 
 	filter := bson.M{
 		"deletedAt": bson.M{"$exists": false},
@@ -157,7 +175,7 @@ func (a *adminTag) GetAll() ([]*types.AdminTag, error) {
 	}
 
 	for cur.Next(context.TODO()) {
-		var elem types.AdminTag
+		var elem types.Category
 		err := cur.Decode(&elem)
 		if err != nil {
 			return nil, e.Wrap(err, "AdminTagMongo GetAll failed")
@@ -172,7 +190,7 @@ func (a *adminTag) GetAll() ([]*types.AdminTag, error) {
 	return results, nil
 }
 
-func (a *adminTag) Update(t *types.AdminTag) error {
+func (a *category) Update(t *types.Category) error {
 	filter := bson.M{"_id": t.ID}
 	update := bson.M{"$set": bson.M{
 		"name":      t.Name,
@@ -189,7 +207,7 @@ func (a *adminTag) Update(t *types.AdminTag) error {
 	return nil
 }
 
-func (a *adminTag) DeleteByID(id primitive.ObjectID) error {
+func (a *category) DeleteByID(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{
 		"deletedAt": time.Now(),

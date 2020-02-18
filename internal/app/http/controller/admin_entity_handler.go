@@ -165,7 +165,7 @@ func (a *adminEntityHandler) updateEntity() func(http.ResponseWriter, *http.Requ
 
 		// Update the admin tags collection.
 		go func() {
-			err := AdminTagHandler.SaveAdminTags(d.Entity.AdminTags)
+			err := CategoryHandler.SaveAdminTags(d.Entity.Categories)
 			if err != nil {
 				l.Logger.Error("saveAdminTags failed", zap.Error(err))
 			}

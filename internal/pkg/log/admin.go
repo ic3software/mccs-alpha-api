@@ -52,8 +52,8 @@ func (a admin) ModifyEntity(
 	if !helper.SameTags(newEntity.Wants, oldEntity.Wants) {
 		modifiedFields = append(modifiedFields, "wants: "+strings.Join(helper.GetTagNames(oldEntity.Wants), " ")+" -> "+strings.Join(helper.GetTagNames(newEntity.Wants), " "))
 	}
-	if strings.Join(newEntity.AdminTags, " ") != strings.Join(oldEntity.AdminTags, " ") {
-		modifiedFields = append(modifiedFields, "adminTags: "+strings.Join(oldEntity.AdminTags, " ")+" -> "+strings.Join(newEntity.AdminTags, " "))
+	if strings.Join(newEntity.Categories, " ") != strings.Join(oldEntity.AdminTags, " ") {
+		modifiedFields = append(modifiedFields, "adminTags: "+strings.Join(oldEntity.AdminTags, " ")+" -> "+strings.Join(newEntity.Categories, " "))
 	}
 	modifiedFields = append(modifiedFields, util.CheckDiff(oldBalance, newBalance, map[string]bool{})...)
 	if len(modifiedFields) == 0 {

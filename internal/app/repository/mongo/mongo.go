@@ -29,7 +29,7 @@ func registerCollections(db *mongo.Database) {
 	UserAction.Register(db)
 	AdminUser.Register(db)
 	Tag.Register(db)
-	AdminTag.Register(db)
+	Category.Register(db)
 	LostPassword.Register(db)
 }
 

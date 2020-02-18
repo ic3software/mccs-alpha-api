@@ -61,9 +61,9 @@ type findAccountResult struct {
 }
 
 type sreachResponse struct {
-	FormData  searchAccountFormData
-	AdminTags []*types.AdminTag
-	Result    *findAccountResult
+	FormData   searchAccountFormData
+	Categories []*types.Category
+	Result     *findAccountResult
 }
 
 // func (a *accountHandler) searchAccount() func(http.ResponseWriter, *http.Request) {

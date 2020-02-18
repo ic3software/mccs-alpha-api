@@ -61,7 +61,7 @@ func (es *user) Update(u *types.User) error {
 	return nil
 }
 
-// OLD
+// TO BE REMOVED
 
 // Find finds users from Elasticsearch.
 func (es *user) Find(u *types.User, page int64) ([]string, int, int, error) {

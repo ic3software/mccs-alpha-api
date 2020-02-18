@@ -44,7 +44,7 @@ func GetEntity(r *http.Request) *types.EntityData {
 		LocationRegion:     r.FormValue("location_region"),      // 50 chars
 		LocationPostalCode: r.FormValue("location_postal_code"), // 10 chars
 		LocationCountry:    r.FormValue("location_country"),     // 50 chars
-		AdminTags:          getAdminTags(r.FormValue("adminTags")),
+		Categories:         getCategories(r.FormValue("categories")),
 		Status:             r.FormValue("status"),
 	}
 	return b

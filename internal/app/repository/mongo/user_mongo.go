@@ -91,7 +91,7 @@ func (u *user) FindOneAndUpdate(update *types.User) (*types.User, error) {
 	return &user, nil
 }
 
-// OLD CODe
+// TO BE REMOVED
 
 func (u *user) FindByEmail(email string) (*types.User, error) {
 	email = strings.ToLower(email)

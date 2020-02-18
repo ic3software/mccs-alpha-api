@@ -99,7 +99,7 @@ func (t *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-// OLD CODE
+// TO BE REMOVED
 
 func (h *tagHandler) SaveOfferTags(added []string) error {
 	for _, tagName := range added {

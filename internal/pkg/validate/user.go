@@ -89,16 +89,6 @@ func UpdateUserEntity(update *types.UpdateUserEntityReqBody) []error {
 	return errs
 }
 
-func SearchEntity(query *types.SearchEntityQuery) []error {
-	errs := []error{}
-	return errs
-}
-
-func SearchTag(query *types.SearchTagQuery) []error {
-	errs := []error{}
-	return errs
-}
-
 func checkEmail(email string) []error {
 	errs := []error{}
 	email = strings.ToLower(email)

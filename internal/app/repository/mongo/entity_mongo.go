@@ -133,7 +133,7 @@ func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 	return nil
 }
 
-// OLD CODE
+// TO BE REMOVED
 
 func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 	var results []*types.Entity
