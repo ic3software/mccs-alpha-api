@@ -89,7 +89,12 @@ func UpdateUserEntity(update *types.UpdateUserEntityReqBody) []error {
 	return errs
 }
 
-func SearchBusiness(query *types.SearchEntityQuery) []error {
+func SearchEntity(query *types.SearchEntityQuery) []error {
+	errs := []error{}
+	return errs
+}
+
+func SearchTag(query *types.SearchTagQuery) []error {
 	errs := []error{}
 	return errs
 }

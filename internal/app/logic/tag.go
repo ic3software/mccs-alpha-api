@@ -14,6 +14,16 @@ type tag struct{}
 
 var Tag = &tag{}
 
+func (t *tag) Find(query *types.SearchTagQuery) (*types.FindTagResult, error) {
+	found, err := mongo.Tag.Find(query)
+	if err != nil {
+		return nil, err
+	}
+	return found, nil
+}
+
+// TO BE REMOVED
+
 func (t *tag) Create(name string) error {
 	id, err := mongo.Tag.Create(name)
 	if err != nil {
@@ -66,14 +76,6 @@ func (t *tag) FindByID(id primitive.ObjectID) (*types.Tag, error) {
 		return nil, e.Wrap(err, "TagService FindByID failed")
 	}
 	return tag, nil
-}
-
-func (t *tag) FindTags(name string, page int64) (*types.FindTagResult, error) {
-	result, err := mongo.Tag.FindTags(name, page)
-	if err != nil {
-		return nil, e.Wrap(err, "TagService FindTags failed")
-	}
-	return result, nil
 }
 
 func (t *tag) Rename(tag *types.Tag) error {

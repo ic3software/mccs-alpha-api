@@ -94,8 +94,15 @@ func TagDifference(new, old []string) ([]string, []string) {
 	return added, removed
 }
 
-// GetTagNames gets tag name from TagField.
-func GetTagNames(tags []*types.TagField) []string {
+func TagFieldToNames(tags []*types.TagField) []string {
+	names := make([]string, 0, len(tags))
+	for _, t := range tags {
+		names = append(names, t.Name)
+	}
+	return names
+}
+
+func TagToNames(tags []*types.Tag) []string {
 	names := make([]string, 0, len(tags))
 	for _, t := range tags {
 		names = append(names, t.Name)

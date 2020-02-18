@@ -473,8 +473,8 @@ func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request
 				LocationPostalCode: entity.LocationPostalCode,
 				LocationCountry:    entity.LocationCountry,
 				Status:             entity.Status,
-				Offers:             util.GetTagNames(entity.Offers),
-				Wants:              util.GetTagNames(entity.Wants),
+				Offers:             util.TagFieldToNames(entity.Offers),
+				Wants:              util.TagFieldToNames(entity.Wants),
 			})
 		}
 		return result
@@ -511,10 +511,10 @@ func updateTags(old *types.Entity, offers, wants []string) {
 
 	var offersAdded, offersRemoved, wantsAdded, wantsRemoved []string
 	if len(offers) != 0 {
-		offersAdded, offersRemoved = util.TagDifference(offers, util.GetTagNames(old.Offers))
+		offersAdded, offersRemoved = util.TagDifference(offers, util.TagFieldToNames(old.Offers))
 	}
 	if len(wants) != 0 {
-		wantsAdded, wantsRemoved = util.TagDifference(wants, util.GetTagNames(old.Wants))
+		wantsAdded, wantsRemoved = util.TagDifference(wants, util.TagFieldToNames(old.Wants))
 	}
 
 	err := logic.Entity.UpdateTags(old.ID, &types.TagDifference{
@@ -604,11 +604,11 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 
 		offers := req.Offers
 		if len(offers) == 0 {
-			offers = util.GetTagNames(entity.Offers)
+			offers = util.TagFieldToNames(entity.Offers)
 		}
 		wants := req.Wants
 		if len(wants) == 0 {
-			wants = util.GetTagNames(entity.Wants)
+			wants = util.TagFieldToNames(entity.Wants)
 		}
 		api.Respond(w, r, http.StatusOK, respond{Data: &types.UserEntityRespond{
 			ID:                 entity.ID.Hex(),

@@ -12,3 +12,9 @@ type SearchEntityQuery struct {
 	Wants         []string  `json:"wants"`
 	TaggedSince   time.Time `json:"taggedSince"`
 }
+
+type SearchTagQuery struct {
+	Fragment string `json:"fragment"`
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
+}

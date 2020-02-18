@@ -86,7 +86,7 @@ func (b *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	return bs, nil
 }
 
-func getSearchEntityQuertParams(q url.Values) (*types.SearchEntityQuery, error) {
+func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
 	page, err := util.ToInt(q.Get("page"), 1)
 	if err != nil {
 		return nil, err
@@ -164,22 +164,22 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 				LocationPostalCode: entity.LocationPostalCode,
 				LocationCountry:    entity.LocationCountry,
 				Status:             entity.Status,
-				Offers:             util.GetTagNames(entity.Offers),
-				Wants:              util.GetTagNames(entity.Wants),
+				Offers:             util.TagFieldToNames(entity.Offers),
+				Wants:              util.TagFieldToNames(entity.Wants),
 				IsFavorite:         isFavorite,
 			})
 		}
 		return result
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := getSearchEntityQuertParams(r.URL.Query())
+		query, err := getSearchEntityQueryParams(r.URL.Query())
 		if err != nil {
 			l.Logger.Info("[INFO] EntityHandler.searchEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		errs := validate.SearchBusiness(query)
+		errs := validate.SearchEntity(query)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
