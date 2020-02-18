@@ -36,7 +36,7 @@ func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryRe
 		"deletedAt": bson.M{"$exists": false},
 	}
 	if len(query.Prefix) != 0 {
-		filter["name"] = primitive.Regex{Pattern: "^" + query.Fragment, Options: "i"}
+		filter["name"] = primitive.Regex{Pattern: "^" + query.Prefix, Options: "i"}
 	} else {
 		filter["name"] = primitive.Regex{Pattern: query.Fragment, Options: "i"}
 	}
