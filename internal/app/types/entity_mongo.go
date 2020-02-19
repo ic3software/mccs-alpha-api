@@ -30,9 +30,12 @@ type Entity struct {
 	LocationPostalCode string      `json:"locationPostalCode,omitempty" bson:"locationPostalCode,omitempty"`
 	LocationCountry    string      `json:"locationCountry,omitempty" bson:"locationCountry,omitempty"`
 	Status             string      `json:"status,omitempty" bson:"status,omitempty"`
-	AdminTags          []string    `json:"adminTags,omitempty" bson:"adminTags,omitempty"`
+	Categories         []string    `json:"categories,omitempty" bson:"categories,omitempty"`
 	// Timestamp when trading status applied
 	MemberStartedAt time.Time `json:"memberStartedAt,omitempty" bson:"memberStartedAt,omitempty"`
+
+	AccountNumber    string               `json:"accountNumber,omitempty" bson:"accountNumber,omitempty"`
+	FavoriteEntities []primitive.ObjectID `json:"favoriteEntities,omitempty" bson:"favoriteEntities,omitempty"`
 }
 
 type TagField struct {

@@ -53,11 +53,11 @@ func (c *category) FindTags(name string, page int64) (*types.FindCategoryResult,
 }
 
 func (c *category) GetAll() ([]*types.Category, error) {
-	adminTags, err := mongo.Category.GetAll()
+	categories, err := mongo.Category.GetAll()
 	if err != nil {
 		return nil, err
 	}
-	return adminTags, nil
+	return categories, nil
 }
 
 func (c *category) Update(tag *types.Category) error {

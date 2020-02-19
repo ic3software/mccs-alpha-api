@@ -9,12 +9,12 @@ type account struct{}
 
 var Account = &account{}
 
-func (a *account) Create(bID string) error {
-	err := pg.Account.Create(bID)
+func (a *account) Create() (*types.Account, error) {
+	account, err := pg.Account.Create()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return account, nil
 }
 
 func (a *account) FindByID(accountID uint) (*types.Account, error) {

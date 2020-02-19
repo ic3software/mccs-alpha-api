@@ -17,11 +17,11 @@ import (
 )
 
 var (
-	entityData    []types.Entity
-	userData      []types.User
-	adminUserData []types.AdminUser
-	tagData       []types.Tag
-	adminTagData  []types.AdminTag
+	entityData     []types.Entity
+	userData       []types.User
+	adminUserData  []types.AdminUser
+	tagData        []types.Tag
+	categoriesData []types.Category
 )
 
 func LoadData() {
@@ -66,9 +66,9 @@ func LoadData() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	adminTags := make([]types.AdminTag, 0)
-	json.Unmarshal(data, &adminTags)
-	adminTagData = adminTags
+	categories := make([]types.Category, 0)
+	json.Unmarshal(data, &categories)
+	categoriesData = categories
 }
 
 func Run() {
@@ -77,6 +77,13 @@ func Run() {
 
 	// Generate users and entities.
 	for i, b := range entityData {
+		// PostgresSQL - Create account
+		account, err := logic.Account.Create()
+		if err != nil {
+			log.Fatal(err)
+		}
+		b.AccountNumber = account.AccountNumber
+
 		res, err := mongo.DB().Collection("entities").InsertOne(context.Background(), b)
 		if err != nil {
 			log.Fatal(err)
@@ -91,19 +98,13 @@ func Run() {
 			LocationCity:    b.LocationCity,
 			LocationCountry: b.LocationCountry,
 			Status:          b.Status,
-			AdminTags:       b.AdminTags,
+			Categories:      b.Categories,
 		}
 		_, err = es.Client().Index().
 			Index("entities").
 			Id(b.ID.Hex()).
 			BodyJson(bRecord).
 			Do(context.Background())
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// PostgresSQL - Create account from entity.
-		err = logic.Account.Create(b.ID.Hex())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -186,9 +187,9 @@ func Run() {
 		}
 	}
 
-	// Generate admin tags.
-	for _, a := range adminTagData {
-		_, err := mongo.DB().Collection("adminTags").InsertOne(context.Background(), a)
+	// Generate categories.
+	for _, a := range categoriesData {
+		_, err := mongo.DB().Collection("categories").InsertOne(context.Background(), a)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -281,9 +281,9 @@ func (b *entity) updateWants(old string, new string) error {
 
 func (b *entity) RenameAdminTag(old string, new string) error {
 	// Push the new tag tag name.
-	filter := bson.M{"adminTags": old}
+	filter := bson.M{"categories": old}
 	update := bson.M{
-		"$push": bson.M{"adminTags": new},
+		"$push": bson.M{"categories": new},
 		"$set":  bson.M{"updatedAt": time.Now()},
 	}
 	_, err := b.c.UpdateMany(context.Background(), filter, update)
@@ -291,9 +291,9 @@ func (b *entity) RenameAdminTag(old string, new string) error {
 		return e.Wrap(err, "RenameAdminTag failed")
 	}
 	// Delete the old tag name.
-	filter = bson.M{"adminTags": old}
+	filter = bson.M{"categories": old}
 	update = bson.M{
-		"$pull": bson.M{"adminTags": old},
+		"$pull": bson.M{"categories": old},
 		"$set":  bson.M{"updatedAt": time.Now()},
 	}
 	_, err = b.c.UpdateMany(context.Background(), filter, update)
@@ -333,12 +333,12 @@ func (b *entity) DeleteTag(name string) error {
 func (b *entity) DeleteAdminTags(name string) error {
 	filter := bson.M{
 		"$or": []interface{}{
-			bson.M{"adminTags": name},
+			bson.M{"categories": name},
 		},
 	}
 	update := bson.M{
 		"$pull": bson.M{
-			"adminTags": name,
+			"categories": name,
 		},
 		"$set": bson.M{
 			"updatedAt": time.Now(),

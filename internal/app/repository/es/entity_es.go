@@ -34,7 +34,7 @@ func (es *entity) Create(id primitive.ObjectID, data *types.Entity) error {
 		LocationCity:    data.LocationCity,
 		LocationCountry: data.LocationCountry,
 		Status:          constant.Entity.Pending,
-		AdminTags:       data.AdminTags,
+		Categories:      data.Categories,
 	}
 	_, err := es.c.Index().
 		Index(es.index).
@@ -184,7 +184,7 @@ func (es *entity) Find(query *types.SearchEntityQuery) (*types.ESFindEntityResul
 		q.Must(idQuery)
 	}
 	if query.Category != "" {
-		q.Must(elastic.NewMatchQuery("adminTags", query.Category))
+		q.Must(elastic.NewMatchQuery("categories", query.Category))
 	}
 
 	seachByStatus(q, query)
@@ -297,12 +297,12 @@ func (es *entity) RenameTag(old string, new string) error {
 }
 
 func (es *entity) RenameAdminTag(old string, new string) error {
-	query := elastic.NewMatchQuery("adminTags", old)
+	query := elastic.NewMatchQuery("categories", old)
 	script := elastic.
 		NewScript(`
-			if (ctx._source.adminTags.contains(params.old)) {
-				ctx._source.adminTags.remove(ctx._source.adminTags.indexOf(params.old));
-				ctx._source.adminTags.add(params.new);
+			if (ctx._source.categories.contains(params.old)) {
+				ctx._source.categories.remove(ctx._source.categories.indexOf(params.old));
+				ctx._source.categories.add(params.new);
 			}
 		`).
 		Params(map[string]interface{}{"new": new, "old": old})
@@ -358,11 +358,11 @@ func (es *entity) DeleteTag(name string) error {
 }
 
 func (es *entity) DeleteAdminTags(name string) error {
-	query := elastic.NewMatchQuery("adminTags", name)
+	query := elastic.NewMatchQuery("categories", name)
 	script := elastic.
 		NewScript(`
-			if (ctx._source.adminTags.contains(params.name)) {
-				ctx._source.adminTags.remove(ctx._source.adminTags.indexOf(params.name));
+			if (ctx._source.categories.contains(params.name)) {
+				ctx._source.categories.remove(ctx._source.categories.indexOf(params.name));
 			}
 		`).
 		Params(map[string]interface{}{"name": name})

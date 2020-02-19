@@ -9,7 +9,7 @@ type EntityESRecord struct {
 	LocationCity    string      `json:"locationCity,omitempty"`
 	LocationCountry string      `json:"locationCountry,omitempty"`
 	Status          string      `json:"status,omitempty"`
-	AdminTags       []string    `json:"adminTags,omitempty"`
+	Categories      []string    `json:"categories,omitempty"`
 }
 
 type ESFindEntityResult struct {

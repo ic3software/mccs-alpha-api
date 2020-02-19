@@ -6,7 +6,7 @@
         "website": "https://petes-painting.null",
         "entityPhone": "+442074848484",
         "turnover": 150000,
-        "adminTags": [ 
+        "categories": [ 
             "Painting"
         ],
         "offers": [ 
@@ -41,7 +41,7 @@
         "website": "https://joes-woodworking.null",
         "entityPhone": "+442089292929",
         "turnover": 50000,
-        "adminTags": [ 
+        "categories": [ 
             "Carpentry"
         ],
         "offers": [ 

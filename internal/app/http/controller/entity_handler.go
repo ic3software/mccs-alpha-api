@@ -86,16 +86,7 @@ func (b *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	return bs, nil
 }
 
-func getUserFavoriteEntities(userID string) []primitive.ObjectID {
-	favorites := []primitive.ObjectID{}
-	user, err := UserHandler.FindByID(userID)
-	if err == nil {
-		favorites = user.FavoriteEntities
-	}
-	return favorites
-}
-
-func getSearchEntityQueryParams(q url.Values, favorites []primitive.ObjectID) (*types.SearchEntityQuery, error) {
+func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
 	page, err := util.ToInt(q.Get("page"), 1)
 	if err != nil {
 		return nil, err
@@ -104,6 +95,7 @@ func getSearchEntityQueryParams(q url.Values, favorites []primitive.ObjectID) (*
 	if err != nil {
 		return nil, err
 	}
+	favorites := getFavoriteEntities(q.Get("queryingEntityID"))
 	return &types.SearchEntityQuery{
 		Page:             page,
 		PageSize:         pageSize,
@@ -121,6 +113,14 @@ func getSearchEntityQueryParams(q url.Values, favorites []primitive.ObjectID) (*
 			constant.Trading.Rejected,
 		},
 	}, nil
+}
+
+func getFavoriteEntities(entityID string) []primitive.ObjectID {
+	entity, err := EntityHandler.FindByID(entityID)
+	if err == nil {
+		return entity.FavoriteEntities
+	}
+	return []primitive.ObjectID{}
 }
 
 func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) {
@@ -159,8 +159,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 		return result
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		favoriteEntities := getUserFavoriteEntities(r.Header.Get("userID"))
-		query, err := getSearchEntityQueryParams(r.URL.Query(), favoriteEntities)
+		query, err := getSearchEntityQueryParams(r.URL.Query())
 		if err != nil {
 			l.Logger.Info("[INFO] EntityHandler.searchEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -181,7 +180,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{
-			Data: toData(found.Entities, favoriteEntities),
+			Data: toData(found.Entities, query.FavoriteEntities),
 			Meta: meta{
 				TotalPages:      found.TotalPages,
 				NumberOfResults: found.NumberOfResults,

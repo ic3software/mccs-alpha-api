@@ -3,28 +3,33 @@ package pg
 import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
+	"github.com/segmentio/ksuid"
 )
 
 type account struct{}
 
 var Account = &account{}
 
-func (a *account) Create(bID string) error {
+func (a *account) Create() (*types.Account, error) {
 	tx := db.Begin()
 
-	account := &types.Account{EntityID: bID, Balance: 0}
-	err := tx.Create(account).Error
+	// TODO
+	accountNumber := ksuid.New().String()
+	account := &types.Account{AccountNumber: accountNumber, Balance: 0}
+
+	var result types.Account
+	err := tx.Create(account).Scan(&result).Error
 	if err != nil {
 		tx.Rollback()
-		return e.Wrap(err, "pg.Account.Create failed")
+		return nil, err
 	}
 	err = BalanceLimit.Create(tx, account.ID)
 	if err != nil {
 		tx.Rollback()
-		return e.Wrap(err, "pg.Account.Create failed")
+		return nil, err
 	}
 
-	return tx.Commit().Error
+	return &result, tx.Commit().Error
 }
 
 func (a *account) FindByID(accountID uint) (*types.Account, error) {

@@ -36,10 +36,9 @@ type User struct {
 	LoginAttempts     int       `json:"loginAttempts,omitempty" bson:"loginAttempts,omitempty"`
 	LastLoginFailDate time.Time `json:"lastLoginFailDate,omitempty" bson:"lastLoginFailDate,omitempty"`
 
-	ShowRecentMatchedTags    *bool                `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
-	FavoriteEntities         []primitive.ObjectID `json:"favoriteEntities,omitempty" bson:"favoriteEntities,omitempty"`
-	DailyNotification        *bool                `json:"dailyNotification,omitempty" bson:"dailyNotification,omitempty"`
-	LastNotificationSentDate time.Time            `json:"lastNotificationSentDate,omitempty" bson:"lastNotificationSentDate,omitempty"`
+	ShowRecentMatchedTags    *bool     `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
+	DailyNotification        *bool     `json:"dailyNotification,omitempty" bson:"dailyNotification,omitempty"`
+	LastNotificationSentDate time.Time `json:"lastNotificationSentDate,omitempty" bson:"lastNotificationSentDate,omitempty"`
 }
 
 // UserESRecord is the data that will store into the elastic search.
