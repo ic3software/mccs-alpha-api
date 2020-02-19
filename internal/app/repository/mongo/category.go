@@ -22,7 +22,7 @@ type category struct {
 var Category = &category{}
 
 func (a *category) Register(db *mongo.Database) {
-	a.c = db.Collection("category")
+	a.c = db.Collection("categories")
 }
 
 func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryResult, error) {
