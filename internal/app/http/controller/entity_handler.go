@@ -138,6 +138,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 			isFavorite := util.ContainID(favorites, entity.ID)
 			result = append(result, &types.EntitySearchRespond{
 				ID:                 entity.ID.Hex(),
+				AccountNumber:      entity.AccountNumber,
 				EntityName:         entity.EntityName,
 				EntityPhone:        entity.EntityPhone,
 				IncType:            entity.IncType,

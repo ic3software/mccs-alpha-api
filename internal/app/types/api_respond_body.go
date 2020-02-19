@@ -37,6 +37,7 @@ type UserProfileRespond struct {
 
 type EntitySearchRespond struct {
 	ID                 string   `json:"id"`
+	AccountNumber      string   `json:"accountNumber"`
 	EntityName         string   `json:"entityName"`
 	EntityPhone        string   `json:"entityPhone"`
 	IncType            string   `json:"incType"`
