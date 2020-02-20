@@ -3,12 +3,10 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
-	"net/url"
 	"sync"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/spf13/viper"
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
@@ -16,8 +14,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
-	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
@@ -49,22 +45,6 @@ func (h *tagHandler) RegisterRoutes(
 	})
 }
 
-func getSearchTagQueryParams(q url.Values) (*types.SearchTagQuery, error) {
-	page, err := util.ToInt(q.Get("page"), 1)
-	if err != nil {
-		return nil, err
-	}
-	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
-	if err != nil {
-		return nil, err
-	}
-	return &types.SearchTagQuery{
-		Fragment: q.Get("fragment"),
-		Page:     page,
-		PageSize: pageSize,
-	}, nil
-}
-
 func (t *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
@@ -75,9 +55,14 @@ func (t *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
 		Meta meta     `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := getSearchTagQueryParams(r.URL.Query())
+		q := r.URL.Query()
+		query := &types.SearchTagQuery{
+			Fragment: q.Get("fragment"),
+			Page:     q.Get("page"),
+			PageSize: q.Get("page_size"),
+		}
 
-		errs := validate.SearchTag(query)
+		errs := query.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return

@@ -27,8 +27,8 @@ func (t *tag) Find(query *types.SearchTagQuery) (*types.FindTagResult, error) {
 	var results []*types.Tag
 
 	findOptions := options.Find()
-	findOptions.SetSkip(int64(query.PageSize * (query.Page - 1)))
-	findOptions.SetLimit(int64(query.PageSize))
+	findOptions.SetSkip(query.GetPageSize() * (query.GetPage() - 1))
+	findOptions.SetLimit(query.GetPageSize())
 
 	filter := bson.M{
 		"name":      primitive.Regex{Pattern: query.Fragment, Options: "i"},
@@ -60,7 +60,7 @@ func (t *tag) Find(query *types.SearchTagQuery) (*types.FindTagResult, error) {
 	return &types.FindTagResult{
 		Tags:            results,
 		NumberOfResults: int(totalCount),
-		TotalPages:      util.GetNumberOfPages(int(totalCount), query.PageSize),
+		TotalPages:      util.GetNumberOfPages(int(totalCount), int(query.GetPageSize())),
 	}, nil
 }
 
