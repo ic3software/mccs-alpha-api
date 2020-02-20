@@ -1,11 +1,8 @@
-package utils
+package util
 
 import (
 	"regexp"
 	"strings"
-	"time"
-
-	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 )
 
 var (
@@ -57,19 +54,6 @@ func ToSearchTags(words string) []string {
 	return FormatTags(tags)
 }
 
-// ToTagFields converts tags into TagFields.
-func ToTagFields(tags []string) []*types.TagField {
-	tagFields := make([]*types.TagField, 0, len(tags))
-	for _, tagName := range tags {
-		tagField := &types.TagField{
-			Name:      tagName,
-			CreatedAt: time.Now(),
-		}
-		tagFields = append(tagFields, tagField)
-	}
-	return tagFields
-}
-
 // TagDifference finds out the new added tags.
 func TagDifference(new, old []string) ([]string, []string) {
 	encountered := map[string]int{}
@@ -92,20 +76,4 @@ func TagDifference(new, old []string) ([]string, []string) {
 		}
 	}
 	return added, removed
-}
-
-func TagFieldToNames(tags []*types.TagField) []string {
-	names := make([]string, 0, len(tags))
-	for _, t := range tags {
-		names = append(names, t.Name)
-	}
-	return names
-}
-
-func TagToNames(tags []*types.Tag) []string {
-	names := make([]string, 0, len(tags))
-	for _, t := range tags {
-		names = append(names, t.Name)
-	}
-	return names
 }

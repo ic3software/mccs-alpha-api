@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
@@ -363,7 +362,7 @@ func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) 
 
 func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.UserProfileRespond `json:"data"`
+		Data *types.UserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := u.FindByID(r.Header.Get("userID"))
@@ -372,34 +371,13 @@ func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: &types.UserProfileRespond{
-			ID:                            user.ID.Hex(),
-			Email:                         user.Email,
-			UserPhone:                     user.Telephone,
-			FirstName:                     user.FirstName,
-			LastName:                      user.LastName,
-			LastLoginIP:                   user.LastLoginIP,
-			LastLoginDate:                 user.LastLoginDate,
-			DailyEmailMatchNotification:   user.DailyNotification,
-			ShowTagsMatchedSinceLastLogin: user.ShowRecentMatchedTags,
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
 
 func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
-	type data struct {
-		ID                            string    `json:"id"`
-		Email                         string    `json:"email"`
-		FirstName                     string    `json:"firstName"`
-		LastName                      string    `json:"lastName"`
-		UserPhone                     string    `json:"userPhone"`
-		LastLoginIP                   string    `json:"lastLoginIP"`
-		LastLoginDate                 time.Time `json:"lastLoginDate"`
-		DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
-		ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
-	}
 	type respond struct {
-		Data data `json:"data"`
+		Data *types.UserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.UpdateUserReqBody
@@ -432,34 +410,13 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: data{
-			ID:                            user.ID.Hex(),
-			Email:                         user.Email,
-			UserPhone:                     user.Telephone,
-			FirstName:                     user.FirstName,
-			LastName:                      user.LastName,
-			LastLoginIP:                   user.LastLoginIP,
-			LastLoginDate:                 user.LastLoginDate,
-			DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
-			ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
 
 func (u *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
-	type data struct {
-		ID                            string    `json:"id"`
-		Email                         string    `json:"email"`
-		FirstName                     string    `json:"firstName"`
-		LastName                      string    `json:"lastName"`
-		UserPhone                     string    `json:"userPhone"`
-		LastLoginIP                   string    `json:"lastLoginIP"`
-		LastLoginDate                 time.Time `json:"lastLoginDate"`
-		DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
-		ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
-	}
 	type respond struct {
-		Data data `json:"data"`
+		Data *types.UserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -470,46 +427,18 @@ func (u *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
-
-		api.Respond(w, r, http.StatusOK, respond{Data: data{
-			ID:                            user.ID.Hex(),
-			Email:                         user.Email,
-			UserPhone:                     user.Telephone,
-			FirstName:                     user.FirstName,
-			LastName:                      user.LastName,
-			LastLoginIP:                   user.LastLoginIP,
-			LastLoginDate:                 user.LastLoginDate,
-			DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
-			ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
 
 func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data []*types.UserEntityRespond `json:"data"`
+		Data []*types.EntityRespond `json:"data"`
 	}
-	toData := func(entities []*types.Entity) []*types.UserEntityRespond {
-		result := []*types.UserEntityRespond{}
+	toData := func(entities []*types.Entity) []*types.EntityRespond {
+		result := []*types.EntityRespond{}
 		for _, entity := range entities {
-			result = append(result, &types.UserEntityRespond{
-				ID:                 entity.ID.Hex(),
-				EntityName:         entity.EntityName,
-				EntityPhone:        entity.EntityPhone,
-				IncType:            entity.IncType,
-				CompanyNumber:      entity.CompanyNumber,
-				Website:            entity.Website,
-				Turnover:           entity.Turnover,
-				Description:        entity.Description,
-				LocationAddress:    entity.LocationAddress,
-				LocationCity:       entity.LocationCity,
-				LocationRegion:     entity.LocationRegion,
-				LocationPostalCode: entity.LocationPostalCode,
-				LocationCountry:    entity.LocationCountry,
-				Status:             entity.Status,
-				Offers:             utils.TagFieldToNames(entity.Offers),
-				Wants:              utils.TagFieldToNames(entity.Wants),
-			})
+			result = append(result, types.NewEntityRespond(entity))
 		}
 		return result
 	}
@@ -545,10 +474,10 @@ func updateTags(old *types.Entity, offers, wants []string) {
 
 	var offersAdded, offersRemoved, wantsAdded, wantsRemoved []string
 	if len(offers) != 0 {
-		offersAdded, offersRemoved = utils.TagDifference(offers, utils.TagFieldToNames(old.Offers))
+		offersAdded, offersRemoved = util.TagDifference(offers, types.TagFieldToNames(old.Offers))
 	}
 	if len(wants) != 0 {
-		wantsAdded, wantsRemoved = utils.TagDifference(wants, utils.TagFieldToNames(old.Wants))
+		wantsAdded, wantsRemoved = util.TagDifference(wants, types.TagFieldToNames(old.Wants))
 	}
 
 	err := logic.Entity.UpdateTags(old.ID, &types.TagDifference{
@@ -578,7 +507,7 @@ func updateTags(old *types.Entity, offers, wants []string) {
 
 func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.UserEntityRespond `json:"data"`
+		Data *types.EntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.UpdateUserEntityReqBody
@@ -596,7 +525,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		req.Offers, req.Wants = utils.FormatTags(req.Offers), utils.FormatTags(req.Wants)
+		req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
 
 		vars := mux.Vars(r)
 		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
@@ -638,13 +567,13 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 
 		offers := req.Offers
 		if len(offers) == 0 {
-			offers = utils.TagFieldToNames(entity.Offers)
+			offers = types.TagFieldToNames(entity.Offers)
 		}
 		wants := req.Wants
 		if len(wants) == 0 {
-			wants = utils.TagFieldToNames(entity.Wants)
+			wants = types.TagFieldToNames(entity.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: &types.UserEntityRespond{
+		api.Respond(w, r, http.StatusOK, respond{Data: &types.EntityRespond{
 			ID:                 entity.ID.Hex(),
 			EntityName:         entity.EntityName,
 			EntityPhone:        entity.EntityPhone,

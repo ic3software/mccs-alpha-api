@@ -77,11 +77,6 @@ func (entity *Entity) Validate() []error {
 	return errs
 }
 
-type TagField struct {
-	Name      string    `json:"name,omitempty" bson:"name,omitempty"`
-	CreatedAt time.Time `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
-}
-
 // Helper types
 
 type TagDifference struct {

@@ -13,7 +13,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -40,7 +39,8 @@ func (b *entityHandler) RegisterRoutes(
 ) {
 	b.once.Do(func() {
 		public.Path("/api/v1/entities").HandlerFunc(b.searchEntity()).Methods("GET")
-		public.Path("/api/v1/favorites").HandlerFunc(b.addToFavoriteEntities()).Methods("POST")
+		public.Path("/api/v1/entities/{entityID}").HandlerFunc(b.getEntity()).Methods("GET")
+		private.Path("/api/v1/favorites").HandlerFunc(b.addToFavoriteEntities()).Methods("POST")
 
 		private.Path("/entities/search/match-tags").HandlerFunc(b.searhMatchTags()).Methods("GET")
 		private.Path("/api/entityStatus").HandlerFunc(b.entityStatus()).Methods("GET")
@@ -101,8 +101,8 @@ func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) 
 		PageSize:         pageSize,
 		EntityName:       q.Get("entityName"),
 		Category:         q.Get("category"),
-		Offers:           utils.ToSearchTags(q.Get("offers")),
-		Wants:            utils.ToSearchTags(q.Get("wants")),
+		Offers:           util.ToSearchTags(q.Get("offers")),
+		Wants:            util.ToSearchTags(q.Get("wants")),
 		TaggedSince:      util.ParseTime(q.Get("tagged_since")),
 		FavoriteEntities: favorites,
 		FavoritesOnly:    q.Get("favorites_only") == "true",
@@ -129,33 +129,15 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 		TotalPages      int `json:"totalPages"`
 	}
 	type respond struct {
-		Data []*types.EntitySearchRespond `json:"data"`
-		Meta meta                         `json:"meta"`
+		Data []*types.EntityRespond `json:"data"`
+		Meta meta                   `json:"meta"`
 	}
-	toData := func(entities []*types.Entity, favorites []primitive.ObjectID) []*types.EntitySearchRespond {
-		result := []*types.EntitySearchRespond{}
+	toData := func(entities []*types.Entity, favorites []primitive.ObjectID) []*types.EntityRespond {
+		result := []*types.EntityRespond{}
 		for _, entity := range entities {
-			isFavorite := util.ContainID(favorites, entity.ID)
-			result = append(result, &types.EntitySearchRespond{
-				ID:                 entity.ID.Hex(),
-				AccountNumber:      entity.AccountNumber,
-				EntityName:         entity.EntityName,
-				EntityPhone:        entity.EntityPhone,
-				IncType:            entity.IncType,
-				CompanyNumber:      entity.CompanyNumber,
-				Website:            entity.Website,
-				Turnover:           entity.Turnover,
-				Description:        entity.Description,
-				LocationAddress:    entity.LocationAddress,
-				LocationCity:       entity.LocationCity,
-				LocationRegion:     entity.LocationRegion,
-				LocationPostalCode: entity.LocationPostalCode,
-				LocationCountry:    entity.LocationCountry,
-				Status:             entity.Status,
-				Offers:             utils.TagFieldToNames(entity.Offers),
-				Wants:              utils.TagFieldToNames(entity.Wants),
-				IsFavorite:         isFavorite,
-			})
+			respond := types.NewEntityRespond(entity)
+			respond.IsFavorite = util.ContainID(favorites, entity.ID)
+			result = append(result, respond)
 		}
 		return result
 	}
@@ -187,6 +169,23 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 				NumberOfResults: found.NumberOfResults,
 			},
 		})
+	}
+}
+
+func (_ *entityHandler) getEntity() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.EntityRespond `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
+		entity, err := logic.Entity.FindByID(entityID)
+		if err != nil {
+			l.Logger.Info("[INFO] EntityHandler.getEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespond(entity)})
 	}
 }
 
