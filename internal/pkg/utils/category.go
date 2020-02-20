@@ -1,4 +1,4 @@
-package util
+package utils
 
 import "github.com/ic3network/mccs-alpha-api/internal/app/types"
 

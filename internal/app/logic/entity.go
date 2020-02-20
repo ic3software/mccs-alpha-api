@@ -66,7 +66,7 @@ func (_ *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 	return nil
 }
 
-func (b *entity) Find(query *types.SearchEntityQuery) (*types.FindEntityResult, error) {
+func (_ *entity) Find(query *types.SearchEntityQuery) (*types.FindEntityResult, error) {
 	result, err := es.Entity.Find(query)
 	if err != nil {
 		return nil, err
@@ -80,6 +80,14 @@ func (b *entity) Find(query *types.SearchEntityQuery) (*types.FindEntityResult, 
 		NumberOfResults: result.NumberOfResults,
 		TotalPages:      result.TotalPages,
 	}, nil
+}
+
+func (_ *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
+	err := mongo.Entity.AddToFavoriteEntities(req)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // TO BE REMOVED

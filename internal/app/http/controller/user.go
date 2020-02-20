@@ -17,8 +17,8 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -58,9 +58,7 @@ func (u *userHandler) RegisterRoutes(
 		private.Path("/api/v1/user/entities").HandlerFunc(u.listUserEntities()).Methods("GET")
 		private.Path("/api/v1/user/entities/{entityID}").HandlerFunc(u.updateUserEntity()).Methods("PATCH")
 
-		private.Path("/api/v1/users/removeFromFavoriteEntities").HandlerFunc(u.removeFromFavoriteEntities()).Methods("POST")
 		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
-		private.Path("/api/v1/users/addToFavoriteEntities").HandlerFunc(u.addToFavoriteEntities()).Methods("POST")
 	})
 }
 
@@ -86,10 +84,6 @@ func (u *userHandler) FindByEntityID(id string) (*types.User, error) {
 }
 
 func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
 	type data struct {
 		Token string `json:"token"`
 	}
@@ -97,7 +91,7 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
+		var req types.LoginReqBody
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -106,7 +100,7 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.Login(req.Password)
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -144,7 +138,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.SignUp(&req)
+		errs := req.Validate()
 		if logic.User.UserEmailExists(req.Email) {
 			errs = append(errs, errors.New("Email address is already registered."))
 		}
@@ -282,12 +276,9 @@ func (u *userHandler) requestPasswordReset() func(http.ResponseWriter, *http.Req
 }
 
 func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		Password string `json:"password"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		var req request
+		var req types.ResetPasswordReqBody
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -296,7 +287,7 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.ResetPassword(req.Password)
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -331,7 +322,7 @@ func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) 
 		Password string `json:"password"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
+		var req types.PasswordChange
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -340,7 +331,7 @@ func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		errs := validate.ResetPassword(req.Password)
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -420,7 +411,7 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.UpdateUser(&req)
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -516,8 +507,8 @@ func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request
 				LocationPostalCode: entity.LocationPostalCode,
 				LocationCountry:    entity.LocationCountry,
 				Status:             entity.Status,
-				Offers:             util.TagFieldToNames(entity.Offers),
-				Wants:              util.TagFieldToNames(entity.Wants),
+				Offers:             utils.TagFieldToNames(entity.Offers),
+				Wants:              utils.TagFieldToNames(entity.Wants),
 			})
 		}
 		return result
@@ -554,10 +545,10 @@ func updateTags(old *types.Entity, offers, wants []string) {
 
 	var offersAdded, offersRemoved, wantsAdded, wantsRemoved []string
 	if len(offers) != 0 {
-		offersAdded, offersRemoved = util.TagDifference(offers, util.TagFieldToNames(old.Offers))
+		offersAdded, offersRemoved = utils.TagDifference(offers, utils.TagFieldToNames(old.Offers))
 	}
 	if len(wants) != 0 {
-		wantsAdded, wantsRemoved = util.TagDifference(wants, util.TagFieldToNames(old.Wants))
+		wantsAdded, wantsRemoved = utils.TagDifference(wants, utils.TagFieldToNames(old.Wants))
 	}
 
 	err := logic.Entity.UpdateTags(old.ID, &types.TagDifference{
@@ -573,7 +564,7 @@ func updateTags(old *types.Entity, offers, wants []string) {
 
 	// User Update tags logic:
 	// 	1. Update the tags collection only when the entity is in accepted status.
-	if util.IsAcceptedStatus(old.Status) {
+	if utils.IsAcceptedStatus(old.Status) {
 		err := TagHandler.SaveOfferTags(offersAdded)
 		if err != nil {
 			l.Logger.Error("[Error] SaveOfferTags failed:", zap.Error(err))
@@ -599,13 +590,13 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		errs := validate.UpdateUserEntity(&req)
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
+		req.Offers, req.Wants = utils.FormatTags(req.Offers), utils.FormatTags(req.Wants)
 
 		vars := mux.Vars(r)
 		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
@@ -647,11 +638,11 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 
 		offers := req.Offers
 		if len(offers) == 0 {
-			offers = util.TagFieldToNames(entity.Offers)
+			offers = utils.TagFieldToNames(entity.Offers)
 		}
 		wants := req.Wants
 		if len(wants) == 0 {
-			wants = util.TagFieldToNames(entity.Wants)
+			wants = utils.TagFieldToNames(entity.Wants)
 		}
 		api.Respond(w, r, http.StatusOK, respond{Data: &types.UserEntityRespond{
 			ID:                 entity.ID.Hex(),
@@ -688,98 +679,6 @@ func (u *userHandler) toggleShowRecentMatchedTags() func(http.ResponseWriter, *h
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-	}
-}
-
-func (u *userHandler) addToFavoriteEntities() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		ID string `json:"id"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
-		if err != nil || req.ID == "" {
-			if err != nil {
-				l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
-			} else {
-				l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.String("error", "request entity id is empty"))
-			}
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-		bID, err := primitive.ObjectIDFromHex(req.ID)
-		if err != nil {
-			l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
-		uID, err := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-		if err != nil {
-			l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
-		err = logic.User.AddToFavoriteEntities(uID, bID)
-		if err != nil {
-			l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-	}
-}
-
-func (u *userHandler) removeFromFavoriteEntities() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		ID string `json:"id"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
-		if err != nil || req.ID == "" {
-			if err != nil {
-				l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
-			} else {
-				l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.String("error", "request entity id is empty"))
-			}
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-		bID, err := primitive.ObjectIDFromHex(req.ID)
-		if err != nil {
-			l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
-		uID, err := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-		if err != nil {
-			l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
-		err = logic.User.RemoveFromFavoriteEntities(uID, bID)
-		if err != nil {
-			l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
 	}
 }

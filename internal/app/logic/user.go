@@ -9,7 +9,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -258,22 +258,6 @@ func (u *user) ToggleShowRecentMatchedTags(id primitive.ObjectID) error {
 	err := mongo.User.ToggleShowRecentMatchedTags(id)
 	if err != nil {
 		return e.Wrap(err, "UserService ToggleShowRecentMatchedTags failed")
-	}
-	return nil
-}
-
-func (u *user) AddToFavoriteEntities(uID, entityID primitive.ObjectID) error {
-	err := mongo.User.AddToFavoriteEntities(uID, entityID)
-	if err != nil {
-		return e.Wrap(err, "UserService AddToFavoriteEntities failed")
-	}
-	return nil
-}
-
-func (u *user) RemoveFromFavoriteEntities(uID, entityID primitive.ObjectID) error {
-	err := mongo.User.RemoveFromFavoriteEntities(uID, entityID)
-	if err != nil {
-		return e.Wrap(err, "UserService RemoveFromFavoriteEntities failed")
 	}
 	return nil
 }

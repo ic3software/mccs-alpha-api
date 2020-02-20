@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -39,6 +40,20 @@ type User struct {
 	ShowRecentMatchedTags    *bool     `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
 	DailyNotification        *bool     `json:"dailyNotification,omitempty" bson:"dailyNotification,omitempty"`
 	LastNotificationSentDate time.Time `json:"lastNotificationSentDate,omitempty" bson:"lastNotificationSentDate,omitempty"`
+}
+
+func (user *User) Validate() []error {
+	errs := []error{}
+	if len(user.FirstName) > 100 {
+		errs = append(errs, errors.New("First name length cannot exceed 100 characters."))
+	}
+	if len(user.LastName) > 100 {
+		errs = append(errs, errors.New("Last name length cannot exceed 100 characters."))
+	}
+	if len(user.Telephone) > 25 {
+		errs = append(errs, errors.New("Telephone length cannot exceed 25 characters."))
+	}
+	return errs
 }
 
 // Helper types

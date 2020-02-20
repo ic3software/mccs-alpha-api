@@ -15,8 +15,9 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
@@ -90,7 +91,7 @@ func (t *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{
-			Data: util.TagToNames(found.Tags),
+			Data: utils.TagToNames(found.Tags),
 			Meta: meta{
 				TotalPages:      found.TotalPages,
 				NumberOfResults: found.NumberOfResults,

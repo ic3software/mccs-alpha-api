@@ -22,6 +22,11 @@ type SearchEntityQuery struct {
 	LocationCity    string
 }
 
+func (query *SearchEntityQuery) Validate() []error {
+	errs := []error{}
+	return errs
+}
+
 type SearchTagQuery struct {
 	Fragment string `json:"fragment"`
 	Page     int    `json:"page"`
@@ -33,4 +38,9 @@ type SearchCategoryQuery struct {
 	Prefix   string `json:"prefix"`
 	Page     int    `json:"page"`
 	PageSize int    `json:"pageSize"`
+}
+
+func (query *SearchCategoryQuery) Validate() []error {
+	errs := []error{}
+	return errs
 }

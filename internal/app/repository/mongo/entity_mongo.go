@@ -7,7 +7,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -100,10 +100,10 @@ func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 
 	push := bson.M{}
 	if len(difference.OffersAdded) != 0 {
-		push["offers"] = bson.M{"$each": util.ToTagFields(difference.OffersAdded)}
+		push["offers"] = bson.M{"$each": utils.ToTagFields(difference.OffersAdded)}
 	}
 	if len(difference.WantsAdded) != 0 {
-		push["wants"] = bson.M{"$each": util.ToTagFields(difference.WantsAdded)}
+		push["wants"] = bson.M{"$each": utils.ToTagFields(difference.WantsAdded)}
 	}
 	if len(push) != 0 {
 		updates = append(updates, bson.M{"$push": push})
@@ -127,6 +127,21 @@ func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 	}
 
 	_, err := b.c.BulkWrite(context.Background(), writes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
+	filter := bson.M{"_id": req.GetAddToEntityID()}
+	update := bson.M{}
+	if req.GetIsFavorite() {
+		update["$addToSet"] = bson.M{"favoriteEntities": req.GetFavoriteEntityID()}
+	} else {
+		update["$pull"] = bson.M{"favoriteEntities": req.GetFavoriteEntityID()}
+	}
+	_, err := b.c.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/jinzhu/gorm"
 	"github.com/segmentio/ksuid"
 	"github.com/spf13/viper"

@@ -13,12 +13,11 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
-
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 )
 
 type entityHandler struct {
@@ -41,6 +40,7 @@ func (b *entityHandler) RegisterRoutes(
 ) {
 	b.once.Do(func() {
 		public.Path("/api/v1/entities").HandlerFunc(b.searchEntity()).Methods("GET")
+		public.Path("/api/v1/favorites").HandlerFunc(b.addToFavoriteEntities()).Methods("POST")
 
 		private.Path("/entities/search/match-tags").HandlerFunc(b.searhMatchTags()).Methods("GET")
 		private.Path("/api/entityStatus").HandlerFunc(b.entityStatus()).Methods("GET")
@@ -101,8 +101,8 @@ func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) 
 		PageSize:         pageSize,
 		EntityName:       q.Get("entityName"),
 		Category:         q.Get("category"),
-		Offers:           util.ToSearchTags(q.Get("offers")),
-		Wants:            util.ToSearchTags(q.Get("wants")),
+		Offers:           utils.ToSearchTags(q.Get("offers")),
+		Wants:            utils.ToSearchTags(q.Get("wants")),
 		TaggedSince:      util.ParseTime(q.Get("tagged_since")),
 		FavoriteEntities: favorites,
 		FavoritesOnly:    q.Get("favorites_only") == "true",
@@ -152,8 +152,8 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 				LocationPostalCode: entity.LocationPostalCode,
 				LocationCountry:    entity.LocationCountry,
 				Status:             entity.Status,
-				Offers:             util.TagFieldToNames(entity.Offers),
-				Wants:              util.TagFieldToNames(entity.Wants),
+				Offers:             utils.TagFieldToNames(entity.Offers),
+				Wants:              utils.TagFieldToNames(entity.Wants),
 				IsFavorite:         isFavorite,
 			})
 		}
@@ -167,7 +167,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		errs := validate.SearchEntity(query)
+		errs := query.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -187,6 +187,34 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 				NumberOfResults: found.NumberOfResults,
 			},
 		})
+	}
+}
+
+func (_ *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.AddToFavoriteReqBody
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&req)
+		if err != nil {
+			l.Logger.Info("[Info] EntityHandler.addToFavorite failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		errs := req.Validate()
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		err = logic.Entity.AddToFavoriteEntities(&req)
+		if err != nil {
+			l.Logger.Error("[Error] EntityHandler.addToFavorite failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, nil)
 	}
 }
 

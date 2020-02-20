@@ -16,8 +16,8 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -80,7 +80,7 @@ func (a *categoryHandler) searchCategory() func(http.ResponseWriter, *http.Reque
 	return func(w http.ResponseWriter, r *http.Request) {
 		query, err := getSearchCategoryQueryParams(r.URL.Query())
 
-		errs := validate.SearchCategory(query)
+		errs := query.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -94,7 +94,7 @@ func (a *categoryHandler) searchCategory() func(http.ResponseWriter, *http.Reque
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{
-			Data: util.CategoryToNames(found.Categories),
+			Data: utils.CategoryToNames(found.Categories),
 			Meta: meta{
 				TotalPages:      found.TotalPages,
 				NumberOfResults: found.NumberOfResults,

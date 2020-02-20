@@ -6,7 +6,7 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/ic3network/mccs-alpha-api/util"
 )
 
 type user struct{}

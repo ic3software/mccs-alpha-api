@@ -388,23 +388,3 @@ func (u *user) ToggleShowRecentMatchedTags(id primitive.ObjectID) error {
 	}
 	return nil
 }
-
-func (u *user) AddToFavoriteEntities(uID, bID primitive.ObjectID) error {
-	filter := bson.M{"_id": uID}
-	update := bson.M{"$addToSet": bson.M{"favoriteEntities": bID}}
-	_, err := u.c.UpdateOne(context.Background(), filter, update)
-	if err != nil {
-		return e.Wrap(err, "UserMongo AddToFavoriteEntities failed")
-	}
-	return nil
-}
-
-func (u *user) RemoveFromFavoriteEntities(uID, bID primitive.ObjectID) error {
-	filter := bson.M{"_id": uID}
-	update := bson.M{"$pull": bson.M{"favoriteEntities": bID}}
-	_, err := u.c.UpdateOne(context.Background(), filter, update)
-	if err != nil {
-		return e.Wrap(err, "UserMongo RemoveFromFavoriteEntities failed")
-	}
-	return nil
-}

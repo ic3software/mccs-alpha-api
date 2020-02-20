@@ -20,7 +20,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
 	"github.com/unrolled/render"
 
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"go.uber.org/zap"
 )
 

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -36,6 +37,44 @@ type Entity struct {
 
 	AccountNumber    string               `json:"accountNumber,omitempty" bson:"accountNumber,omitempty"`
 	FavoriteEntities []primitive.ObjectID `json:"favoriteEntities,omitempty" bson:"favoriteEntities,omitempty"`
+}
+
+func (entity *Entity) Validate() []error {
+	errs := []error{}
+	if len(entity.EntityName) > 100 {
+		errs = append(errs, errors.New("Entity name length cannot exceed 100 characters."))
+	}
+	if len(entity.EntityPhone) > 25 {
+		errs = append(errs, errors.New("Telephone length cannot exceed 25 characters."))
+	}
+	if len(entity.IncType) > 25 {
+		errs = append(errs, errors.New("Incorporation type length cannot exceed 25 characters."))
+	}
+	if len(entity.CompanyNumber) > 20 {
+		errs = append(errs, errors.New("Company number length cannot exceed 20 characters."))
+	}
+	if len(entity.Website) > 100 {
+		errs = append(errs, errors.New("Website URL length cannot exceed 100 characters."))
+	}
+	if len(entity.Description) > 500 {
+		errs = append(errs, errors.New("Description length cannot exceed 500 characters."))
+	}
+	if len(entity.LocationCountry) > 10 {
+		errs = append(errs, errors.New("Country length cannot exceed 50 characters."))
+	}
+	if len(entity.LocationCity) > 10 {
+		errs = append(errs, errors.New("City length cannot exceed 50 characters."))
+	}
+	if len(entity.LocationAddress) > 255 {
+		errs = append(errs, errors.New("Address length cannot exceed 255 characters."))
+	}
+	if len(entity.LocationRegion) > 50 {
+		errs = append(errs, errors.New("Region length cannot exceed 50 characters."))
+	}
+	if len(entity.LocationPostalCode) > 10 {
+		errs = append(errs, errors.New("Postal code length cannot exceed 10 characters."))
+	}
+	return errs
 }
 
 type TagField struct {
