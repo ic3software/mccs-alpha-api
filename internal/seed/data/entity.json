@@ -72,5 +72,44 @@
         "locationCountry": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-16T08:35:55.758Z"
+    },
+    {
+        "entityName": "Farmer Freddy's Veg",
+        "incType": "sole",
+        "companyNumber": "none",
+        "website": "https://farmer-freddy.null",
+        "entityPhone": "+4420832132132",
+        "turnover": 10000,
+        "categories": [ 
+            "Organic Produce"
+        ],
+        "offers": [ 
+            {
+                "name": "organic-vegetables",
+                "createdAt": "2020-02-20T06:45:55.849Z"
+            }, 
+            {
+                "name": "organic-fruits",
+                "createdAt": "2020-02-20T06:45:55.849Z"
+            }
+        ],
+        "wants": [ 
+            {
+                "name": "capentry",
+                "createdAt": "2020-02-20T06:45:55.849Z"
+            }, 
+            {
+                "name": "beer",
+                "createdAt": "2020-02-20T06:45:55.849Z"
+            }
+        ],
+        "description": "High quality carpentry at a reasonable price.",
+        "locationAddress": "123 Main",
+        "locationCity": "London",
+        "locationRegion": "Greater London",
+        "locationPostalCode": "UK1 2ENG",
+        "locationCountry": "England",
+        "status": "tradingAccepted",
+        "createdAt": "2020-02-16T08:35:55.758Z"
     }
 ]

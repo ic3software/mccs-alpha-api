@@ -6,5 +6,20 @@
     {
         "name": "Painting",
         "createdAt": "2020-02-16T08:40:10.255Z"
+    },
+    {
+        "name": "Car Repair"
+    },
+    {
+        "name": "Brewery"
+    },
+    {
+        "name": "Restaurant"
+    },
+    {
+        "name": "Transport"
+    },
+    {
+        "name": "Organic Produce"
     }
 ]

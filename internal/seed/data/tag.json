@@ -34,5 +34,15 @@
         "createdAt": "2020-02-16T08:40:10.251Z",
         "wantAddedAt": "2020-02-16T08:40:10.251Z",
         "updatedAt": "2020-02-16T08:40:10.251Z"
+    },
+    {
+        "name": "organic-vegetables",
+        "createdAt": "2020-02-20T06:45:55.849Z",
+        "offerAddedAt": "2020-02-20T06:45:55.849Z"
+    },
+    {
+        "name": "organic-fruits",
+        "createdAt": "2020-02-20T06:45:55.849Z",
+        "offerAddedAt": "2020-02-20T06:45:55.849Z"
     }
 ]
