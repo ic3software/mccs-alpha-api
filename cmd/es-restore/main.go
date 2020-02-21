@@ -70,7 +70,6 @@ func restoreEntity() {
 	log.Println("start restoring entities")
 	startTime := time.Now()
 
-	// Don't incluse deleted item.
 	filter := bson.M{
 		"deletedAt": bson.M{"$exists": false},
 	}
@@ -97,7 +96,7 @@ func restoreEntity() {
 				LocationCity:    b.LocationCity,
 				LocationCountry: b.LocationCountry,
 				Status:          b.Status,
-				AdminTags:       b.AdminTags,
+				Categories:      b.Categories,
 			}
 			_, err = es.Client().Index().
 				Index("entities").
