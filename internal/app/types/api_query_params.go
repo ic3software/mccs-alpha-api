@@ -29,7 +29,7 @@ type SearchEntityQuery struct {
 func (query *SearchEntityQuery) Validate() []error {
 	errs := []error{}
 
-	if query.QueryingEntityID == "" {
+	if query.FavoritesOnly == true && query.QueryingEntityID == "" {
 		errs = append(errs, errors.New("Please specify the querying_entity_id"))
 	}
 
