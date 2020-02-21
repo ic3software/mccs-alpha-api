@@ -21,10 +21,12 @@ func (b balanceLimit) Create(tx *gorm.DB, accountID uint) error {
 	}
 	err := tx.Create(balance).Error
 	if err != nil {
-		return e.Wrap(err, "pg.BalanceLimit.Create failed")
+		return err
 	}
 	return nil
 }
+
+// TO BE REMOVED
 
 func (b balanceLimit) FindByAccountID(accountID uint) (*types.BalanceLimit, error) {
 	balance := new(types.BalanceLimit)

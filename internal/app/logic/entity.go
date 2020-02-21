@@ -5,6 +5,7 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/pg"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -15,6 +16,11 @@ type entity struct{}
 var Entity = &entity{}
 
 func (_ *entity) Create(entity *types.Entity) (primitive.ObjectID, error) {
+	account, err := pg.Account.Create()
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	entity.AccountNumber = account.AccountNumber
 	id, err := mongo.Entity.Create(entity)
 	if err != nil {
 		return primitive.ObjectID{}, err

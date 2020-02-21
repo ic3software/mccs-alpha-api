@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/util"
@@ -9,6 +10,7 @@ import (
 )
 
 type SearchEntityQuery struct {
+	QueryingEntityID string
 	Page             int
 	PageSize         int
 	EntityName       string
@@ -26,6 +28,11 @@ type SearchEntityQuery struct {
 
 func (query *SearchEntityQuery) Validate() []error {
 	errs := []error{}
+
+	if query.QueryingEntityID == "" {
+		errs = append(errs, errors.New("Please specify the querying_entity_id"))
+	}
+
 	return errs
 }
 

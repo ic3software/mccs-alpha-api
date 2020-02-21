@@ -147,8 +147,6 @@ func (b *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
 	return nil
 }
 
-// TO BE REMOVED
-
 func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 	var results []*types.Entity
 
@@ -178,6 +176,8 @@ func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 
 	return results, nil
 }
+
+// TO BE REMOVED
 
 func (b *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
 	filter := bson.M{"_id": id}

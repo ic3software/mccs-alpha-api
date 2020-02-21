@@ -18,6 +18,11 @@ func Respond(w http.ResponseWriter, r *http.Request, status int, data ...interfa
 
 	d := evaluateData(data[0])
 
+	if d == nil {
+		w.WriteHeader(status)
+		return
+	}
+
 	js, err := json.Marshal(d)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

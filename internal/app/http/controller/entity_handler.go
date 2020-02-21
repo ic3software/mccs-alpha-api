@@ -95,11 +95,12 @@ func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) 
 	if err != nil {
 		return nil, err
 	}
-	favorites := getFavoriteEntities(q.Get("queryingEntityID"))
+	favorites := getFavoriteEntities(q.Get("querying_entity_id"))
 	return &types.SearchEntityQuery{
+		QueryingEntityID: q.Get("querying_entity_id"),
 		Page:             page,
 		PageSize:         pageSize,
-		EntityName:       q.Get("entityName"),
+		EntityName:       q.Get("entity_name"),
 		Category:         q.Get("category"),
 		Offers:           util.ToSearchTags(q.Get("offers")),
 		Wants:            util.ToSearchTags(q.Get("wants")),
