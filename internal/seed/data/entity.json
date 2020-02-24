@@ -95,7 +95,7 @@
         ],
         "wants": [ 
             {
-                "name": "capentry",
+                "name": "carpentry",
                 "createdAt": "2020-02-20T06:45:55.849Z"
             }, 
             {

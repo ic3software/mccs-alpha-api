@@ -3,7 +3,8 @@
         "name": "carpentry",
         "createdAt": "2020-02-16T08:37:08.382Z",
         "offerAddedAt": "2020-02-16T08:37:08.382Z",
-        "updatedAt": "2020-02-16T08:37:08.382Z"
+        "wantAddedAt": "2020-02-20T06:45:55.849Z",
+        "updatedAt": "2020-02-20T06:45:55.849Z"
     },
     {
         "name": "pizza",
@@ -14,8 +15,8 @@
     {
         "name": "beer",
         "createdAt": "2020-02-16T08:37:08.444Z",
-        "updatedAt": "2020-02-16T08:37:08.444Z",
-        "wantAddedAt": "2020-02-16T08:37:08.444Z"
+        "updatedAt": "2020-02-20T06:45:55.849Z",
+        "wantAddedAt": "2020-02-20T06:45:55.849Z"
     },
     {
         "name": "painting",
