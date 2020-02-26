@@ -33,6 +33,10 @@ func (query *SearchEntityQuery) Validate() []error {
 		errs = append(errs, errors.New("Please specify the querying_entity_id"))
 	}
 
+	if !query.TaggedSince.IsZero() && len(query.Wants) == 0 && len(query.Offers) == 0 {
+		errs = append(errs, errors.New("Please specify the wants or tags"))
+	}
+
 	return errs
 }
 
