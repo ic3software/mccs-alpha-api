@@ -62,7 +62,7 @@ func LoadData() {
 	tagData = tags
 
 	// Load admin tag data.
-	data, err = ioutil.ReadFile("internal/seed/data/admin_tag.json")
+	data, err = ioutil.ReadFile("internal/seed/data/category.json")
 	if err != nil {
 		log.Fatal(err)
 	}
