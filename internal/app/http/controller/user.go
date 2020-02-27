@@ -128,9 +128,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.SignupReqBody
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
+		req, err := types.NewSignupReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.signup failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -159,6 +157,8 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			LocationRegion:     req.LocationRegion,
 			LocationPostalCode: req.LocationPostalCode,
 			LocationCountry:    req.LocationCountry,
+			Offers:             types.ToTagFields(req.Offers),
+			Wants:              types.ToTagFields(req.Wants),
 		})
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))

@@ -1,7 +1,9 @@
 package types
 
 import (
+	"encoding/json"
 	"errors"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -12,6 +14,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+func NewSignupReqBody(r *http.Request) (*SignupReqBody, error) {
+	var req SignupReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
+}
+
 type SignupReqBody struct {
 	Email                 string `json:"email"`
 	Password              string `json:"password"`
@@ -20,18 +32,21 @@ type SignupReqBody struct {
 	UserPhone             string `json:"userPhone"`
 	ShowRecentMatchedTags *bool  `json:"showTagsMatchedSinceLastLogin"`
 	DailyNotification     *bool  `json:"dailyEmailMatchNotification"`
-	EntityName            string `json:"entityName"`
-	IncType               string `json:"incType"`
-	CompanyNumber         string `json:"companyNumber"`
-	EntityPhone           string `json:"entityPhone"`
-	Website               string `json:"website"`
-	Turnover              int    `json:"turnover"`
-	Description           string `json:"description"`
-	LocationAddress       string `json:"locationAddress"`
-	LocationCity          string `json:"locationCity"`
-	LocationRegion        string `json:"locationRegion"`
-	LocationPostalCode    string `json:"locationPostalCode"`
-	LocationCountry       string `json:"locationCountry"`
+
+	EntityName         string   `json:"entityName"`
+	IncType            string   `json:"incType"`
+	CompanyNumber      string   `json:"companyNumber"`
+	EntityPhone        string   `json:"entityPhone"`
+	Website            string   `json:"website"`
+	Turnover           int      `json:"turnover"`
+	Description        string   `json:"description"`
+	LocationAddress    string   `json:"locationAddress"`
+	LocationCity       string   `json:"locationCity"`
+	LocationRegion     string   `json:"locationRegion"`
+	LocationPostalCode string   `json:"locationPostalCode"`
+	LocationCountry    string   `json:"locationCountry"`
+	Offers             []string `json:"offers"`
+	Wants              []string `json:"wants"`
 }
 
 func (req *SignupReqBody) Validate() []error {
@@ -45,7 +60,25 @@ func (req *SignupReqBody) Validate() []error {
 		LastName:  req.LastName,
 		Telephone: req.UserPhone,
 	}
+	entity := Entity{
+		EntityName:         req.EntityName,
+		EntityPhone:        req.EntityPhone,
+		IncType:            req.IncType,
+		CompanyNumber:      req.CompanyNumber,
+		Website:            req.Website,
+		Turnover:           req.Turnover,
+		Description:        req.Description,
+		LocationCity:       req.LocationCity,
+		LocationCountry:    req.LocationCountry,
+		LocationAddress:    req.LocationAddress,
+		LocationRegion:     req.LocationRegion,
+		LocationPostalCode: req.LocationPostalCode,
+	}
+
 	errs = append(errs, user.Validate()...)
+	errs = append(errs, entity.Validate()...)
+	errs = append(errs, validateTags(req.Offers)...)
+	errs = append(errs, validateTags(req.Wants)...)
 
 	return errs
 }
