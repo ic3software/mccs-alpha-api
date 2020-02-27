@@ -136,7 +136,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 	toData := func(entities []*types.Entity, favorites []primitive.ObjectID) []*types.EntityRespond {
 		result := []*types.EntityRespond{}
 		for _, entity := range entities {
-			respond := types.NewEntityRespond(entity)
+			respond := types.NewEntityRespondWithoutEmail(entity)
 			respond.IsFavorite = util.ContainID(favorites, entity.ID)
 			result = append(result, respond)
 		}
@@ -186,7 +186,7 @@ func (_ *entityHandler) getEntity() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespond(entity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithoutEmail(entity)})
 	}
 }
 

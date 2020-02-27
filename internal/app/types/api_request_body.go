@@ -117,6 +117,7 @@ type UpdateUserEntityReqBody struct {
 	ID                 string   `json:"id"`
 	Status             string   `json:"status"`
 	EntityName         string   `json:"entityName"`
+	Email              string   `json:"email"`
 	EntityPhone        string   `json:"entityPhone"`
 	IncType            string   `json:"incType"`
 	CompanyNumber      string   `json:"companyNumber"`

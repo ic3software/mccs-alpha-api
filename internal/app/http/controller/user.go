@@ -148,6 +148,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 
 		entityID, err := logic.Entity.Create(&types.Entity{
 			EntityName:         req.EntityName,
+			Email:              req.Email,
 			IncType:            req.IncType,
 			CompanyNumber:      req.CompanyNumber,
 			EntityPhone:        req.EntityPhone,
@@ -438,7 +439,7 @@ func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request
 	toData := func(entities []*types.Entity) []*types.EntityRespond {
 		result := []*types.EntityRespond{}
 		for _, entity := range entities {
-			result = append(result, types.NewEntityRespond(entity))
+			result = append(result, types.NewEntityRespondWithEmail(entity))
 		}
 		return result
 	}
@@ -525,8 +526,6 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
-
 		vars := mux.Vars(r)
 		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
 		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
@@ -545,6 +544,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 		entity, err := logic.Entity.FindOneAndUpdate(&types.Entity{
 			ID:                 entityID,
 			EntityName:         req.EntityName,
+			Email:              req.Email,
 			EntityPhone:        req.EntityPhone,
 			IncType:            req.IncType,
 			CompanyNumber:      req.CompanyNumber,
@@ -563,6 +563,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			return
 		}
 
+		req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
 		go updateTags(oldEntity, req.Offers, req.Wants)
 
 		offers := req.Offers
@@ -573,24 +574,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 		if len(wants) == 0 {
 			wants = types.TagFieldToNames(entity.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: &types.EntityRespond{
-			ID:                 entity.ID.Hex(),
-			EntityName:         entity.EntityName,
-			EntityPhone:        entity.EntityPhone,
-			IncType:            entity.IncType,
-			CompanyNumber:      entity.CompanyNumber,
-			Website:            entity.Website,
-			Turnover:           entity.Turnover,
-			Description:        entity.Description,
-			LocationAddress:    entity.LocationAddress,
-			LocationCity:       entity.LocationCity,
-			LocationRegion:     entity.LocationRegion,
-			LocationPostalCode: entity.LocationPostalCode,
-			LocationCountry:    entity.LocationCountry,
-			Status:             entity.Status,
-			Offers:             offers,
-			Wants:              wants,
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(entity)})
 	}
 }
 
