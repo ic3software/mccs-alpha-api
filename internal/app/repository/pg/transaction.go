@@ -6,7 +6,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/pagination"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/jinzhu/gorm"
 	"github.com/segmentio/ksuid"
 	"github.com/spf13/viper"
@@ -278,7 +278,7 @@ func (t *transaction) FindInRange(id uint, dateFrom time.Time, dateTo time.Time,
 
 	var numberOfResults int64
 	db.Model(&types.Posting{}).Where("account_id = ? AND (created_at BETWEEN ? AND ?)", id, dateFrom, dateTo).Count(&numberOfResults)
-	totalPages := pagination.Pages(numberOfResults, viper.GetInt64("page_size"))
+	totalPages := util.GetNumberOfPages(int(numberOfResults), viper.GetInt("page_size"))
 
 	if err != nil {
 		return nil, 0, e.Wrap(err, "pg.Transaction.Find failed")

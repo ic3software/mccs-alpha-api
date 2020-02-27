@@ -3,9 +3,6 @@ package util
 import (
 	"regexp"
 	"strings"
-	"time"
-
-	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 )
 
 var (
@@ -47,17 +44,14 @@ func FormatTags(tags []string) []string {
 	return formatted
 }
 
-// ToTagFields converts tags into TagFields.
-func ToTagFields(tags []string) []*types.TagField {
-	tagFields := make([]*types.TagField, 0, len(tags))
-	for _, tagName := range tags {
-		tagField := &types.TagField{
-			Name:      tagName,
-			CreatedAt: time.Now(),
-		}
-		tagFields = append(tagFields, tagField)
+// ToSearchTags transforms tags from user inputs into searching tags.
+// dog walking -> dog, walking (two words)
+func ToSearchTags(words string) []string {
+	splitFn := func(c rune) bool {
+		return c == ',' || c == ' '
 	}
-	return tagFields
+	tags := strings.FieldsFunc(strings.ToLower(words), splitFn)
+	return FormatTags(tags)
 }
 
 // TagDifference finds out the new added tags.
@@ -82,13 +76,4 @@ func TagDifference(new, old []string) ([]string, []string) {
 		}
 	}
 	return added, removed
-}
-
-// GetTagNames gets tag name from TagField.
-func GetTagNames(tags []*types.TagField) []string {
-	names := make([]string, 0, len(tags))
-	for _, t := range tags {
-		names = append(names, t.Name)
-	}
-	return names
 }

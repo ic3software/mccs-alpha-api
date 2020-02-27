@@ -6,7 +6,7 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/pagination"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -99,7 +99,7 @@ func (u *userAction) Find(c *types.UserActionSearchCriteria, page int64) ([]*typ
 	if err != nil {
 		return nil, 0, e.Wrap(err, "mongo.userAction.Find failed")
 	}
-	totalPages := pagination.Pages(totalCount, viper.GetInt64("page_size"))
+	totalPages := util.GetNumberOfPages(int(totalCount), viper.GetInt("page_size"))
 
 	return results, totalPages, nil
 }

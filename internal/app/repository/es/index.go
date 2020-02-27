@@ -59,7 +59,7 @@ var indexMappings = map[string]string{
 		},
 		"mappings": {
 			"properties": {
-				"adminTags": {
+				"categories": {
 					"type": "text",
 					"analyzer": "tag_analyzer",
 					"fields": {

@@ -7,7 +7,7 @@ import (
 type Account struct {
 	gorm.Model
 	// Account has many postings, AccountID is the foreign key
-	Postings []Posting
-	EntityID string  `gorm:"type:varchar(24);not null;unique_index"`
-	Balance  float64 `gorm:"not null;default:0"`
+	Postings      []Posting
+	AccountNumber string  `gorm:"type:varchar(27);not null;unique_index"`
+	Balance       float64 `gorm:"not null;default:0"`
 }

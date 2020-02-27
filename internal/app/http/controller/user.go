@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
@@ -17,8 +16,8 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -46,17 +45,19 @@ func (u *userHandler) RegisterRoutes(
 		public.Path("/api/v1/login").HandlerFunc(u.login()).Methods("POST")
 		public.Path("/api/v1/signup").HandlerFunc(u.signup()).Methods("POST")
 		private.Path("/api/v1/logout").HandlerFunc(u.logout()).Methods("POST")
+
 		public.Path("/api/v1/password-reset").HandlerFunc(u.requestPasswordReset()).Methods("POST")
 		public.Path("/api/v1/password-reset/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
 		private.Path("/api/v1/password-change").HandlerFunc(u.passwordChange()).Methods("POST")
+
+		private.Path("/api/v1/users/{userID}").HandlerFunc(u.getUser()).Methods("GET")
+
 		private.Path("/api/v1/user").HandlerFunc(u.userProfile()).Methods("GET")
 		private.Path("/api/v1/user").HandlerFunc(u.updateUser()).Methods("PATCH")
 		private.Path("/api/v1/user/entities").HandlerFunc(u.listUserEntities()).Methods("GET")
 		private.Path("/api/v1/user/entities/{entityID}").HandlerFunc(u.updateUserEntity()).Methods("PATCH")
 
-		private.Path("/api/v1/users/removeFromFavoriteEntities").HandlerFunc(u.removeFromFavoriteEntities()).Methods("POST")
 		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
-		private.Path("/api/v1/users/addToFavoriteEntities").HandlerFunc(u.addToFavoriteEntities()).Methods("POST")
 	})
 }
 
@@ -82,10 +83,6 @@ func (u *userHandler) FindByEntityID(id string) (*types.User, error) {
 }
 
 func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
 	type data struct {
 		Token string `json:"token"`
 	}
@@ -93,7 +90,7 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
+		var req types.LoginReqBody
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -102,7 +99,7 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.Login(req.Password)
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -140,7 +137,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.SignUp(&req)
+		errs := req.Validate()
 		if logic.User.UserEmailExists(req.Email) {
 			errs = append(errs, errors.New("Email address is already registered."))
 		}
@@ -278,12 +275,9 @@ func (u *userHandler) requestPasswordReset() func(http.ResponseWriter, *http.Req
 }
 
 func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		Password string `json:"password"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		var req request
+		var req types.ResetPasswordReqBody
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -292,7 +286,7 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.ResetPassword(req.Password)
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -327,7 +321,7 @@ func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) 
 		Password string `json:"password"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
+		var req types.PasswordChange
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -336,7 +330,7 @@ func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		errs := validate.ResetPassword(req.Password)
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -367,19 +361,8 @@ func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) 
 }
 
 func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
-	type data struct {
-		ID                            string    `json:"id"`
-		Email                         string    `json:"email"`
-		FirstName                     string    `json:"firstName"`
-		LastName                      string    `json:"lastName"`
-		UserPhone                     string    `json:"userPhone"`
-		LastLoginIP                   string    `json:"lastLoginIP"`
-		LastLoginDate                 time.Time `json:"lastLoginDate"`
-		DailyEmailMatchNotification   *bool     `json:"dailyEmailMatchNotification"`
-		ShowTagsMatchedSinceLastLogin *bool     `json:"showTagsMatchedSinceLastLogin"`
-	}
 	type respond struct {
-		Data data `json:"data"`
+		Data *types.UserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := u.FindByID(r.Header.Get("userID"))
@@ -388,34 +371,13 @@ func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: data{
-			ID:                            user.ID.Hex(),
-			Email:                         user.Email,
-			UserPhone:                     user.Telephone,
-			FirstName:                     user.FirstName,
-			LastName:                      user.LastName,
-			LastLoginIP:                   user.LastLoginIP,
-			LastLoginDate:                 user.LastLoginDate,
-			DailyEmailMatchNotification:   user.DailyNotification,
-			ShowTagsMatchedSinceLastLogin: user.ShowRecentMatchedTags,
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
 
 func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
-	type data struct {
-		ID                            string    `json:"id"`
-		Email                         string    `json:"email"`
-		FirstName                     string    `json:"firstName"`
-		LastName                      string    `json:"lastName"`
-		UserPhone                     string    `json:"userPhone"`
-		LastLoginIP                   string    `json:"lastLoginIP"`
-		LastLoginDate                 time.Time `json:"lastLoginDate"`
-		DailyEmailMatchNotification   *bool     `json:"dailyEmailMatchNotification"`
-		ShowTagsMatchedSinceLastLogin *bool     `json:"showTagsMatchedSinceLastLogin"`
-	}
 	type respond struct {
-		Data data `json:"data"`
+		Data *types.UserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.UpdateUserReqBody
@@ -427,7 +389,7 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		errs := validate.UpdateUser(&req)
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -448,63 +410,35 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: data{
-			ID:                            user.ID.Hex(),
-			Email:                         user.Email,
-			UserPhone:                     user.Telephone,
-			FirstName:                     user.FirstName,
-			LastName:                      user.LastName,
-			LastLoginIP:                   user.LastLoginIP,
-			LastLoginDate:                 user.LastLoginDate,
-			DailyEmailMatchNotification:   user.DailyNotification,
-			ShowTagsMatchedSinceLastLogin: user.ShowRecentMatchedTags,
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
+	}
+}
+
+func (u *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.UserRespond `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID, _ := primitive.ObjectIDFromHex(vars["userID"])
+		user, err := logic.User.FindByID(userID)
+		if err != nil {
+			l.Logger.Info("[INFO] UserHandler.getUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
 
 func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request) {
-	type data struct {
-		ID                 string   `json:"id"`
-		EntityName         string   `json:"entityName"`
-		EntityPhone        string   `json:"entityPhone"`
-		IncType            string   `json:"incType"`
-		CompanyNumber      string   `json:"companyNumber"`
-		Website            string   `json:"website"`
-		Turnover           int      `json:"turnover"`
-		Description        string   `json:"description"`
-		LocationAddress    string   `json:"locationAddress"`
-		LocationCity       string   `json:"locationCity"`
-		LocationRegion     string   `json:"locationRegion"`
-		LocationPostalCode string   `json:"locationPostalCode"`
-		LocationCountry    string   `json:"locationCountry"`
-		Status             string   `json:"status"`
-		Offers             []string `json:"offers"`
-		Wants              []string `json:"wants"`
-	}
 	type respond struct {
-		Data []data `json:"data"`
+		Data []*types.EntityRespond `json:"data"`
 	}
-	toData := func(entities []*types.Entity) []data {
-		result := []data{}
+	toData := func(entities []*types.Entity) []*types.EntityRespond {
+		result := []*types.EntityRespond{}
 		for _, entity := range entities {
-			result = append(result, data{
-				ID:                 entity.ID.Hex(),
-				EntityName:         entity.EntityName,
-				EntityPhone:        entity.EntityPhone,
-				IncType:            entity.IncType,
-				CompanyNumber:      entity.CompanyNumber,
-				Website:            entity.Website,
-				Turnover:           entity.Turnover,
-				Description:        entity.Description,
-				LocationAddress:    entity.LocationAddress,
-				LocationCity:       entity.LocationCity,
-				LocationRegion:     entity.LocationRegion,
-				LocationPostalCode: entity.LocationPostalCode,
-				LocationCountry:    entity.LocationCountry,
-				Status:             entity.Status,
-				Offers:             util.GetTagNames(entity.Offers),
-				Wants:              util.GetTagNames(entity.Wants),
-			})
+			result = append(result, types.NewEntityRespond(entity))
 		}
 		return result
 	}
@@ -540,10 +474,10 @@ func updateTags(old *types.Entity, offers, wants []string) {
 
 	var offersAdded, offersRemoved, wantsAdded, wantsRemoved []string
 	if len(offers) != 0 {
-		offersAdded, offersRemoved = util.TagDifference(offers, util.GetTagNames(old.Offers))
+		offersAdded, offersRemoved = util.TagDifference(offers, types.TagFieldToNames(old.Offers))
 	}
 	if len(wants) != 0 {
-		wantsAdded, wantsRemoved = util.TagDifference(wants, util.GetTagNames(old.Wants))
+		wantsAdded, wantsRemoved = util.TagDifference(wants, types.TagFieldToNames(old.Wants))
 	}
 
 	err := logic.Entity.UpdateTags(old.ID, &types.TagDifference{
@@ -559,7 +493,7 @@ func updateTags(old *types.Entity, offers, wants []string) {
 
 	// User Update tags logic:
 	// 	1. Update the tags collection only when the entity is in accepted status.
-	if util.IsAcceptedStatus(old.Status) {
+	if utils.IsAcceptedStatus(old.Status) {
 		err := TagHandler.SaveOfferTags(offersAdded)
 		if err != nil {
 			l.Logger.Error("[Error] SaveOfferTags failed:", zap.Error(err))
@@ -572,26 +506,8 @@ func updateTags(old *types.Entity, offers, wants []string) {
 }
 
 func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request) {
-	type data struct {
-		ID                 string   `json:"id"`
-		EntityName         string   `json:"entityName"`
-		EntityPhone        string   `json:"entityPhone"`
-		IncType            string   `json:"incType"`
-		CompanyNumber      string   `json:"companyNumber"`
-		Website            string   `json:"website"`
-		Turnover           int      `json:"turnover"`
-		Description        string   `json:"description"`
-		LocationAddress    string   `json:"locationAddress"`
-		LocationCity       string   `json:"locationCity"`
-		LocationRegion     string   `json:"locationRegion"`
-		LocationPostalCode string   `json:"locationPostalCode"`
-		LocationCountry    string   `json:"locationCountry"`
-		Status             string   `json:"status"`
-		Offers             []string `json:"offers"`
-		Wants              []string `json:"wants"`
-	}
 	type respond struct {
-		Data data `json:"data"`
+		Data *types.EntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.UpdateUserEntityReqBody
@@ -603,7 +519,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		errs := validate.UpdateUserEntity(&req)
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -651,13 +567,13 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 
 		offers := req.Offers
 		if len(offers) == 0 {
-			offers = util.GetTagNames(entity.Offers)
+			offers = types.TagFieldToNames(entity.Offers)
 		}
 		wants := req.Wants
 		if len(wants) == 0 {
-			wants = util.GetTagNames(entity.Wants)
+			wants = types.TagFieldToNames(entity.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: data{
+		api.Respond(w, r, http.StatusOK, respond{Data: &types.EntityRespond{
 			ID:                 entity.ID.Hex(),
 			EntityName:         entity.EntityName,
 			EntityPhone:        entity.EntityPhone,
@@ -692,98 +608,6 @@ func (u *userHandler) toggleShowRecentMatchedTags() func(http.ResponseWriter, *h
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-	}
-}
-
-func (u *userHandler) addToFavoriteEntities() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		ID string `json:"id"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
-		if err != nil || req.ID == "" {
-			if err != nil {
-				l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
-			} else {
-				l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.String("error", "request entity id is empty"))
-			}
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-		bID, err := primitive.ObjectIDFromHex(req.ID)
-		if err != nil {
-			l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
-		uID, err := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-		if err != nil {
-			l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
-		err = logic.User.AddToFavoriteEntities(uID, bID)
-		if err != nil {
-			l.Logger.Error("AppServer AddToFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-	}
-}
-
-func (u *userHandler) removeFromFavoriteEntities() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		ID string `json:"id"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
-		if err != nil || req.ID == "" {
-			if err != nil {
-				l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
-			} else {
-				l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.String("error", "request entity id is empty"))
-			}
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-		bID, err := primitive.ObjectIDFromHex(req.ID)
-		if err != nil {
-			l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
-		uID, err := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-		if err != nil {
-			l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
-		err = logic.User.RemoveFromFavoriteEntities(uID, bID)
-		if err != nil {
-			l.Logger.Error("AppServer RemoveFromFavoriteEntities failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
 	}
 }

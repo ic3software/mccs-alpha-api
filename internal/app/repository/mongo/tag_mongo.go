@@ -6,8 +6,7 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/pagination"
-	"github.com/spf13/viper"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,6 +22,49 @@ var Tag = &tag{}
 func (t *tag) Register(db *mongo.Database) {
 	t.c = db.Collection("tags")
 }
+
+func (t *tag) Find(query *types.SearchTagQuery) (*types.FindTagResult, error) {
+	var results []*types.Tag
+
+	findOptions := options.Find()
+	findOptions.SetSkip(query.GetPageSize() * (query.GetPage() - 1))
+	findOptions.SetLimit(query.GetPageSize())
+
+	filter := bson.M{
+		"name":      primitive.Regex{Pattern: query.Fragment, Options: "i"},
+		"deletedAt": bson.M{"$exists": false},
+	}
+	cur, err := t.c.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	for cur.Next(context.TODO()) {
+		var elem types.Tag
+		err := cur.Decode(&elem)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	cur.Close(context.TODO())
+
+	totalCount, err := t.c.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.FindTagResult{
+		Tags:            results,
+		NumberOfResults: int(totalCount),
+		TotalPages:      util.GetNumberOfPages(int(totalCount), int(query.GetPageSize())),
+	}, nil
+}
+
+// TO BE REMOVED
 
 // Create creates a tag record in the table
 func (t *tag) Create(name string) (primitive.ObjectID, error) {
@@ -127,53 +169,6 @@ func (t *tag) FindByID(id primitive.ObjectID) (*types.Tag, error) {
 		return nil, e.New(e.EntityNotFound, "Tag not found")
 	}
 	return &tag, nil
-}
-
-func (t *tag) FindTags(name string, page int64) (*types.FindTagResult, error) {
-	if page < 0 || page == 0 {
-		return nil, e.New(e.InvalidPageNumber, "TagMongo FindTags failed")
-	}
-
-	var results []*types.Tag
-
-	findOptions := options.Find()
-	findOptions.SetSkip(viper.GetInt64("page_size") * (page - 1))
-	findOptions.SetLimit(viper.GetInt64("page_size"))
-
-	filter := bson.M{
-		"name":      primitive.Regex{Pattern: name, Options: "i"},
-		"deletedAt": bson.M{"$exists": false},
-	}
-
-	cur, err := t.c.Find(context.TODO(), filter, findOptions)
-	if err != nil {
-		return nil, e.Wrap(err, "TagMongo FindTags failed")
-	}
-
-	for cur.Next(context.TODO()) {
-		var elem types.Tag
-		err := cur.Decode(&elem)
-		if err != nil {
-			return nil, e.Wrap(err, "TagMongo FindTags failed")
-		}
-		results = append(results, &elem)
-	}
-	if err := cur.Err(); err != nil {
-		return nil, e.Wrap(err, "TagMongo FindTags failed")
-	}
-	cur.Close(context.TODO())
-
-	totalCount, err := t.c.CountDocuments(context.TODO(), filter)
-	if err != nil {
-		return nil, e.Wrap(err, "TagMongo FindTags failed")
-	}
-	totalPages := pagination.Pages(totalCount, viper.GetInt64("page_size"))
-
-	return &types.FindTagResult{
-		Tags:            results,
-		NumberOfResults: int(totalCount),
-		TotalPages:      totalPages,
-	}, nil
 }
 
 func (t *tag) Rename(tag *types.Tag) error {

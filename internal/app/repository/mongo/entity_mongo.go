@@ -7,7 +7,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -100,10 +99,10 @@ func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 
 	push := bson.M{}
 	if len(difference.OffersAdded) != 0 {
-		push["offers"] = bson.M{"$each": util.ToTagFields(difference.OffersAdded)}
+		push["offers"] = bson.M{"$each": types.ToTagFields(difference.OffersAdded)}
 	}
 	if len(difference.WantsAdded) != 0 {
-		push["wants"] = bson.M{"$each": util.ToTagFields(difference.WantsAdded)}
+		push["wants"] = bson.M{"$each": types.ToTagFields(difference.WantsAdded)}
 	}
 	if len(push) != 0 {
 		updates = append(updates, bson.M{"$push": push})
@@ -133,7 +132,20 @@ func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 	return nil
 }
 
-// OLD CODE
+func (b *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
+	filter := bson.M{"_id": req.GetAddToEntityID()}
+	update := bson.M{}
+	if req.GetIsFavorite() {
+		update["$addToSet"] = bson.M{"favoriteEntities": req.GetFavoriteEntityID()}
+	} else {
+		update["$pull"] = bson.M{"favoriteEntities": req.GetFavoriteEntityID()}
+	}
+	_, err := b.c.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 	var results []*types.Entity
@@ -164,6 +176,8 @@ func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 
 	return results, nil
 }
+
+// TO BE REMOVED
 
 func (b *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
 	filter := bson.M{"_id": id}
@@ -281,9 +295,9 @@ func (b *entity) updateWants(old string, new string) error {
 
 func (b *entity) RenameAdminTag(old string, new string) error {
 	// Push the new tag tag name.
-	filter := bson.M{"adminTags": old}
+	filter := bson.M{"categories": old}
 	update := bson.M{
-		"$push": bson.M{"adminTags": new},
+		"$push": bson.M{"categories": new},
 		"$set":  bson.M{"updatedAt": time.Now()},
 	}
 	_, err := b.c.UpdateMany(context.Background(), filter, update)
@@ -291,9 +305,9 @@ func (b *entity) RenameAdminTag(old string, new string) error {
 		return e.Wrap(err, "RenameAdminTag failed")
 	}
 	// Delete the old tag name.
-	filter = bson.M{"adminTags": old}
+	filter = bson.M{"categories": old}
 	update = bson.M{
-		"$pull": bson.M{"adminTags": old},
+		"$pull": bson.M{"categories": old},
 		"$set":  bson.M{"updatedAt": time.Now()},
 	}
 	_, err = b.c.UpdateMany(context.Background(), filter, update)
@@ -333,12 +347,12 @@ func (b *entity) DeleteTag(name string) error {
 func (b *entity) DeleteAdminTags(name string) error {
 	filter := bson.M{
 		"$or": []interface{}{
-			bson.M{"adminTags": name},
+			bson.M{"categories": name},
 		},
 	}
 	update := bson.M{
 		"$pull": bson.M{
-			"adminTags": name,
+			"categories": name,
 		},
 		"$set": bson.M{
 			"updatedAt": time.Now(),

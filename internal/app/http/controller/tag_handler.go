@@ -3,17 +3,16 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"sync"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 
 	"github.com/gorilla/mux"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
@@ -37,15 +36,55 @@ func (h *tagHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	h.once.Do(func() {
-		adminPrivate.Path("/user-tags").HandlerFunc(h.tagPage()).Methods("GET")
-		adminPrivate.Path("/user-tags/search").HandlerFunc(h.searchTags()).Methods("GET")
+		public.Path("/api/v1/tags").HandlerFunc(h.searchTag()).Methods("GET")
 
-		public.Path("/api/tags/{tagName}").HandlerFunc(h.getTagSuggestions()).Methods("GET")
 		adminPrivate.Path("/api/user-tags").HandlerFunc(h.createTag()).Methods("POST")
 		adminPrivate.Path("/api/user-tags/{id}").HandlerFunc(h.renameTag()).Methods("PUT")
 		adminPrivate.Path("/api/user-tags/{id}").HandlerFunc(h.deleteTag()).Methods("DELETE")
 	})
 }
+
+func (t *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
+	type meta struct {
+		NumberOfResults int `json:"numberOfResults"`
+		TotalPages      int `json:"totalPages"`
+	}
+	type respond struct {
+		Data []string `json:"data"`
+		Meta meta     `json:"meta"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		query := &types.SearchTagQuery{
+			Fragment: q.Get("fragment"),
+			Page:     q.Get("page"),
+			PageSize: q.Get("page_size"),
+		}
+
+		errs := query.Validate()
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		found, err := logic.Tag.Find(query)
+		if err != nil {
+			l.Logger.Error("[Error] TagHandler.searchTag failed:", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{
+			Data: types.TagToNames(found.Tags),
+			Meta: meta{
+				TotalPages:      found.TotalPages,
+				NumberOfResults: found.NumberOfResults,
+			},
+		})
+	}
+}
+
+// TO BE REMOVED
 
 func (h *tagHandler) SaveOfferTags(added []string) error {
 	for _, tagName := range added {
@@ -67,59 +106,6 @@ func (h *tagHandler) SaveWantTags(added []string) error {
 		}
 	}
 	return nil
-}
-
-func (h *tagHandler) tagPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("admin/user-tags")
-	return func(w http.ResponseWriter, r *http.Request) {
-		t.Render(w, r, nil, nil)
-	}
-}
-
-func (h *tagHandler) getTagSuggestions() func(http.ResponseWriter, *http.Request) {
-	type result struct {
-		Name  string `json:"name,omitempty"`
-		Value string `json:"value,omitempty"`
-		Text  string `json:"text,omitempty"`
-	}
-	type response struct {
-		Success bool     `json:"success,omitempty"`
-		Results []result `json:"results,omitempty"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		tagName := vars["tagName"]
-
-		findResult, err := logic.Tag.FindTags(tagName, int64(1))
-		if err != nil {
-			l.Logger.Error("GetTagSuggestions failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		results := make([]result, 0, len(findResult.Tags))
-		for _, tag := range findResult.Tags {
-			results = append(results, result{
-				Name:  tag.Name,
-				Value: tag.Name,
-				Text:  tag.Name,
-			})
-		}
-
-		res := response{
-			Success: true,
-			Results: results,
-		}
-
-		js, err := json.Marshal(res)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
-	}
 }
 
 func (h *tagHandler) createTag() func(http.ResponseWriter, *http.Request) {
@@ -182,47 +168,6 @@ func (h *tagHandler) createTag() func(http.ResponseWriter, *http.Request) {
 		}()
 
 		w.WriteHeader(http.StatusCreated)
-	}
-}
-
-func (h *tagHandler) searchTags() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("admin/user-tags")
-	type formData struct {
-		Name string
-		Page int
-	}
-	type response struct {
-		FormData formData
-		Result   *types.FindTagResult
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		page, err := strconv.Atoi(r.URL.Query().Get("page"))
-		if err != nil {
-			l.Logger.Error("SearchTags failed", zap.Error(err))
-			t.Error(w, r, nil, err)
-			return
-		}
-
-		f := formData{
-			Name: r.URL.Query().Get("name"),
-			Page: page,
-		}
-		res := response{FormData: f}
-
-		if f.Name == "" {
-			t.Render(w, r, res, []string{"Please enter the tag name"})
-			return
-		}
-
-		findResult, err := logic.Tag.FindTags(f.Name, int64(f.Page))
-		if err != nil {
-			l.Logger.Error("SearchTags failed", zap.Error(err))
-			t.Error(w, r, res, err)
-			return
-		}
-		res.Result = findResult
-
-		t.Render(w, r, res, nil)
 	}
 }
 

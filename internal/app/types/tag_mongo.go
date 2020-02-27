@@ -25,6 +25,14 @@ type TagESRecord struct {
 	WantAddedAt  time.Time `json:"wantAddedAt,omitempty"`
 }
 
+func TagToNames(tags []*Tag) []string {
+	names := make([]string, 0, len(tags))
+	for _, t := range tags {
+		names = append(names, t.Name)
+	}
+	return names
+}
+
 // Helper types
 
 type FindTagResult struct {

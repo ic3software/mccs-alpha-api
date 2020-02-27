@@ -34,13 +34,17 @@ func setUpAccount() {
 
 	counter := 0
 	for cur.Next(ctx) {
-		var b types.Entity
-		err := cur.Decode(&b)
+		var entity types.Entity
+		err := cur.Decode(&entity)
 		if err != nil {
 			log.Fatal(err)
 		}
 		// Create account from entity.
-		err = logic.Account.Create(b.ID.Hex())
+		account, err := logic.Account.Create()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = updateEntity(&entity, account)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -53,4 +57,23 @@ func setUpAccount() {
 
 	log.Printf("count %v\n", counter)
 	log.Printf("took  %v\n\n", time.Now().Sub(startTime))
+}
+
+func updateEntity(entity *types.Entity, account *types.Account) error {
+	filter := bson.M{"_id": entity.ID}
+	update := bson.M{"$set": bson.M{
+		"accountNumber": account.AccountNumber,
+		"updatedAt":     time.Now(),
+	}}
+
+	_, err := mongo.DB().Collection("entities").UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

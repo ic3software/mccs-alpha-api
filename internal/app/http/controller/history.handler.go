@@ -11,7 +11,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"go.uber.org/zap"
 )
 

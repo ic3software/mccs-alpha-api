@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -30,26 +31,50 @@ type Entity struct {
 	LocationPostalCode string      `json:"locationPostalCode,omitempty" bson:"locationPostalCode,omitempty"`
 	LocationCountry    string      `json:"locationCountry,omitempty" bson:"locationCountry,omitempty"`
 	Status             string      `json:"status,omitempty" bson:"status,omitempty"`
-	AdminTags          []string    `json:"adminTags,omitempty" bson:"adminTags,omitempty"`
+	Categories         []string    `json:"categories,omitempty" bson:"categories,omitempty"`
 	// Timestamp when trading status applied
 	MemberStartedAt time.Time `json:"memberStartedAt,omitempty" bson:"memberStartedAt,omitempty"`
+
+	AccountNumber    string               `json:"accountNumber,omitempty" bson:"accountNumber,omitempty"`
+	FavoriteEntities []primitive.ObjectID `json:"favoriteEntities,omitempty" bson:"favoriteEntities,omitempty"`
 }
 
-type TagField struct {
-	Name      string    `json:"name,omitempty" bson:"name,omitempty"`
-	CreatedAt time.Time `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
-}
-
-// EntityESRecord is the data that will store into the elastic search.
-type EntityESRecord struct {
-	EntityID        string      `json:"entityID,omitempty"`
-	EntityName      string      `json:"entityName,omitempty"`
-	Offers          []*TagField `json:"offers,omitempty"`
-	Wants           []*TagField `json:"wants,omitempty"`
-	LocationCity    string      `json:"locationCity,omitempty"`
-	LocationCountry string      `json:"locationCountry,omitempty"`
-	Status          string      `json:"status,omitempty"`
-	AdminTags       []string    `json:"adminTags,omitempty"`
+func (entity *Entity) Validate() []error {
+	errs := []error{}
+	if len(entity.EntityName) > 100 {
+		errs = append(errs, errors.New("Entity name length cannot exceed 100 characters."))
+	}
+	if len(entity.EntityPhone) > 25 {
+		errs = append(errs, errors.New("Telephone length cannot exceed 25 characters."))
+	}
+	if len(entity.IncType) > 25 {
+		errs = append(errs, errors.New("Incorporation type length cannot exceed 25 characters."))
+	}
+	if len(entity.CompanyNumber) > 20 {
+		errs = append(errs, errors.New("Company number length cannot exceed 20 characters."))
+	}
+	if len(entity.Website) > 100 {
+		errs = append(errs, errors.New("Website URL length cannot exceed 100 characters."))
+	}
+	if len(entity.Description) > 500 {
+		errs = append(errs, errors.New("Description length cannot exceed 500 characters."))
+	}
+	if len(entity.LocationCountry) > 10 {
+		errs = append(errs, errors.New("Country length cannot exceed 50 characters."))
+	}
+	if len(entity.LocationCity) > 10 {
+		errs = append(errs, errors.New("City length cannot exceed 50 characters."))
+	}
+	if len(entity.LocationAddress) > 255 {
+		errs = append(errs, errors.New("Address length cannot exceed 255 characters."))
+	}
+	if len(entity.LocationRegion) > 50 {
+		errs = append(errs, errors.New("Region length cannot exceed 50 characters."))
+	}
+	if len(entity.LocationPostalCode) > 10 {
+		errs = append(errs, errors.New("Postal code length cannot exceed 10 characters."))
+	}
+	return errs
 }
 
 // Helper types
@@ -59,20 +84,6 @@ type TagDifference struct {
 	OffersRemoved []string
 	WantsAdded    []string
 	WantsRemoved  []string
-}
-
-type SearchCriteria struct {
-	TagType          string
-	Tags             []*TagField
-	CreatedOnOrAfter time.Time
-
-	Statuses              []string // accepted", "pending", rejected", "tradingPending", "tradingAccepted", "tradingRejected"
-	EntityName            string
-	LocationCountry       string
-	LocationCity          string
-	ShowUserFavoritesOnly bool
-	FavoriteEntities      []primitive.ObjectID
-	AdminTag              string
 }
 
 type FindEntityResult struct {
@@ -104,5 +115,5 @@ type EntityData struct {
 	LocationPostalCode string
 	LocationCountry    string
 	Status             string
-	AdminTags          []string
+	Categories         []string
 }

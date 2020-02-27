@@ -41,7 +41,7 @@ func NewView(templateName string) *View {
 			"IncludesID":           includesID,
 			"TimeNow":              timeNow,
 			"DaysBefore":           daysBefore,
-			"SortAdminTags":        sortAdminTags,
+			"SortCategories":       sortCategories,
 			"ContainPrefix":        containPrefix,
 		}).
 		ParseFiles(templates...)

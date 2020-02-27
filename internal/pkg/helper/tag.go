@@ -82,7 +82,7 @@ func ToSearchTags(words string) []*types.TagField {
 	return tags
 }
 
-func getAdminTags(words string) []string {
+func getCategories(words string) []string {
 	splitFn := func(c rune) bool {
 		return c == ','
 	}
@@ -158,7 +158,7 @@ func GetTagNames(tags []*types.TagField) []string {
 }
 
 // GetAdminTagNames gets admin tag name from AdminTagField.
-func GetAdminTagNames(tags []*types.AdminTag) []string {
+func GetAdminTagNames(tags []*types.Category) []string {
 	names := make([]string, 0, len(tags))
 	for _, t := range tags {
 		names = append(names, t.Name)

@@ -6,7 +6,7 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/pagination"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/olivere/elastic/v7"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -61,7 +61,7 @@ func (es *user) Update(u *types.User) error {
 	return nil
 }
 
-// OLD
+// TO BE REMOVED
 
 // Find finds users from Elasticsearch.
 func (es *user) Find(u *types.User, page int64) ([]string, int, int, error) {
@@ -102,8 +102,8 @@ func (es *user) Find(u *types.User, page int64) ([]string, int, int, error) {
 		ids = append(ids, record.UserID)
 	}
 
-	numberOfResults := res.Hits.TotalHits.Value
-	totalPages := pagination.Pages(numberOfResults, viper.GetInt64("page_size"))
+	numberOfResults := int(res.Hits.TotalHits.Value)
+	totalPages := util.GetNumberOfPages(numberOfResults, viper.GetInt("page_size"))
 
 	return ids, int(numberOfResults), totalPages, nil
 }

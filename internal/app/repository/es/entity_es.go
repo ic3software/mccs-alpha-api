@@ -7,12 +7,9 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/pagination"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/olivere/elastic/v7"
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -37,7 +34,7 @@ func (es *entity) Create(id primitive.ObjectID, data *types.Entity) error {
 		LocationCity:    data.LocationCity,
 		LocationCountry: data.LocationCountry,
 		Status:          constant.Entity.Pending,
-		AdminTags:       data.AdminTags,
+		Categories:      data.Categories,
 	}
 	_, err := es.c.Index().
 		Index(es.index).
@@ -124,96 +121,107 @@ func (es *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDiffere
 	return nil
 }
 
-// OLD CODE
-
-func (es *entity) Find(c *types.SearchCriteria, page int64) ([]string, int, int, error) {
-	if page < 0 || page == 0 {
-		return nil, 0, 0, e.New(e.InvalidPageNumber, "find entity failed")
-	}
-
-	var ids []string
-	size := viper.GetInt("page_size")
-	from := viper.GetInt("page_size") * (int(page) - 1)
-
-	q := elastic.NewBoolQuery()
-
-	if c.ShowUserFavoritesOnly {
-		idQuery := elastic.NewIdsQuery().Ids(util.ToIDStrings(c.FavoriteEntities)...)
-		q.Must(idQuery)
-	}
-
-	if len(c.Statuses) != 0 {
+func seachByStatus(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elastic.BoolQuery {
+	if len(query.Statuses) != 0 {
 		qq := elastic.NewBoolQuery()
-		for _, status := range c.Statuses {
+		for _, status := range query.Statuses {
 			qq.Should(elastic.NewMatchQuery("status", status))
 		}
 		q.Must(qq)
 	}
+	return q
+}
 
-	if c.EntityName != "" {
-		q.Must(newFuzzyWildcardQuery("entityName", c.EntityName))
+func seachByAddress(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elastic.BoolQuery {
+	if query.EntityName != "" {
+		q.Must(newFuzzyWildcardQuery("entityName", query.EntityName))
 	}
-	if c.LocationCountry != "" {
-		q.Must(elastic.NewMatchQuery("locationCountry", c.LocationCountry))
+	if query.LocationCountry != "" {
+		q.Must(elastic.NewMatchQuery("locationCountry", query.LocationCountry))
 	}
-	if c.LocationCity != "" {
-		q.Must(newFuzzyWildcardQuery("locationCity", c.LocationCity))
+	if query.LocationCity != "" {
+		q.Must(newFuzzyWildcardQuery("locationCity", query.LocationCity))
 	}
+	return q
+}
 
-	if c.AdminTag != "" {
-		q.Must(elastic.NewMatchQuery("adminTags", c.AdminTag))
-	}
-
+func seachByTags(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elastic.BoolQuery {
 	// "Tag Added After" will associate with "tags".
-	if c.TagType == constant.OFFERS && len(c.Tags) != 0 {
+	if len(query.Offers) != 0 {
 		qq := elastic.NewBoolQuery()
 		// weighted is used to make sure the tags are shown in order.
 		weighted := 2.0
-		for _, o := range c.Tags {
-			qq.Should(newFuzzyWildcardTimeQueryForTag("offers", o.Name, c.CreatedOnOrAfter).
-				Boost(weighted))
-			weighted *= 0.9
-		}
-		// Must match one of the "Should" queries.
-		q.Must(qq)
-	} else if c.TagType == constant.WANTS && len(c.Tags) != 0 {
-		qq := elastic.NewBoolQuery()
-		// weighted is used to make sure the tags are shown in order.
-		weighted := 2.0
-		for _, w := range c.Tags {
-			qq.Should(newFuzzyWildcardTimeQueryForTag("wants", w.Name, c.CreatedOnOrAfter).
+		for _, offer := range query.Offers {
+			qq.Should(newFuzzyWildcardTimeQueryForTag("offers", offer, query.TaggedSince).
 				Boost(weighted))
 			weighted *= 0.9
 		}
 		// Must match one of the "Should" queries.
 		q.Must(qq)
 	}
+	if len(query.Wants) != 0 {
+		qq := elastic.NewBoolQuery()
+		// weighted is used to make sure the tags are shown in order.
+		weighted := 2.0
+		for _, want := range query.Wants {
+			qq.Should(newFuzzyWildcardTimeQueryForTag("wants", want, query.TaggedSince).
+				Boost(weighted))
+			weighted *= 0.9
+		}
+		// Must match one of the "Should" queries.
+		q.Must(qq)
+	}
+	return q
+}
 
+func (es *entity) Find(query *types.SearchEntityQuery) (*types.ESFindEntityResult, error) {
+	var ids []string
+
+	q := elastic.NewBoolQuery()
+
+	if query.FavoritesOnly {
+		idQuery := elastic.NewIdsQuery().Ids(util.ToIDStrings(query.FavoriteEntities)...)
+		q.Must(idQuery)
+	}
+	if query.Category != "" {
+		q.Must(elastic.NewMatchQuery("categories", query.Category))
+	}
+
+	seachByStatus(q, query)
+	seachByAddress(q, query)
+	seachByTags(q, query)
+
+	from := query.PageSize * (query.Page - 1)
 	res, err := es.c.Search().
 		Index(es.index).
 		From(from).
-		Size(size).
+		Size(query.PageSize).
 		Query(q).
 		Do(context.Background())
-
 	if err != nil {
-		return nil, 0, 0, e.Wrap(err, "EntityES Find failed")
+		return nil, err
 	}
 
 	for _, hit := range res.Hits.Hits {
 		var record types.EntityESRecord
 		err := json.Unmarshal(hit.Source, &record)
 		if err != nil {
-			return nil, 0, 0, e.Wrap(err, "EntityES Find failed")
+			return nil, err
 		}
 		ids = append(ids, record.EntityID)
 	}
 
-	numberOfResults := res.Hits.TotalHits.Value
-	totalPages := pagination.Pages(numberOfResults, viper.GetInt64("page_size"))
+	numberOfResults := int(res.Hits.TotalHits.Value)
+	totalPages := util.GetNumberOfPages(numberOfResults, query.PageSize)
 
-	return ids, int(numberOfResults), totalPages, nil
+	return &types.ESFindEntityResult{
+		IDs:             ids,
+		NumberOfResults: int(numberOfResults),
+		TotalPages:      totalPages,
+	}, nil
 }
+
+// TO BE REMOVED
 
 func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
 	doc := map[string]interface{}{
@@ -289,12 +297,12 @@ func (es *entity) RenameTag(old string, new string) error {
 }
 
 func (es *entity) RenameAdminTag(old string, new string) error {
-	query := elastic.NewMatchQuery("adminTags", old)
+	query := elastic.NewMatchQuery("categories", old)
 	script := elastic.
 		NewScript(`
-			if (ctx._source.adminTags.contains(params.old)) {
-				ctx._source.adminTags.remove(ctx._source.adminTags.indexOf(params.old));
-				ctx._source.adminTags.add(params.new);
+			if (ctx._source.categories.contains(params.old)) {
+				ctx._source.categories.remove(ctx._source.categories.indexOf(params.old));
+				ctx._source.categories.add(params.new);
 			}
 		`).
 		Params(map[string]interface{}{"new": new, "old": old})
@@ -350,11 +358,11 @@ func (es *entity) DeleteTag(name string) error {
 }
 
 func (es *entity) DeleteAdminTags(name string) error {
-	query := elastic.NewMatchQuery("adminTags", name)
+	query := elastic.NewMatchQuery("categories", name)
 	script := elastic.
 		NewScript(`
-			if (ctx._source.adminTags.contains(params.name)) {
-				ctx._source.adminTags.remove(ctx._source.adminTags.indexOf(params.name));
+			if (ctx._source.categories.contains(params.name)) {
+				ctx._source.categories.remove(ctx._source.categories.indexOf(params.name));
 			}
 		`).
 		Params(map[string]interface{}{"name": name})

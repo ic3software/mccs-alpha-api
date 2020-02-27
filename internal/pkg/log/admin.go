@@ -6,7 +6,7 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/util"
+	"github.com/ic3network/mccs-alpha-api/util"
 )
 
 type admin struct{}
@@ -52,8 +52,8 @@ func (a admin) ModifyEntity(
 	if !helper.SameTags(newEntity.Wants, oldEntity.Wants) {
 		modifiedFields = append(modifiedFields, "wants: "+strings.Join(helper.GetTagNames(oldEntity.Wants), " ")+" -> "+strings.Join(helper.GetTagNames(newEntity.Wants), " "))
 	}
-	if strings.Join(newEntity.AdminTags, " ") != strings.Join(oldEntity.AdminTags, " ") {
-		modifiedFields = append(modifiedFields, "adminTags: "+strings.Join(oldEntity.AdminTags, " ")+" -> "+strings.Join(newEntity.AdminTags, " "))
+	if strings.Join(newEntity.Categories, " ") != strings.Join(oldEntity.Categories, " ") {
+		modifiedFields = append(modifiedFields, "categories: "+strings.Join(oldEntity.Categories, " ")+" -> "+strings.Join(newEntity.Categories, " "))
 	}
 	modifiedFields = append(modifiedFields, util.CheckDiff(oldBalance, newBalance, map[string]bool{})...)
 	if len(modifiedFields) == 0 {
