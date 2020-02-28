@@ -203,7 +203,7 @@ func (tr *adminTransactionHandler) pendingTransactions() func(http.ResponseWrite
 
 func (tr *adminTransactionHandler) isInitiatedStatus(w http.ResponseWriter, t *types.Transaction) (bool, error) {
 	type response struct {
-		Error string `json:"error"`
+		Error string `json:"error,omitempty"`
 	}
 
 	if t.Status == constant.Transaction.Completed {

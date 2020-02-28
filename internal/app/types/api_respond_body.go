@@ -81,7 +81,7 @@ type EntityRespond struct {
 	ID                 string   `json:"id"`
 	AccountNumber      string   `json:"accountNumber"`
 	EntityName         string   `json:"entityName"`
-	Email              string   `json:"email"`
+	Email              string   `json:"email,omitempty"`
 	EntityPhone        string   `json:"entityPhone"`
 	IncType            string   `json:"incType"`
 	CompanyNumber      string   `json:"companyNumber"`

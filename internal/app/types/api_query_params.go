@@ -2,8 +2,10 @@ package types
 
 import (
 	"errors"
+	"net/url"
 	"time"
 
+	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -24,6 +26,34 @@ type SearchEntityQuery struct {
 
 	LocationCountry string
 	LocationCity    string
+}
+
+func NewSearchEntityQuery(q url.Values) (*SearchEntityQuery, error) {
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, err
+	}
+	return &SearchEntityQuery{
+		QueryingEntityID: q.Get("querying_entity_id"),
+		Page:             page,
+		PageSize:         pageSize,
+		EntityName:       q.Get("entity_name"),
+		Category:         q.Get("category"),
+		Offers:           util.ToSearchTags(q.Get("offers")),
+		Wants:            util.ToSearchTags(q.Get("wants")),
+		TaggedSince:      util.ParseTime(q.Get("tagged_since")),
+		FavoritesOnly:    q.Get("favorites_only") == "true",
+		Statuses: []string{
+			constant.Entity.Accepted,
+			constant.Trading.Pending,
+			constant.Trading.Accepted,
+			constant.Trading.Rejected,
+		},
+	}, nil
 }
 
 func (query *SearchEntityQuery) Validate() []error {

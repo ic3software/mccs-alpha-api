@@ -16,7 +16,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -494,7 +493,7 @@ func updateTags(old *types.Entity, offers, wants []string) {
 
 	// User Update tags logic:
 	// 	1. Update the tags collection only when the entity is in accepted status.
-	if utils.IsAcceptedStatus(old.Status) {
+	if util.IsAcceptedStatus(old.Status) {
 		err := TagHandler.SaveOfferTags(offersAdded)
 		if err != nil {
 			l.Logger.Error("[Error] SaveOfferTags failed:", zap.Error(err))
@@ -511,9 +510,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 		Data *types.EntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.UpdateUserEntityReqBody
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
+		req, err := types.NewUpdateUserEntityReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.updateUserEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -563,16 +560,13 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
 		go updateTags(oldEntity, req.Offers, req.Wants)
 
-		offers := req.Offers
-		if len(offers) == 0 {
-			offers = types.TagFieldToNames(entity.Offers)
+		if len(req.Offers) != 0 {
+			entity.Offers = types.ToTagFields(req.Offers)
 		}
-		wants := req.Wants
-		if len(wants) == 0 {
-			wants = types.TagFieldToNames(entity.Wants)
+		if len(req.Wants) != 0 {
+			entity.Wants = types.ToTagFields(req.Wants)
 		}
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(entity)})
 	}

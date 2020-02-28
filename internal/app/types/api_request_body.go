@@ -1,7 +1,9 @@
 package types
 
 import (
+	"encoding/json"
 	"errors"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -131,6 +133,17 @@ type UpdateUserEntityReqBody struct {
 	LocationCountry    string   `json:"locationCountry"`
 	Offers             []string `json:"offers"`
 	Wants              []string `json:"wants"`
+}
+
+func NewUpdateUserEntityReqBody(r *http.Request) (*UpdateUserEntityReqBody, error) {
+	var req UpdateUserEntityReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+	req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
+	return &req, nil
 }
 
 func (req *UpdateUserEntityReqBody) Validate() []error {
