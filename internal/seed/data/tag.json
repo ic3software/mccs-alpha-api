@@ -10,12 +10,14 @@
         "name": "pizza",
         "createdAt": "2020-02-16T08:37:08.423Z",
         "updatedAt": "2020-02-16T08:37:08.423Z",
+        "offerAddedAt": "2020-02-27T17:12:30.849Z",
         "wantAddedAt": "2020-02-16T08:37:08.423Z"
     },
     {
         "name": "beer",
         "createdAt": "2020-02-16T08:37:08.444Z",
         "updatedAt": "2020-02-20T06:45:55.849Z",
+        "offerAddedAt": "2020-02-27T17:12:30.849Z",
         "wantAddedAt": "2020-02-20T06:45:55.849Z"
     },
     {
@@ -39,11 +41,47 @@
     {
         "name": "organic-vegetables",
         "createdAt": "2020-02-20T06:45:55.849Z",
+        "wantAddedAt": "2020-02-27T17:12:30.849Z",
         "offerAddedAt": "2020-02-20T06:45:55.849Z"
     },
     {
         "name": "organic-fruits",
         "createdAt": "2020-02-20T06:45:55.849Z",
+        "wantAddedAt": "2020-02-24T09:45:52.849Z",
         "offerAddedAt": "2020-02-20T06:45:55.849Z"
-    }
-]
+    },
+    {
+        "name": "flour",
+        "createdAt": "2020-02-20T06:45:55.849Z",
+        "offerAddedAt": "2020-02-20T06:45:55.849Z"
+    },
+    {
+        "name": "baked-goods",
+        "createdAt": "2020-02-24T09:45:52.849Z",
+        "offerAddedAt": "2020-02-24T09:45:52.849Z"
+    }, 
+    {
+        "name": "bread",
+        "createdAt": "2020-02-24T09:45:52.849Z",
+        "offerAddedAt": "2020-02-24T09:45:52.849Z"
+    }, 
+    {
+        "name": "pasteries",
+        "createdAt": "2020-02-24T09:45:52.849Z",
+        "offerAddedAt": "2020-02-24T09:45:52.849Z"
+    },
+    {
+        "name": "flour",
+        "createdAt": "2020-02-24T09:45:52.849Z",
+        "wantAddedAt": "2020-02-24T09:45:52.849Z"
+    },
+    {
+        "name": "craft-beers",
+        "createdAt": "2020-02-27T17:12:30.849Z",
+        "offerAddedAt": "2020-02-27T17:12:30.849Z"
+    },
+    {
+        "name": "organic-flour",
+        "createdAt": "2020-02-27T17:12:30.849Z",
+        "wantAddedAt": "2020-02-27T17:12:30.849Z"
+    }]
