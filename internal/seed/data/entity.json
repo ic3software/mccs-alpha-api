@@ -65,7 +65,7 @@
             }
         ],
         "description": "High quality carpentry at a reasonable price.",
-        "locationAddress": "123 Main",
+        "locationAddress": "789 Main",
         "locationCity": "London",
         "locationRegion": "Greater London",
         "locationPostalCode": "UK1 2ENG",
@@ -91,6 +91,10 @@
             {
                 "name": "organic-fruits",
                 "createdAt": "2020-02-20T06:45:55.849Z"
+            }, 
+            {
+                "name": "flour",
+                "createdAt": "2020-02-20T06:45:55.849Z"
             }
         ],
         "wants": [ 
@@ -103,13 +107,100 @@
                 "createdAt": "2020-02-20T06:45:55.849Z"
             }
         ],
-        "description": "High quality carpentry at a reasonable price.",
+        "description": "Only the freshest organic produce of the highest quality.",
         "locationAddress": "123 Main",
         "locationCity": "London",
         "locationRegion": "Greater London",
         "locationPostalCode": "UK1 2ENG",
         "locationCountry": "England",
         "status": "tradingAccepted",
-        "createdAt": "2020-02-16T08:35:55.758Z"
+        "createdAt": "2020-02-20T06:45:55.849Z"
+    },
+    {
+        "entityName": "Betty's Baked Goods",
+        "incType": "sole",
+        "companyNumber": "none",
+        "website": "https://betty-bakes.null",
+        "entityPhone": "+442087070707",
+        "turnover": 32000,
+        "categories": [ 
+            "Bakery"
+        ],
+        "offers": [ 
+            {
+                "name": "baked-goods",
+                "createdAt": "2020-02-24T09:45:52.849Z"
+            }, 
+            {
+                "name": "bread",
+                "createdAt": "2020-02-24T09:45:52.849Z"
+            }, 
+            {
+                "name": "pasteries",
+                "createdAt": "2020-02-24T09:45:52.849Z"
+            }
+        ],
+        "wants": [ 
+            {
+                "name": "organic-fruits",
+                "createdAt": "2020-02-24T09:45:52.849Z"
+            }, 
+            {
+                "name": "flour",
+                "createdAt": "2020-02-24T09:45:52.849Z"
+            }
+        ],
+        "description": "The tastiest baked goods in this solar system!",
+        "locationAddress": "575 Main",
+        "locationCity": "London",
+        "locationRegion": "Greater London",
+        "locationPostalCode": "UK1 2ENG",
+        "locationCountry": "England",
+        "status": "tradingAccepted",
+        "createdAt": "2020-02-24T09:45:52.849Z"
+    },
+    {
+        "entityName": "Herbie's Hipster Brews",
+        "incType": "plc",
+        "companyNumber": "999888777",
+        "website": "https://herbie-brews.null",
+        "entityPhone": "+442012345678",
+        "turnover": 250000,
+        "categories": [ 
+            "Brewery",
+            "Restaurant"
+        ],
+        "offers": [ 
+            {
+                "name": "craft-beers",
+                "createdAt": "2020-02-27T17:12:30.849Z"
+            }, 
+            {
+                "name": "beer",
+                "createdAt": "2020-02-27T17:12:30.849Z"
+            }, 
+            {
+                "name": "pizza",
+                "createdAt": "2020-02-27T17:12:30.849Z"
+            }
+        ],
+        "wants": [ 
+            {
+                "name": "organic-flour",
+                "createdAt": "2020-02-27T17:12:30.849Z"
+            }, 
+            {
+                "name": "organic-vegetables",
+                "createdAt": "2020-02-27T17:12:30.849Z"
+            }
+        ],
+        "description": "The tastiest baked goods in this solar system!",
+        "locationAddress": "575 Main",
+        "locationCity": "London",
+        "locationRegion": "Greater London",
+        "locationPostalCode": "UK1 2ENG",
+        "locationCountry": "England",
+        "status": "tradingAccepted",
+        "createdAt": "2020-02-27T17:12:30.849Z"
     }
 ]
