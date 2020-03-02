@@ -23,6 +23,25 @@ func (u *user) Register(db *mongo.Database) {
 	u.c = db.Collection("users")
 }
 
+func (u *user) FindByEmail(email string) (*types.User, error) {
+	email = strings.ToLower(email)
+	if email == "" {
+		return &types.User{}, e.New(e.UserNotFound, "Please specify an email address.")
+	}
+
+	user := types.User{}
+	filter := bson.M{
+		"email":     email,
+		"deletedAt": bson.M{"$exists": false},
+	}
+	err := u.c.FindOne(context.Background(), filter).Decode(&user)
+	if err != nil {
+		return nil, e.New(e.UserNotFound, "The specified user could not be found.")
+	}
+
+	return &user, nil
+}
+
 func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 	user := types.User{}
 	filter := bson.M{
@@ -91,26 +110,27 @@ func (u *user) FindOneAndUpdate(update *types.User) (*types.User, error) {
 	return &user, nil
 }
 
-// TO BE REMOVED
-
-func (u *user) FindByEmail(email string) (*types.User, error) {
-	email = strings.ToLower(email)
-	if email == "" {
-		return &types.User{}, e.New(e.UserNotFound, "Please specify an email address.")
+func (u *user) UpdateLoginAttempts(email string, attempts int, lockUser bool) error {
+	filter := bson.M{"email": email}
+	set := bson.M{
+		"loginAttempts": attempts,
 	}
-
-	user := types.User{}
-	filter := bson.M{
-		"email":     email,
-		"deletedAt": bson.M{"$exists": false},
+	if lockUser {
+		set["lastLoginFailDate"] = time.Now()
 	}
-	err := u.c.FindOne(context.Background(), filter).Decode(&user)
+	update := bson.M{"$set": set}
+	_, err := u.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
 	if err != nil {
-		return nil, e.New(e.UserNotFound, "The specified user could not be found.")
+		return err
 	}
-
-	return &user, nil
+	return nil
 }
+
+// TO BE REMOVED
 
 func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
 	user := types.User{}
@@ -266,27 +286,6 @@ func (u *user) AdminUpdateUser(user *types.User) error {
 	)
 	if err != nil {
 		return e.Wrap(err, "UserMongo AdminUpdateUser failed")
-	}
-	return nil
-}
-
-func (u *user) UpdateLoginAttempts(email string, attempts int, lockUser bool) error {
-	filter := bson.M{"email": email}
-	set := bson.M{
-		"loginAttempts": attempts,
-		"updatedAt":     time.Now(),
-	}
-	if lockUser {
-		set["lastLoginFailDate"] = time.Now()
-	}
-	update := bson.M{"$set": set}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return e.Wrap(err, "UserMongo UpdateLoginAttempts failed")
 	}
 	return nil
 }
