@@ -81,6 +81,13 @@ func (u *userHandler) FindByEntityID(id string) (*types.User, error) {
 	return user, nil
 }
 
+func (u *userHandler) updateLoginAttempts(email string) {
+	err := logic.User.UpdateLoginAttempts(email)
+	if err != nil {
+		l.Logger.Error("[Error] UserHandler.updateLoginAttempts failed:", zap.Error(err))
+	}
+}
+
 func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 	type data struct {
 		Token string `json:"token"`
@@ -95,7 +102,6 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
-			logic.User.UpdateLoginAttempts(req.Email)
 			return
 		}
 
@@ -109,7 +115,7 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.login failed", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
-			logic.User.UpdateLoginAttempts(req.Email)
+			go u.updateLoginAttempts(req.Email)
 			return
 		}
 
