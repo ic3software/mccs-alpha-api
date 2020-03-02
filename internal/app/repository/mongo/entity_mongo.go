@@ -133,12 +133,12 @@ func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 }
 
 func (b *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
-	filter := bson.M{"_id": req.GetAddToEntityID()}
+	filter := bson.M{"_id": req.AddToEntityID}
 	update := bson.M{}
-	if req.GetIsFavorite() {
-		update["$addToSet"] = bson.M{"favoriteEntities": req.GetFavoriteEntityID()}
+	if req.Favorite {
+		update["$addToSet"] = bson.M{"favoriteEntities": req.FavoriteEntityID}
 	} else {
-		update["$pull"] = bson.M{"favoriteEntities": req.GetFavoriteEntityID()}
+		update["$pull"] = bson.M{"favoriteEntities": req.FavoriteEntityID}
 	}
 	_, err := b.c.UpdateOne(context.Background(), filter, update)
 	if err != nil {

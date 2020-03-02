@@ -11,7 +11,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -40,12 +39,12 @@ func (b *entityHandler) RegisterRoutes(
 		public.Path("/api/v1/entities").HandlerFunc(b.searchEntity()).Methods("GET")
 		public.Path("/api/v1/entities/{entityID}").HandlerFunc(b.getEntity()).Methods("GET")
 		private.Path("/api/v1/favorites").HandlerFunc(b.addToFavoriteEntities()).Methods("POST")
+		private.Path("/api/v1/send-email").HandlerFunc(b.sendEmailToEntity()).Methods("POST")
 
 		private.Path("/entities/search/match-tags").HandlerFunc(b.searhMatchTags()).Methods("GET")
 		private.Path("/api/entityStatus").HandlerFunc(b.entityStatus()).Methods("GET")
 		private.Path("/api/getEntityName").HandlerFunc(b.getEntityName()).Methods("GET")
 		private.Path("/api/tradingMemberStatus").HandlerFunc(b.tradingMemberStatus()).Methods("GET")
-		private.Path("/api/contactEntity").HandlerFunc(b.contactEntity()).Methods("POST")
 	})
 }
 
@@ -210,54 +209,52 @@ func (handler *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, 
 	}
 }
 
-// TO BE REMOVED
-
-func (handler *entityHandler) contactEntity() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		EntityID string `json:"id"`
-		Body     string `json:"body"`
-	}
+func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
-
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
+		req, err := types.NewEmailReqBody(r)
 		if err != nil {
-			l.Logger.Error("ContactEntity failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
+			l.Logger.Info("[Info] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		user, err := UserHandler.FindByID(r.Header.Get("userID"))
-		if err != nil {
-			l.Logger.Error("ContactEntity failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
+		errs := req.Validate()
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		entityOwner, err := UserHandler.FindByEntityID(req.EntityID)
-		if err != nil {
-			l.Logger.Error("ContactEntity failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
+		// user, err := UserHandler.FindByID(r.Header.Get("userID"))
+		// if err != nil {
+		// 	l.Logger.Error("ContactEntity failed", zap.Error(err))
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	w.Write([]byte("Something went wrong. Please try again later."))
+		// 	return
+		// }
 
-		receiver := entityOwner.FirstName + " " + entityOwner.LastName
-		replyToName := user.FirstName + " " + user.LastName
-		err = email.SendContactEntity(receiver, entityOwner.Email, replyToName, user.Email, req.Body)
-		if err != nil {
-			l.Logger.Error("ContactEntity failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
-			return
-		}
+		// entityOwner, err := UserHandler.FindByEntityID(req.EntityID)
+		// if err != nil {
+		// 	l.Logger.Error("ContactEntity failed", zap.Error(err))
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	w.Write([]byte("Something went wrong. Please try again later."))
+		// 	return
+		// }
+
+		// receiver := entityOwner.FirstName + " " + entityOwner.LastName
+		// replyToName := user.FirstName + " " + user.LastName
+		// err = email.SendContactEntity(receiver, entityOwner.Email, replyToName, user.Email, req.Body)
+		// if err != nil {
+		// 	l.Logger.Error("ContactEntity failed", zap.Error(err))
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	w.Write([]byte("Something went wrong. Please try again later."))
+		// 	return
+		// }
 
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+// TO BE REMOVED
 
 func (handler *entityHandler) searhMatchTags() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
