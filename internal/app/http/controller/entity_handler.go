@@ -211,6 +211,17 @@ func (handler *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, 
 	}
 }
 
+func (handler *entityHandler) checkEntityStatus(SenderEntity, ReceiverEntity *types.Entity) error {
+	if !util.IsTradingAccepted(SenderEntity.Status) {
+		return errors.New("Sender is not in the accepted status.")
+
+	}
+	if !util.IsTradingAccepted(ReceiverEntity.Status) {
+		return errors.New("Receiver is not in the accepted status.")
+	}
+	return nil
+}
+
 func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, err := types.NewEmailReqBody(r)
@@ -238,9 +249,13 @@ func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *htt
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-
-		if !util.IsTradingAccepted(ReceiverEntity.Status) {
-			api.Respond(w, r, http.StatusBadRequest, errors.New("Receiver is not in the accepted status."))
+		if !UserHandler.IsEntityBelongsToUser(req.SenderEntityID, r.Header.Get("userID")) {
+			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
+			return
+		}
+		err = handler.checkEntityStatus(SenderEntity, ReceiverEntity)
+		if err != nil {
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
