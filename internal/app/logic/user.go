@@ -73,11 +73,14 @@ func (u *user) Login(email string, password string) (*types.User, error) {
 	}
 
 	if u.isUserLockForLogin(user.LastLoginFailDate) {
-		return nil, errors.New("Your account has been temporarily locked for 15 minutes. Please try again later.")
+		return nil, ErrLoginLocked
 	}
 
 	err = bcrypt.CompareHash(user.Password, password)
 	if err != nil {
+		if user.LoginAttempts+1 >= viper.GetInt("login_attempts_limit") {
+			return nil, ErrLoginLocked
+		}
 		return nil, errors.New("Invalid password.")
 	}
 
