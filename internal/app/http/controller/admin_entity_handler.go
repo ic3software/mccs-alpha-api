@@ -42,7 +42,7 @@ func (handler *adminEntityHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	handler.once.Do(func() {
-		adminPrivate.Path("api/v1/entities/{entityID}").HandlerFunc(handler.updateEntity()).Methods("POST")
+		adminPrivate.Path("api/v1/entities/{entityID}").HandlerFunc(handler.updateEntity()).Methods("PATCH")
 
 		adminPrivate.Path("/entities/{id}").HandlerFunc(handler.updateEntityOld()).Methods("POST")
 		adminPrivate.Path("/api/entities/{id}").HandlerFunc(handler.deleteEntity()).Methods("DELETE")
@@ -73,21 +73,21 @@ func (handler *adminEntityHandler) updateOfferAndWants(oldEntity *types.Entity, 
 		if err != nil {
 			l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
-		err = TagHandler.SaveOfferTags(offers)
+		err = TagHandler.UpdateOffers(offers)
 		if err != nil {
 			l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
-		err = TagHandler.SaveWantTags(wants)
+		err = TagHandler.UpdateWants(wants)
 		if err != nil {
 			l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
 	}
 	if util.IsAcceptedStatus(oldEntity.Status) && util.IsAcceptedStatus(newStatus) {
-		err := TagHandler.SaveOfferTags(tagDifference.OffersAdded)
+		err := TagHandler.UpdateOffers(tagDifference.OffersAdded)
 		if err != nil {
 			l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
-		err = TagHandler.SaveWantTags(tagDifference.WantsAdded)
+		err = TagHandler.UpdateWants(tagDifference.WantsAdded)
 		if err != nil {
 			l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
@@ -276,21 +276,21 @@ func (a *adminEntityHandler) updateEntityOld() func(http.ResponseWriter, *http.R
 				if err != nil {
 					l.Logger.Error("UpdateAllTagsCreatedAt failed", zap.Error(err))
 				}
-				err = TagHandler.SaveOfferTags(helper.GetTagNames(d.Entity.Offers))
+				err = TagHandler.UpdateOffers(helper.GetTagNames(d.Entity.Offers))
 				if err != nil {
 					l.Logger.Error("saveOfferTags failed", zap.Error(err))
 				}
-				err = TagHandler.SaveWantTags(helper.GetTagNames(d.Entity.Wants))
+				err = TagHandler.UpdateWants(helper.GetTagNames(d.Entity.Wants))
 				if err != nil {
 					l.Logger.Error("saveWantTags failed", zap.Error(err))
 				}
 			}
 			if util.IsAcceptedStatus(oldEntity.Status) && util.IsAcceptedStatus(d.Entity.Status) {
-				err := TagHandler.SaveOfferTags(d.Entity.OffersAdded)
+				err := TagHandler.UpdateOffers(d.Entity.OffersAdded)
 				if err != nil {
 					l.Logger.Error("saveOfferTags failed", zap.Error(err))
 				}
-				err = TagHandler.SaveWantTags(d.Entity.WantsAdded)
+				err = TagHandler.UpdateWants(d.Entity.WantsAdded)
 				if err != nil {
 					l.Logger.Error("saveWantTags failed", zap.Error(err))
 				}

@@ -102,13 +102,13 @@ func (handler *entityHandler) UpdateOffersAndWants(old *types.Entity, offers, wa
 	if util.IsAcceptedStatus(old.Status) {
 		// User Update tags logic:
 		// 	1. Update the tags collection only when the entity is in accepted status.
-		err := TagHandler.SaveOfferTags(tagDifference.OffersAdded)
+		err := TagHandler.UpdateOffers(tagDifference.OffersAdded)
 		if err != nil {
-			l.Logger.Error("[Error] TagHandler.SaveOfferTags failed:", zap.Error(err))
+			l.Logger.Error("[Error] EntityHandler.UpdateOffersAndWants failed:", zap.Error(err))
 		}
-		err = TagHandler.SaveWantTags(tagDifference.WantsAdded)
+		err = TagHandler.UpdateWants(tagDifference.WantsAdded)
 		if err != nil {
-			l.Logger.Error("[Error] TagHandler.SaveWantTags failed:", zap.Error(err))
+			l.Logger.Error("[Error] EntityHandler.UpdateOffersAndWants failed:", zap.Error(err))
 		}
 	}
 }

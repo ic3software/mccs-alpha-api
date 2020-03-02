@@ -44,7 +44,7 @@ func (handler *tagHandler) RegisterRoutes(
 	})
 }
 
-func (h *tagHandler) SaveOfferTags(added []string) error {
+func (h *tagHandler) UpdateOffers(added []string) error {
 	for _, tagName := range added {
 		// TODO: UpdateOffers
 		err := logic.Tag.UpdateOffer(tagName)
@@ -55,7 +55,7 @@ func (h *tagHandler) SaveOfferTags(added []string) error {
 	return nil
 }
 
-func (h *tagHandler) SaveWantTags(added []string) error {
+func (h *tagHandler) UpdateWants(added []string) error {
 	for _, tagName := range added {
 		// TODO: UpdateWants
 		err := logic.Tag.UpdateWant(tagName)
