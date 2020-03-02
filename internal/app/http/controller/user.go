@@ -16,7 +16,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -146,6 +145,7 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 
 		entityID, err := logic.Entity.Create(&types.Entity{
 			EntityName:         req.EntityName,
+			Email:              req.Email,
 			IncType:            req.IncType,
 			CompanyNumber:      req.CompanyNumber,
 			EntityPhone:        req.EntityPhone,
@@ -438,7 +438,7 @@ func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request
 	toData := func(entities []*types.Entity) []*types.EntityRespond {
 		result := []*types.EntityRespond{}
 		for _, entity := range entities {
-			result = append(result, types.NewEntityRespond(entity))
+			result = append(result, types.NewEntityRespondWithEmail(entity))
 		}
 		return result
 	}
@@ -493,7 +493,7 @@ func updateTags(old *types.Entity, offers, wants []string) {
 
 	// User Update tags logic:
 	// 	1. Update the tags collection only when the entity is in accepted status.
-	if utils.IsAcceptedStatus(old.Status) {
+	if util.IsAcceptedStatus(old.Status) {
 		err := TagHandler.SaveOfferTags(offersAdded)
 		if err != nil {
 			l.Logger.Error("[Error] SaveOfferTags failed:", zap.Error(err))
@@ -510,9 +510,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 		Data *types.EntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.UpdateUserEntityReqBody
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
+		req, err := types.NewUpdateUserEntityReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.updateUserEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -524,8 +522,6 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
-
-		req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
 
 		vars := mux.Vars(r)
 		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
@@ -545,6 +541,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 		entity, err := logic.Entity.FindOneAndUpdate(&types.Entity{
 			ID:                 entityID,
 			EntityName:         req.EntityName,
+			Email:              req.Email,
 			EntityPhone:        req.EntityPhone,
 			IncType:            req.IncType,
 			CompanyNumber:      req.CompanyNumber,
@@ -565,32 +562,13 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 
 		go updateTags(oldEntity, req.Offers, req.Wants)
 
-		offers := req.Offers
-		if len(offers) == 0 {
-			offers = types.TagFieldToNames(entity.Offers)
+		if len(req.Offers) != 0 {
+			entity.Offers = types.ToTagFields(req.Offers)
 		}
-		wants := req.Wants
-		if len(wants) == 0 {
-			wants = types.TagFieldToNames(entity.Wants)
+		if len(req.Wants) != 0 {
+			entity.Wants = types.ToTagFields(req.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: &types.EntityRespond{
-			ID:                 entity.ID.Hex(),
-			EntityName:         entity.EntityName,
-			EntityPhone:        entity.EntityPhone,
-			IncType:            entity.IncType,
-			CompanyNumber:      entity.CompanyNumber,
-			Website:            entity.Website,
-			Turnover:           entity.Turnover,
-			Description:        entity.Description,
-			LocationAddress:    entity.LocationAddress,
-			LocationCity:       entity.LocationCity,
-			LocationRegion:     entity.LocationRegion,
-			LocationPostalCode: entity.LocationPostalCode,
-			LocationCountry:    entity.LocationCountry,
-			Status:             entity.Status,
-			Offers:             offers,
-			Wants:              wants,
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(entity)})
 	}
 }
 

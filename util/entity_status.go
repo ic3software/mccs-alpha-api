@@ -1,4 +1,4 @@
-package utils
+package util
 
 import (
 	"github.com/ic3network/mccs-alpha-api/global/constant"
@@ -10,6 +10,13 @@ func IsAcceptedStatus(status string) bool {
 		status == constant.Trading.Pending ||
 		status == constant.Trading.Accepted ||
 		status == constant.Trading.Rejected {
+		return true
+	}
+	return false
+}
+
+func IsTradingAccepted(status string) bool {
+	if status == constant.Trading.Accepted {
 		return true
 	}
 	return false

@@ -150,6 +150,7 @@ type UpdateUserEntityReqBody struct {
 	ID                 string   `json:"id"`
 	Status             string   `json:"status"`
 	EntityName         string   `json:"entityName"`
+	Email              string   `json:"email"`
 	EntityPhone        string   `json:"entityPhone"`
 	IncType            string   `json:"incType"`
 	CompanyNumber      string   `json:"companyNumber"`
@@ -163,6 +164,17 @@ type UpdateUserEntityReqBody struct {
 	LocationCountry    string   `json:"locationCountry"`
 	Offers             []string `json:"offers"`
 	Wants              []string `json:"wants"`
+}
+
+func NewUpdateUserEntityReqBody(r *http.Request) (*UpdateUserEntityReqBody, error) {
+	var req UpdateUserEntityReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+	req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
+	return &req, nil
 }
 
 func (req *UpdateUserEntityReqBody) Validate() []error {

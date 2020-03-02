@@ -15,8 +15,8 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/validate"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 
@@ -190,7 +190,7 @@ func (a *adminEntityHandler) updateEntity() func(http.ResponseWriter, *http.Requ
 		// 	2. When the entity is in accepted status.
 		//	   - only update added tags.
 		go func() {
-			if !utils.IsAcceptedStatus(oldEntity.Status) && utils.IsAcceptedStatus(d.Entity.Status) {
+			if !util.IsAcceptedStatus(oldEntity.Status) && util.IsAcceptedStatus(d.Entity.Status) {
 				err := logic.Entity.UpdateAllTagsCreatedAt(oldEntity.ID, time.Now())
 				if err != nil {
 					l.Logger.Error("UpdateAllTagsCreatedAt failed", zap.Error(err))
@@ -204,7 +204,7 @@ func (a *adminEntityHandler) updateEntity() func(http.ResponseWriter, *http.Requ
 					l.Logger.Error("saveWantTags failed", zap.Error(err))
 				}
 			}
-			if utils.IsAcceptedStatus(oldEntity.Status) && utils.IsAcceptedStatus(d.Entity.Status) {
+			if util.IsAcceptedStatus(oldEntity.Status) && util.IsAcceptedStatus(d.Entity.Status) {
 				err := TagHandler.SaveOfferTags(d.Entity.OffersAdded)
 				if err != nil {
 					l.Logger.Error("saveOfferTags failed", zap.Error(err))

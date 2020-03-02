@@ -14,7 +14,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
@@ -50,7 +49,7 @@ func (b *entityHandler) RegisterRoutes(
 	})
 }
 
-func (b *entityHandler) FindByID(entityID string) (*types.Entity, error) {
+func (handler *entityHandler) FindByID(entityID string) (*types.Entity, error) {
 	objID, err := primitive.ObjectIDFromHex(entityID)
 	if err != nil {
 		return nil, err
@@ -62,7 +61,7 @@ func (b *entityHandler) FindByID(entityID string) (*types.Entity, error) {
 	return entity, nil
 }
 
-func (b *entityHandler) FindByEmail(email string) (*types.Entity, error) {
+func (handler *entityHandler) FindByEmail(email string) (*types.Entity, error) {
 	user, err := logic.User.FindByEmail(email)
 	if err != nil {
 		return nil, err
@@ -74,7 +73,7 @@ func (b *entityHandler) FindByEmail(email string) (*types.Entity, error) {
 	return bs, nil
 }
 
-func (b *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
+func (handler *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	user, err := UserHandler.FindByID(uID)
 	if err != nil {
 		return nil, err
@@ -87,33 +86,12 @@ func (b *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 }
 
 func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
-	page, err := util.ToInt(q.Get("page"), 1)
+	query, err := types.NewSearchEntityQuery(q)
 	if err != nil {
 		return nil, err
 	}
-	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
-	if err != nil {
-		return nil, err
-	}
-	favorites := getFavoriteEntities(q.Get("querying_entity_id"))
-	return &types.SearchEntityQuery{
-		QueryingEntityID: q.Get("querying_entity_id"),
-		Page:             page,
-		PageSize:         pageSize,
-		EntityName:       q.Get("entity_name"),
-		Category:         q.Get("category"),
-		Offers:           util.ToSearchTags(q.Get("offers")),
-		Wants:            util.ToSearchTags(q.Get("wants")),
-		TaggedSince:      util.ParseTime(q.Get("tagged_since")),
-		FavoriteEntities: favorites,
-		FavoritesOnly:    q.Get("favorites_only") == "true",
-		Statuses: []string{
-			constant.Entity.Accepted,
-			constant.Trading.Pending,
-			constant.Trading.Accepted,
-			constant.Trading.Rejected,
-		},
-	}, nil
+	query.FavoriteEntities = getFavoriteEntities(q.Get("querying_entity_id"))
+	return query, nil
 }
 
 func getFavoriteEntities(entityID string) []primitive.ObjectID {
@@ -124,7 +102,15 @@ func getFavoriteEntities(entityID string) []primitive.ObjectID {
 	return []primitive.ObjectID{}
 }
 
-func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) {
+func getQueryingEntityState(entityID string) string {
+	entity, err := EntityHandler.FindByID(entityID)
+	if err == nil {
+		return entity.Status
+	}
+	return ""
+}
+
+func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
 		TotalPages      int `json:"totalPages"`
@@ -133,11 +119,17 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 		Data []*types.EntityRespond `json:"data"`
 		Meta meta                   `json:"meta"`
 	}
-	toData := func(entities []*types.Entity, favorites []primitive.ObjectID) []*types.EntityRespond {
+	toData := func(query *types.SearchEntityQuery, entities []*types.Entity) []*types.EntityRespond {
 		result := []*types.EntityRespond{}
+		queryingEntityState := getQueryingEntityState(query.QueryingEntityID)
 		for _, entity := range entities {
-			respond := types.NewEntityRespond(entity)
-			respond.IsFavorite = util.ContainID(favorites, entity.ID)
+			var respond *types.EntityRespond
+			if util.IsTradingAccepted(queryingEntityState) && util.IsTradingAccepted(entity.Status) {
+				respond = types.NewEntityRespondWithEmail(entity)
+			} else {
+				respond = types.NewEntityRespondWithoutEmail(entity)
+			}
+			respond.IsFavorite = util.ContainID(query.FavoriteEntities, entity.ID)
 			result = append(result, respond)
 		}
 		return result
@@ -164,7 +156,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{
-			Data: toData(found.Entities, query.FavoriteEntities),
+			Data: toData(query, found.Entities),
 			Meta: meta{
 				TotalPages:      found.TotalPages,
 				NumberOfResults: found.NumberOfResults,
@@ -173,7 +165,7 @@ func (b *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) 
 	}
 }
 
-func (_ *entityHandler) getEntity() func(http.ResponseWriter, *http.Request) {
+func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.EntityRespond `json:"data"`
 	}
@@ -186,11 +178,11 @@ func (_ *entityHandler) getEntity() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespond(entity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithoutEmail(entity)})
 	}
 }
 
-func (_ *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, *http.Request) {
+func (handler *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.AddToFavoriteReqBody
 		decoder := json.NewDecoder(r.Body)
@@ -218,7 +210,9 @@ func (_ *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, *http.
 	}
 }
 
-func (b *entityHandler) contactEntity() func(http.ResponseWriter, *http.Request) {
+// TO BE REMOVED
+
+func (handler *entityHandler) contactEntity() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		EntityID string `json:"id"`
 		Body     string `json:"body"`
@@ -265,13 +259,13 @@ func (b *entityHandler) contactEntity() func(http.ResponseWriter, *http.Request)
 	}
 }
 
-func (b *entityHandler) searhMatchTags() func(http.ResponseWriter, *http.Request) {
+func (handler *entityHandler) searhMatchTags() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/entities/search?"+r.URL.Query().Encode(), http.StatusFound)
 	}
 }
 
-func (b *entityHandler) entityStatus() func(http.ResponseWriter, *http.Request) {
+func (handler *entityHandler) entityStatus() func(http.ResponseWriter, *http.Request) {
 	type response struct {
 		Status string `json:"status"`
 	}
@@ -316,7 +310,7 @@ func (b *entityHandler) entityStatus() func(http.ResponseWriter, *http.Request) 
 	}
 }
 
-func (b *entityHandler) getEntityName() func(http.ResponseWriter, *http.Request) {
+func (handler *entityHandler) getEntityName() func(http.ResponseWriter, *http.Request) {
 	type response struct {
 		Name string
 	}
@@ -350,7 +344,7 @@ func (b *entityHandler) getEntityName() func(http.ResponseWriter, *http.Request)
 	}
 }
 
-func (b *entityHandler) tradingMemberStatus() func(http.ResponseWriter, *http.Request) {
+func (handler *entityHandler) tradingMemberStatus() func(http.ResponseWriter, *http.Request) {
 	type response struct {
 		Self  bool `json:"self"`
 		Other bool `json:"other"`

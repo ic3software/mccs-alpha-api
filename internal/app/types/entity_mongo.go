@@ -18,6 +18,7 @@ type Entity struct {
 
 	EntityName         string      `json:"entityName,omitempty" bson:"entityName,omitempty"`
 	EntityPhone        string      `json:"entityPhone,omitempty" bson:"entityPhone,omitempty"`
+	Email              string      `json:"email,omitempty" bson:"email,omitempty"`
 	IncType            string      `json:"incType,omitempty" bson:"incType,omitempty"`
 	CompanyNumber      string      `json:"companyNumber,omitempty" bson:"companyNumber,omitempty"`
 	Website            string      `json:"website,omitempty" bson:"website,omitempty"`
