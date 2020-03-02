@@ -3,7 +3,7 @@
         "firstName": "Pete",
         "lastName": "Painter",
         "email": "pete@dev.null",
-        "password": "password",
+        "password": "password1!",
         "telephone": "+442083232323",
         "createdAt": "2020-02-16T08:40:10.249Z",
         "dailyNotification": true
@@ -12,7 +12,7 @@
         "firstName": "Joe",
         "lastName": "Carpenter",
         "email": "joe@dev.null",
-        "password": "password",
+        "password": "password1!",
         "telephone": "+442079191919",
         "createdAt": "2020-02-16T08:35:55.849Z",
         "dailyNotification": true
@@ -21,7 +21,7 @@
         "firstName": "Fred",
         "lastName": "Farmer",
         "email": "fred@dev.null",
-        "password": "password",
+        "password": "password1!",
         "telephone": "+4420812312312",
         "createdAt": "2020-02-20T06:45:55.849Z",
         "dailyNotification": true
@@ -30,7 +30,7 @@
         "firstName": "Betty",
         "lastName": "Baker",
         "email": "betty@dev.null",
-        "password": "password",
+        "password": "password1!",
         "telephone": "+442086666888",
         "createdAt": "2020-02-24T09:45:52.849Z",
         "dailyNotification": true
@@ -39,7 +39,7 @@
         "firstName": "Herbie",
         "lastName": "Hipster",
         "email": "herbie@dev.null",
-        "password": "password",
+        "password": "password1!",
         "telephone": "+442044442222",
         "createdAt": "2020-02-27T17:12:30.849Z",
         "dailyNotification": true

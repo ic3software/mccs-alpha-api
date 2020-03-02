@@ -6,6 +6,7 @@
         "website": "https://petes-painting.null",
         "entityPhone": "+442074848484",
         "turnover": 150000,
+        "email": "pete@dev.null",
         "categories": [ 
             "Painting"
         ],
@@ -41,6 +42,7 @@
         "website": "https://joes-woodworking.null",
         "entityPhone": "+442089292929",
         "turnover": 50000,
+        "email": "joe@dev.null",
         "categories": [ 
             "Carpentry"
         ],
@@ -80,6 +82,7 @@
         "website": "https://farmer-freddy.null",
         "entityPhone": "+4420832132132",
         "turnover": 10000,
+        "email": "fred@dev.null",
         "categories": [ 
             "Organic Produce"
         ],
@@ -123,6 +126,7 @@
         "website": "https://betty-bakes.null",
         "entityPhone": "+442087070707",
         "turnover": 32000,
+        "email": "betty@dev.null",
         "categories": [ 
             "Bakery"
         ],
@@ -166,6 +170,7 @@
         "website": "https://herbie-brews.null",
         "entityPhone": "+442012345678",
         "turnover": 250000,
+        "email": "herbie@dev.null",
         "categories": [ 
             "Brewery",
             "Restaurant"
