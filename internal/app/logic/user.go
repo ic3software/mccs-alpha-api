@@ -59,14 +59,21 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 	return nil
 }
 
+func (u *user) isUserLockForLogin(lastLoginFailDate time.Time) bool {
+	if time.Now().Sub(lastLoginFailDate).Seconds() <= viper.GetFloat64("login_attempts_timeout") {
+		return true
+	}
+	return false
+}
+
 func (u *user) Login(email string, password string) (*types.User, error) {
 	user, err := mongo.User.FindByEmail(email)
 	if err != nil {
 		return nil, err
 	}
 
-	if time.Now().Sub(user.LastLoginFailDate).Seconds() <= viper.GetFloat64("login_attempts_timeout") {
-		return nil, e.New(e.AccountLocked, "")
+	if u.isUserLockForLogin(user.LastLoginFailDate) {
+		return nil, errors.New("Your account has been temporarily locked for 15 minutes. Please try again later.")
 	}
 
 	err = bcrypt.CompareHash(user.Password, password)
@@ -75,6 +82,34 @@ func (u *user) Login(email string, password string) (*types.User, error) {
 	}
 
 	return user, nil
+}
+
+func (u *user) UpdateLoginAttempts(email string) error {
+	user, err := mongo.User.FindByEmail(email)
+	if err != nil {
+		return err
+	}
+
+	if u.isUserLockForLogin(user.LastLoginFailDate) {
+		return nil
+	}
+
+	attempts := user.LoginAttempts
+	lockUser := false
+
+	if attempts+1 >= viper.GetInt("login_attempts_limit") {
+		attempts = 0
+		lockUser = true
+	} else {
+		attempts++
+	}
+
+	err = mongo.User.UpdateLoginAttempts(email, attempts, lockUser)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (u *user) ResetPassword(email string, newPassword string) error {
@@ -194,30 +229,6 @@ func (u *user) AdminUpdateUser(user *types.User) error {
 	if err != nil {
 		return e.Wrap(err, "AdminUpdateUser failed")
 	}
-	return nil
-}
-
-func (u *user) UpdateLoginAttempts(email string) error {
-	user, err := mongo.User.FindByEmail(email)
-	if err != nil {
-		return err
-	}
-
-	attempts := user.LoginAttempts
-	lockUser := false
-
-	if attempts+1 >= viper.GetInt("login_attempts_limit") {
-		attempts = 0
-		lockUser = true
-	} else {
-		attempts++
-	}
-
-	err = mongo.User.UpdateLoginAttempts(email, attempts, lockUser)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 

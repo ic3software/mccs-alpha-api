@@ -95,6 +95,7 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
+			logic.User.UpdateLoginAttempts(req.Email)
 			return
 		}
 
@@ -108,6 +109,7 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.login failed", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
+			logic.User.UpdateLoginAttempts(req.Email)
 			return
 		}
 
