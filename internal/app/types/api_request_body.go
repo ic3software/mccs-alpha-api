@@ -209,42 +209,36 @@ func (req *UpdateUserEntityReqBody) Validate() []error {
 }
 
 func NewAddToFavoriteReqBody(r *http.Request) (*AddToFavoriteReqBody, error) {
-	var req struct {
-		AddToEntityID    string `json:"add_to_entity_id"`
-		FavoriteEntityID string `json:"favorite_entity_id"`
-		Favorite         *bool  `json:"favorite"`
-	}
+	var req AddToFavoriteReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
 		return nil, err
 	}
-	addToEntityID, err := primitive.ObjectIDFromHex(req.AddToEntityID)
-	if err != nil {
-		return nil, errors.New("add_to_entity_id is wrong")
-	}
-	favoriteEntityID, err := primitive.ObjectIDFromHex(req.FavoriteEntityID)
-	if err != nil {
-		return nil, errors.New("favorite_entity_id is wrong")
-	}
-	if req.Favorite == nil {
-		return nil, errors.New("favorite is nil")
-	}
-	return &AddToFavoriteReqBody{
-		AddToEntityID:    addToEntityID,
-		FavoriteEntityID: favoriteEntityID,
-		Favorite:         *req.Favorite,
-	}, nil
+	return &req, nil
 }
 
 type AddToFavoriteReqBody struct {
-	AddToEntityID    primitive.ObjectID
-	FavoriteEntityID primitive.ObjectID
-	Favorite         bool
+	AddToEntityID    string `json:"add_to_entity_id"`
+	FavoriteEntityID string `json:"favorite_entity_id"`
+	Favorite         *bool  `json:"favorite"`
 }
 
 func (req *AddToFavoriteReqBody) Validate() []error {
 	errs := []error{}
+
+	_, err := primitive.ObjectIDFromHex(req.AddToEntityID)
+	if err != nil {
+		errs = append(errs, errors.New("add_to_entity_id is wrong"))
+	}
+	_, err = primitive.ObjectIDFromHex(req.FavoriteEntityID)
+	if err != nil {
+		errs = append(errs, errors.New("favorite_entity_id is wrong"))
+	}
+	if req.Favorite == nil {
+		errs = append(errs, errors.New("favorite is nil"))
+	}
+
 	return errs
 }
 
@@ -313,38 +307,35 @@ func validatePassword(password string) []error {
 }
 
 func NewEmailReqBody(r *http.Request) (*EmailReqBody, error) {
-	var req struct {
-		SenderEntityID   string `json:"sender_entity_id"`
-		ReceiverEntityID string `json:"receiver_entity_id"`
-		Body             string `json:"body"`
-	}
+	var req EmailReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
 		return nil, err
 	}
-	senderEntityID, err := primitive.ObjectIDFromHex(req.SenderEntityID)
-	if err != nil {
-		return nil, errors.New("sender_entity_id is wrong")
-	}
-	receiverEntityID, err := primitive.ObjectIDFromHex(req.ReceiverEntityID)
-	if err != nil {
-		return nil, errors.New("receiver_entity_id is wrong")
-	}
-	return &EmailReqBody{
-		SenderEntityID:   senderEntityID,
-		ReceiverEntityID: receiverEntityID,
-		Body:             req.Body,
-	}, nil
+	return &req, nil
 }
 
 type EmailReqBody struct {
-	SenderEntityID   primitive.ObjectID
-	ReceiverEntityID primitive.ObjectID
-	Body             string
+	SenderEntityID   string `json:"sender_entity_id"`
+	ReceiverEntityID string `json:"receiver_entity_id"`
+	Body             string `json:"body"`
 }
 
 func (req *EmailReqBody) Validate() []error {
 	errs := []error{}
+
+	_, err := primitive.ObjectIDFromHex(req.SenderEntityID)
+	if err != nil {
+		errs = append(errs, errors.New("sender_entity_id is wrong"))
+	}
+	_, err = primitive.ObjectIDFromHex(req.ReceiverEntityID)
+	if err != nil {
+		errs = append(errs, errors.New("receiver_entity_id is wrong"))
+	}
+	if len(req.Body) == 0 {
+		errs = append(errs, errors.New("body is empty"))
+	}
+
 	return errs
 }

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -224,31 +226,30 @@ func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
-		// user, err := UserHandler.FindByID(r.Header.Get("userID"))
-		// if err != nil {
-		// 	l.Logger.Error("ContactEntity failed", zap.Error(err))
-		// 	w.WriteHeader(http.StatusInternalServerError)
-		// 	w.Write([]byte("Something went wrong. Please try again later."))
-		// 	return
-		// }
+		SenderEntity, err := handler.FindByID(req.SenderEntityID)
+		if err != nil {
+			l.Logger.Error("[Error] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		ReceiverEntity, err := handler.FindByID(req.ReceiverEntityID)
+		if err != nil {
+			l.Logger.Error("[Error] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
 
-		// entityOwner, err := UserHandler.FindByEntityID(req.EntityID)
-		// if err != nil {
-		// 	l.Logger.Error("ContactEntity failed", zap.Error(err))
-		// 	w.WriteHeader(http.StatusInternalServerError)
-		// 	w.Write([]byte("Something went wrong. Please try again later."))
-		// 	return
-		// }
+		if !util.IsTradingAccepted(ReceiverEntity.Status) {
+			api.Respond(w, r, http.StatusBadRequest, errors.New("Receiver is not in the accepted status."))
+			return
+		}
 
-		// receiver := entityOwner.FirstName + " " + entityOwner.LastName
-		// replyToName := user.FirstName + " " + user.LastName
-		// err = email.SendContactEntity(receiver, entityOwner.Email, replyToName, user.Email, req.Body)
-		// if err != nil {
-		// 	l.Logger.Error("ContactEntity failed", zap.Error(err))
-		// 	w.WriteHeader(http.StatusInternalServerError)
-		// 	w.Write([]byte("Something went wrong. Please try again later."))
-		// 	return
-		// }
+		err = email.SendContactEntity(ReceiverEntity.EntityName, ReceiverEntity.Email, SenderEntity.EntityName, SenderEntity.Email, req.Body)
+		if err != nil {
+			l.Logger.Error("[Error] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
 
 		w.WriteHeader(http.StatusOK)
 	}
