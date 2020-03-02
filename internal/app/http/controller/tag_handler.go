@@ -29,22 +29,44 @@ func newTagHandler() *tagHandler {
 	}
 }
 
-func (h *tagHandler) RegisterRoutes(
+func (handler *tagHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
 	adminPublic *mux.Router,
 	adminPrivate *mux.Router,
 ) {
-	h.once.Do(func() {
-		public.Path("/api/v1/tags").HandlerFunc(h.searchTag()).Methods("GET")
+	handler.once.Do(func() {
+		public.Path("/api/v1/tags").HandlerFunc(handler.searchTag()).Methods("GET")
 
-		adminPrivate.Path("/api/user-tags").HandlerFunc(h.createTag()).Methods("POST")
-		adminPrivate.Path("/api/user-tags/{id}").HandlerFunc(h.renameTag()).Methods("PUT")
-		adminPrivate.Path("/api/user-tags/{id}").HandlerFunc(h.deleteTag()).Methods("DELETE")
+		adminPrivate.Path("/api/user-tags").HandlerFunc(handler.createTag()).Methods("POST")
+		adminPrivate.Path("/api/user-tags/{id}").HandlerFunc(handler.renameTag()).Methods("PUT")
+		adminPrivate.Path("/api/user-tags/{id}").HandlerFunc(handler.deleteTag()).Methods("DELETE")
 	})
 }
 
-func (t *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
+func (h *tagHandler) SaveOfferTags(added []string) error {
+	for _, tagName := range added {
+		// TODO: UpdateOffers
+		err := logic.Tag.UpdateOffer(tagName)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *tagHandler) SaveWantTags(added []string) error {
+	for _, tagName := range added {
+		// TODO: UpdateWants
+		err := logic.Tag.UpdateWant(tagName)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
 		TotalPages      int `json:"totalPages"`
@@ -85,28 +107,6 @@ func (t *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
 }
 
 // TO BE REMOVED
-
-func (h *tagHandler) SaveOfferTags(added []string) error {
-	for _, tagName := range added {
-		// TODO: UpdateOffers
-		err := logic.Tag.UpdateOffer(tagName)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (h *tagHandler) SaveWantTags(added []string) error {
-	for _, tagName := range added {
-		// TODO: UpdateWants
-		err := logic.Tag.UpdateWant(tagName)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 func (h *tagHandler) createTag() func(http.ResponseWriter, *http.Request) {
 	type request struct {

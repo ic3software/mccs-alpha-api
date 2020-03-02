@@ -9,6 +9,7 @@ import (
 
 	"unicode"
 
+	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -147,8 +148,6 @@ func (req *UpdateUserReqBody) Validate() []error {
 }
 
 type UpdateUserEntityReqBody struct {
-	ID                 string   `json:"id"`
-	Status             string   `json:"status"`
 	EntityName         string   `json:"entityName"`
 	Email              string   `json:"email"`
 	EntityPhone        string   `json:"entityPhone"`
@@ -164,6 +163,9 @@ type UpdateUserEntityReqBody struct {
 	LocationCountry    string   `json:"locationCountry"`
 	Offers             []string `json:"offers"`
 	Wants              []string `json:"wants"`
+	// Not allow to change
+	ID     string `json:"id"`
+	Status string `json:"status"`
 }
 
 func NewUpdateUserEntityReqBody(r *http.Request) (*UpdateUserEntityReqBody, error) {
@@ -336,6 +338,79 @@ func (req *EmailReqBody) Validate() []error {
 	if len(req.Body) == 0 {
 		errs = append(errs, errors.New("body is empty"))
 	}
+
+	return errs
+}
+
+// Admin
+
+type AdminUpdateEntityReqBody struct {
+	EntityID           primitive.ObjectID `json:"entityID"`
+	ID                 string             `json:"id"`
+	Status             string             `json:"status"`
+	EntityName         string             `json:"entityName"`
+	Email              string             `json:"email"`
+	EntityPhone        string             `json:"entityPhone"`
+	IncType            string             `json:"incType"`
+	CompanyNumber      string             `json:"companyNumber"`
+	Website            string             `json:"website"`
+	Turnover           int                `json:"turnover"`
+	Description        string             `json:"description"`
+	LocationAddress    string             `json:"locationAddress"`
+	LocationCity       string             `json:"locationCity"`
+	LocationRegion     string             `json:"locationRegion"`
+	LocationPostalCode string             `json:"locationPostalCode"`
+	LocationCountry    string             `json:"locationCountry"`
+	Offers             []string           `json:"offers"`
+	Wants              []string           `json:"wants"`
+	Categories         []string           `json:"categories"`
+}
+
+func NewAdminUpdateEntityReqBody(r *http.Request) (*AdminUpdateEntityReqBody, error) {
+	var req AdminUpdateEntityReqBody
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	vars := mux.Vars(r)
+	entityID, err := primitive.ObjectIDFromHex(vars["entityID"])
+	if err != nil {
+		return nil, err
+	}
+	req.EntityID = entityID
+	req.Offers, req.Wants, req.Categories = util.FormatTags(req.Offers), util.FormatTags(req.Wants), util.FormatTags(req.Categories)
+
+	return &req, nil
+}
+
+func (req *AdminUpdateEntityReqBody) Validate() []error {
+	errs := []error{}
+
+	if req.ID != "" {
+		errs = append(errs, errors.New("The entity ID cannot be changed."))
+	}
+
+	entity := Entity{
+		EntityName:         req.EntityName,
+		EntityPhone:        req.EntityPhone,
+		IncType:            req.IncType,
+		CompanyNumber:      req.CompanyNumber,
+		Website:            req.Website,
+		Turnover:           req.Turnover,
+		Description:        req.Description,
+		LocationCity:       req.LocationCity,
+		LocationCountry:    req.LocationCountry,
+		LocationAddress:    req.LocationAddress,
+		LocationRegion:     req.LocationRegion,
+		LocationPostalCode: req.LocationPostalCode,
+		Categories:         req.Categories,
+	}
+	errs = append(errs, entity.Validate()...)
+	errs = append(errs, validateTags(req.Offers)...)
+	errs = append(errs, validateTags(req.Wants)...)
 
 	return errs
 }

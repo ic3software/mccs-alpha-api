@@ -87,6 +87,32 @@ func (handler *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	return bs, nil
 }
 
+func (handler *entityHandler) UpdateOffersAndWants(old *types.Entity, offers, wants []string) {
+	if len(offers) == 0 && len(wants) == 0 {
+		return
+	}
+
+	tagDifference := types.NewTagDifference(types.TagFieldToNames(old.Offers), offers, types.TagFieldToNames(old.Wants), wants)
+	err := logic.Entity.UpdateTags(old.ID, tagDifference)
+	if err != nil {
+		l.Logger.Error("[Error] EntityHandler.UpdateOffersAndWants failed:", zap.Error(err))
+		return
+	}
+
+	if util.IsAcceptedStatus(old.Status) {
+		// User Update tags logic:
+		// 	1. Update the tags collection only when the entity is in accepted status.
+		err := TagHandler.SaveOfferTags(tagDifference.OffersAdded)
+		if err != nil {
+			l.Logger.Error("[Error] TagHandler.SaveOfferTags failed:", zap.Error(err))
+		}
+		err = TagHandler.SaveWantTags(tagDifference.WantsAdded)
+		if err != nil {
+			l.Logger.Error("[Error] TagHandler.SaveWantTags failed:", zap.Error(err))
+		}
+	}
+}
+
 func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
 	query, err := types.NewSearchEntityQuery(q)
 	if err != nil {

@@ -16,7 +16,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -476,44 +475,6 @@ func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.R
 	}
 }
 
-func updateTags(old *types.Entity, offers, wants []string) {
-	if len(offers) == 0 && len(wants) == 0 {
-		return
-	}
-
-	var offersAdded, offersRemoved, wantsAdded, wantsRemoved []string
-	if len(offers) != 0 {
-		offersAdded, offersRemoved = util.TagDifference(offers, types.TagFieldToNames(old.Offers))
-	}
-	if len(wants) != 0 {
-		wantsAdded, wantsRemoved = util.TagDifference(wants, types.TagFieldToNames(old.Wants))
-	}
-
-	err := logic.Entity.UpdateTags(old.ID, &types.TagDifference{
-		OffersAdded:   offersAdded,
-		OffersRemoved: offersRemoved,
-		WantsAdded:    wantsAdded,
-		WantsRemoved:  wantsRemoved,
-	})
-	if err != nil {
-		l.Logger.Error("[Error] UpdateTags failed:", zap.Error(err))
-		return
-	}
-
-	// User Update tags logic:
-	// 	1. Update the tags collection only when the entity is in accepted status.
-	if util.IsAcceptedStatus(old.Status) {
-		err := TagHandler.SaveOfferTags(offersAdded)
-		if err != nil {
-			l.Logger.Error("[Error] SaveOfferTags failed:", zap.Error(err))
-		}
-		err = TagHandler.SaveWantTags(wantsAdded)
-		if err != nil {
-			l.Logger.Error("[Error] SaveWantTags failed:", zap.Error(err))
-		}
-	}
-}
-
 func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.EntityRespond `json:"data"`
@@ -568,7 +529,7 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 			return
 		}
 
-		go updateTags(oldEntity, req.Offers, req.Wants)
+		go EntityHandler.UpdateOffersAndWants(oldEntity, req.Offers, req.Wants)
 
 		if len(req.Offers) != 0 {
 			entity.Offers = types.ToTagFields(req.Offers)

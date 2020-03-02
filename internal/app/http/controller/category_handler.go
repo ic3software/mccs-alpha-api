@@ -51,6 +51,13 @@ func (a *categoryHandler) RegisterRoutes(
 	})
 }
 
+func (handler *categoryHandler) Update(categories []string) {
+	err := logic.Category.Create(categories...)
+	if err != nil {
+		l.Logger.Error("[Error] CategoryHandler.Update failed:", zap.Error(err))
+	}
+}
+
 func getSearchCategoryQueryParams(q url.Values) (*types.SearchCategoryQuery, error) {
 	page, err := util.ToInt(q.Get("page"), 1)
 	if err != nil {

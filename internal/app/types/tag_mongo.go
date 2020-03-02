@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -23,6 +24,29 @@ type TagESRecord struct {
 	Name         string    `json:"name,omitempty"`
 	OfferAddedAt time.Time `json:"offerAddedAt,omitempty"`
 	WantAddedAt  time.Time `json:"wantAddedAt,omitempty"`
+}
+
+type TagDifference struct {
+	OffersAdded   []string
+	OffersRemoved []string
+	WantsAdded    []string
+	WantsRemoved  []string
+}
+
+func NewTagDifference(oldOffers, newOffers, oldWants, newWants []string) *TagDifference {
+	var offersAdded, offersRemoved, wantsAdded, wantsRemoved []string
+	if len(newOffers) != 0 {
+		offersAdded, offersRemoved = util.TagDifference(newOffers, oldOffers)
+	}
+	if len(newWants) != 0 {
+		wantsAdded, wantsRemoved = util.TagDifference(newWants, oldWants)
+	}
+	return &TagDifference{
+		OffersAdded:   offersAdded,
+		OffersRemoved: offersRemoved,
+		WantsAdded:    wantsAdded,
+		WantsRemoved:  wantsRemoved,
+	}
 }
 
 func TagToNames(tags []*Tag) []string {

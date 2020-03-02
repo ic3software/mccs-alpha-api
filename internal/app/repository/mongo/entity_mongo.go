@@ -180,6 +180,35 @@ func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 	return results, nil
 }
 
+func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
+	filter := bson.M{"_id": id}
+	update := bson.M{"$set": bson.M{
+		"offers.$[].createdAt": t,
+		"wants.$[].createdAt":  t,
+	}}
+	_, err := b.c.UpdateMany(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *entity) SetMemberStartedAt(id primitive.ObjectID) error {
+	filter := bson.M{"_id": id}
+	update := bson.M{"$set": bson.M{
+		"memberStartedAt": time.Now(),
+	}}
+	_, err := b.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (b *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
@@ -207,35 +236,6 @@ func (b *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingReg
 	)
 	if err != nil {
 		return e.Wrap(err, "EntityMongo UpdateTradingInfo failed")
-	}
-	return nil
-}
-
-func (b *entity) SetMemberStartedAt(id primitive.ObjectID) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"memberStartedAt": time.Now(),
-	}}
-	_, err := b.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return e.Wrap(err, "EntityMongo SetMemberStartedAt failed")
-	}
-	return nil
-}
-
-func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"offers.$[].createdAt": t,
-		"wants.$[].createdAt":  t,
-	}}
-	_, err := b.c.UpdateMany(context.Background(), filter, update)
-	if err != nil {
-		return e.Wrap(err, "entityMongo UpdateAllTagsCreatedAt failed")
 	}
 	return nil
 }

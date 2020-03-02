@@ -64,6 +64,24 @@ func (es *entity) Update(update *types.Entity) error {
 	return nil
 }
 
+func (es *entity) AdminUpdate(update *types.Entity) error {
+	doc := map[string]interface{}{
+		"entityName":      update.EntityName,
+		"locationCity":    update.LocationCity,
+		"locationCountry": update.LocationCountry,
+		"status":          update.Status,
+	}
+	_, err := es.c.Update().
+		Index(es.index).
+		Id(update.ID.Hex()).
+		Doc(doc).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (es *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
 	params := map[string]interface{}{
 		"offersAdded":   helper.ToTagFields(difference.OffersAdded),
@@ -221,26 +239,6 @@ func (es *entity) Find(query *types.SearchEntityQuery) (*types.ESFindEntityResul
 	}, nil
 }
 
-// TO BE REMOVED
-
-func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
-	doc := map[string]interface{}{
-		"entityName":      data.EntityName,
-		"locationCity":    data.LocationCity,
-		"locationCountry": data.LocationCountry,
-		"status":          constant.Trading.Pending,
-	}
-	_, err := es.c.Update().
-		Index(es.index).
-		Id(id.Hex()).
-		Doc(doc).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (es *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
 	params := map[string]interface{}{
 		"createdAt": t,
@@ -261,6 +259,26 @@ func (es *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) err
 		Index(es.index).
 		Id(id.Hex()).
 		Script(script).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// TO BE REMOVED
+
+func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
+	doc := map[string]interface{}{
+		"entityName":      data.EntityName,
+		"locationCity":    data.LocationCity,
+		"locationCountry": data.LocationCountry,
+		"status":          constant.Trading.Pending,
+	}
+	_, err := es.c.Update().
+		Index(es.index).
+		Id(id.Hex()).
+		Doc(doc).
 		Do(context.Background())
 	if err != nil {
 		return err

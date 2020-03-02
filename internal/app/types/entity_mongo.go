@@ -83,13 +83,6 @@ func (entity *Entity) Validate() []error {
 
 // Helper types
 
-type TagDifference struct {
-	OffersAdded   []string
-	OffersRemoved []string
-	WantsAdded    []string
-	WantsRemoved  []string
-}
-
 type FindEntityResult struct {
 	Entities        []*Entity
 	NumberOfResults int

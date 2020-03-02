@@ -25,6 +25,22 @@ func (a *category) Register(db *mongo.Database) {
 	a.c = db.Collection("categories")
 }
 
+func (c *category) Create(name string) error {
+	if name == "" || len(strings.TrimSpace(name)) == 0 {
+		return nil
+	}
+
+	filter := bson.M{"name": name}
+	update := bson.M{"$setOnInsert": bson.M{"name": name, "createdAt": time.Now()}}
+	_, err := c.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+		options.Update().SetUpsert(true),
+	)
+	return err
+}
+
 func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryResult, error) {
 	var results []*types.Category
 
@@ -67,22 +83,6 @@ func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryRe
 }
 
 // TO BE REMOVED
-
-func (a *category) Create(name string) error {
-	if name == "" || len(strings.TrimSpace(name)) == 0 {
-		return nil
-	}
-
-	filter := bson.M{"name": name}
-	update := bson.M{"$setOnInsert": bson.M{"name": name, "createdAt": time.Now()}}
-	_, err := a.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-		options.Update().SetUpsert(true),
-	)
-	return err
-}
 
 func (a *category) FindByName(name string) (*types.Category, error) {
 	adminTag := types.Category{}

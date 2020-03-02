@@ -60,6 +60,18 @@ func (_ *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 	return entity, nil
 }
 
+func (_ *entity) AdminFindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
+	err := es.Entity.AdminUpdate(update)
+	if err != nil {
+		return nil, err
+	}
+	entity, err := mongo.Entity.FindOneAndUpdate(update)
+	if err != nil {
+		return nil, err
+	}
+	return entity, nil
+}
+
 func (_ *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
 	err := mongo.Entity.UpdateTags(id, difference)
 	if err != nil {
@@ -96,9 +108,15 @@ func (_ *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
 	return nil
 }
 
-// TO BE REMOVED
-
-func (b *entity) UpdateEntity(id primitive.ObjectID, difference *types.EntityData, isAdmin bool) error {
+func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
+	err := es.Entity.UpdateAllTagsCreatedAt(id, t)
+	if err != nil {
+		return err
+	}
+	err = mongo.Entity.UpdateAllTagsCreatedAt(id, t)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -110,15 +128,9 @@ func (b *entity) SetMemberStartedAt(id primitive.ObjectID) error {
 	return nil
 }
 
-func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
-	err := es.Entity.UpdateAllTagsCreatedAt(id, t)
-	if err != nil {
-		return e.Wrap(err, "EntityService UpdateAllTagsCreatedAt failed")
-	}
-	err = mongo.Entity.UpdateAllTagsCreatedAt(id, t)
-	if err != nil {
-		return e.Wrap(err, "EntityService UpdateAllTagsCreatedAt failed")
-	}
+// TO BE REMOVED
+
+func (b *entity) UpdateEntity(id primitive.ObjectID, difference *types.EntityData, isAdmin bool) error {
 	return nil
 }
 
