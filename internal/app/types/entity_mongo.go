@@ -57,6 +57,9 @@ func (entity *Entity) Validate() []error {
 	if len(entity.Website) > 100 {
 		errs = append(errs, errors.New("Website URL length cannot exceed 100 characters."))
 	}
+	if entity.Turnover < 0 {
+		errs = append(errs, errors.New("Turnover should be a positive number."))
+	}
 	if len(entity.Description) > 500 {
 		errs = append(errs, errors.New("Description length cannot exceed 500 characters."))
 	}
