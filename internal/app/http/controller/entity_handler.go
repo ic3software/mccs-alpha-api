@@ -213,11 +213,11 @@ func (handler *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, 
 }
 
 func (handler *entityHandler) checkEntityStatus(SenderEntity, ReceiverEntity *types.Entity) error {
-	if !util.IsTradingAccepted(SenderEntity.Status) {
+	if !util.IsAcceptedStatus(SenderEntity.Status) {
 		return errors.New("Sender does not have the correct status.")
 
 	}
-	if !util.IsTradingAccepted(ReceiverEntity.Status) {
+	if !util.IsAcceptedStatus(ReceiverEntity.Status) {
 		return errors.New("Receiver does not have the correct status.")
 	}
 	return nil
