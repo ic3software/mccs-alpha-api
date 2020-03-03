@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"sync"
@@ -14,6 +15,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
@@ -40,12 +42,12 @@ func (b *entityHandler) RegisterRoutes(
 		public.Path("/api/v1/entities").HandlerFunc(b.searchEntity()).Methods("GET")
 		public.Path("/api/v1/entities/{entityID}").HandlerFunc(b.getEntity()).Methods("GET")
 		private.Path("/api/v1/favorites").HandlerFunc(b.addToFavoriteEntities()).Methods("POST")
+		private.Path("/api/v1/send-email").HandlerFunc(b.sendEmailToEntity()).Methods("POST")
 
 		private.Path("/entities/search/match-tags").HandlerFunc(b.searhMatchTags()).Methods("GET")
 		private.Path("/api/entityStatus").HandlerFunc(b.entityStatus()).Methods("GET")
 		private.Path("/api/getEntityName").HandlerFunc(b.getEntityName()).Methods("GET")
 		private.Path("/api/tradingMemberStatus").HandlerFunc(b.tradingMemberStatus()).Methods("GET")
-		private.Path("/api/contactEntity").HandlerFunc(b.contactEntity()).Methods("POST")
 	})
 }
 
@@ -210,54 +212,82 @@ func (handler *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, 
 	}
 }
 
-// TO BE REMOVED
+func (handler *entityHandler) checkEntityStatus(SenderEntity, ReceiverEntity *types.Entity) error {
+	if !util.IsAcceptedStatus(SenderEntity.Status) {
+		return errors.New("Sender does not have the correct status.")
 
-func (handler *entityHandler) contactEntity() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		EntityID string `json:"id"`
-		Body     string `json:"body"`
 	}
+	if !util.IsAcceptedStatus(ReceiverEntity.Status) {
+		return errors.New("Receiver does not have the correct status.")
+	}
+	return nil
+}
+
+func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
-
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
+		req, err := types.NewEmailReqBody(r)
 		if err != nil {
-			l.Logger.Error("ContactEntity failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
+			l.Logger.Info("[Info] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		user, err := UserHandler.FindByID(r.Header.Get("userID"))
-		if err != nil {
-			l.Logger.Error("ContactEntity failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
+		errs := req.Validate()
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		entityOwner, err := UserHandler.FindByEntityID(req.EntityID)
+		SenderEntity, err := handler.FindByID(req.SenderEntityID)
 		if err != nil {
-			l.Logger.Error("ContactEntity failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
+			l.Logger.Error("[Error] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		ReceiverEntity, err := handler.FindByID(req.ReceiverEntityID)
+		if err != nil {
+			l.Logger.Error("[Error] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		if !UserHandler.IsEntityBelongsToUser(req.SenderEntityID, r.Header.Get("userID")) {
+			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
+			return
+		}
+		err = handler.checkEntityStatus(SenderEntity, ReceiverEntity)
+		if err != nil {
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		receiver := entityOwner.FirstName + " " + entityOwner.LastName
-		replyToName := user.FirstName + " " + user.LastName
-		err = email.SendContactEntity(receiver, entityOwner.Email, replyToName, user.Email, req.Body)
+		err = email.SendContactEntity(ReceiverEntity.EntityName, ReceiverEntity.Email, SenderEntity.EntityName, SenderEntity.Email, req.Body)
 		if err != nil {
-			l.Logger.Error("ContactEntity failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
+			l.Logger.Error("[Error] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
+		if viper.GetString("env") == "development" {
+			type data struct {
+				SenderEntityName   string `json:"sender_entity_name"`
+				ReceiverEntityName string `json:"receiver_entity_name"`
+				Body               string `json:"body"`
+			}
+			type respond struct {
+				Data data `json:"data"`
+			}
+			api.Respond(w, r, http.StatusOK, respond{Data: data{
+				SenderEntityName:   SenderEntity.EntityName,
+				ReceiverEntityName: ReceiverEntity.EntityName,
+				Body:               req.Body,
+			}})
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+// TO BE REMOVED
 
 func (handler *entityHandler) searhMatchTags() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {

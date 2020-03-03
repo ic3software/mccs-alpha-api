@@ -34,33 +34,33 @@ func newUserHandler() *userHandler {
 	}
 }
 
-func (u *userHandler) RegisterRoutes(
+func (handler *userHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
 	adminPublic *mux.Router,
 	adminPrivate *mux.Router,
 ) {
-	u.once.Do(func() {
-		public.Path("/api/v1/login").HandlerFunc(u.login()).Methods("POST")
-		public.Path("/api/v1/signup").HandlerFunc(u.signup()).Methods("POST")
-		private.Path("/api/v1/logout").HandlerFunc(u.logout()).Methods("POST")
+	handler.once.Do(func() {
+		public.Path("/api/v1/login").HandlerFunc(handler.login()).Methods("POST")
+		public.Path("/api/v1/signup").HandlerFunc(handler.signup()).Methods("POST")
+		private.Path("/api/v1/logout").HandlerFunc(handler.logout()).Methods("POST")
 
-		public.Path("/api/v1/password-reset").HandlerFunc(u.requestPasswordReset()).Methods("POST")
-		public.Path("/api/v1/password-reset/{token}").HandlerFunc(u.passwordReset()).Methods("POST")
-		private.Path("/api/v1/password-change").HandlerFunc(u.passwordChange()).Methods("POST")
+		public.Path("/api/v1/password-reset").HandlerFunc(handler.requestPasswordReset()).Methods("POST")
+		public.Path("/api/v1/password-reset/{token}").HandlerFunc(handler.passwordReset()).Methods("POST")
+		private.Path("/api/v1/password-change").HandlerFunc(handler.passwordChange()).Methods("POST")
 
-		private.Path("/api/v1/users/{userID}").HandlerFunc(u.getUser()).Methods("GET")
+		private.Path("/api/v1/users/{userID}").HandlerFunc(handler.getUser()).Methods("GET")
 
-		private.Path("/api/v1/user").HandlerFunc(u.userProfile()).Methods("GET")
-		private.Path("/api/v1/user").HandlerFunc(u.updateUser()).Methods("PATCH")
-		private.Path("/api/v1/user/entities").HandlerFunc(u.listUserEntities()).Methods("GET")
-		private.Path("/api/v1/user/entities/{entityID}").HandlerFunc(u.updateUserEntity()).Methods("PATCH")
+		private.Path("/api/v1/user").HandlerFunc(handler.userProfile()).Methods("GET")
+		private.Path("/api/v1/user").HandlerFunc(handler.updateUser()).Methods("PATCH")
+		private.Path("/api/v1/user/entities").HandlerFunc(handler.listUserEntities()).Methods("GET")
+		private.Path("/api/v1/user/entities/{entityID}").HandlerFunc(handler.updateUserEntity()).Methods("PATCH")
 
-		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(u.toggleShowRecentMatchedTags()).Methods("POST")
+		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(handler.toggleShowRecentMatchedTags()).Methods("POST")
 	})
 }
 
-func (u *userHandler) FindByID(id string) (*types.User, error) {
+func (handler *userHandler) FindByID(id string) (*types.User, error) {
 	objID, _ := primitive.ObjectIDFromHex(id)
 	user, err := logic.User.FindByID(objID)
 	if err != nil {
@@ -69,7 +69,7 @@ func (u *userHandler) FindByID(id string) (*types.User, error) {
 	return user, nil
 }
 
-func (u *userHandler) FindByEntityID(id string) (*types.User, error) {
+func (handler *userHandler) FindByEntityID(id string) (*types.User, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, e.Wrap(err, "controller.User.FindByEntityID failed")
@@ -79,6 +79,20 @@ func (u *userHandler) FindByEntityID(id string) (*types.User, error) {
 		return nil, e.Wrap(err, "controller.User.FindByEntityID failed")
 	}
 	return user, nil
+}
+
+func (handler *userHandler) IsEntityBelongsToUser(entityID, userID string) bool {
+	uID, _ := primitive.ObjectIDFromHex(userID)
+	user, err := logic.User.FindByID(uID)
+	if err != nil {
+		return false
+	}
+	for _, entity := range user.Entities {
+		if entity.Hex() == entityID {
+			return true
+		}
+	}
+	return false
 }
 
 func (u *userHandler) updateLoginAttempts(email string) {
@@ -125,7 +139,7 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 	type data struct {
 		UserID   string `json:"userID"`
 		EntityID string `json:"entityID"`
@@ -215,14 +229,14 @@ func (u *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (u *userHandler) logout() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) logout() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, cookie.ResetCookie())
 		api.Respond(w, r, http.StatusOK)
 	}
 }
 
-func (u *userHandler) requestPasswordReset() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) requestPasswordReset() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		Email string `json:"email"`
 	}
@@ -282,7 +296,7 @@ func (u *userHandler) requestPasswordReset() func(http.ResponseWriter, *http.Req
 	}
 }
 
-func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		var req types.ResetPasswordReqBody
@@ -324,7 +338,7 @@ func (u *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		Password string `json:"password"`
 	}
@@ -368,12 +382,12 @@ func (u *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) 
 	}
 }
 
-func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.UserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, err := u.FindByID(r.Header.Get("userID"))
+		user, err := handler.FindByID(r.Header.Get("userID"))
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.userProfile failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
@@ -383,7 +397,7 @@ func (u *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.UserRespond `json:"data"`
 	}
@@ -422,7 +436,7 @@ func (u *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (u *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.UserRespond `json:"data"`
 	}
@@ -439,7 +453,7 @@ func (u *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data []*types.EntityRespond `json:"data"`
 	}
@@ -460,19 +474,6 @@ func (u *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request
 		}
 		api.Respond(w, r, http.StatusOK, respond{Data: toData(entities)})
 	}
-}
-
-func isEntityBelongsToUser(entityID, userID primitive.ObjectID) bool {
-	user, err := logic.User.FindByID(userID)
-	if err != nil {
-		return false
-	}
-	for _, entity := range user.Entities {
-		if entity.Hex() == entityID.Hex() {
-			return true
-		}
-	}
-	return false
 }
 
 func updateTags(old *types.Entity, offers, wants []string) {
@@ -513,7 +514,7 @@ func updateTags(old *types.Entity, offers, wants []string) {
 	}
 }
 
-func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.EntityRespond `json:"data"`
 	}
@@ -532,13 +533,12 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 		}
 
 		vars := mux.Vars(r)
-		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
-		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-		if !isEntityBelongsToUser(entityID, userID) {
+		if !handler.IsEntityBelongsToUser(vars["entityID"], r.Header.Get("userID")) {
 			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
 			return
 		}
 
+		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
 		oldEntity, err := logic.Entity.FindByID(entityID)
 		if err != nil {
 			l.Logger.Error("[Error] UserHandler.updateUserEntity failed:", zap.Error(err))
@@ -580,7 +580,7 @@ func (u *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request
 	}
 }
 
-func (u *userHandler) toggleShowRecentMatchedTags() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) toggleShowRecentMatchedTags() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		objID, err := primitive.ObjectIDFromHex(r.Header.Get("userID"))
 		if err != nil {
