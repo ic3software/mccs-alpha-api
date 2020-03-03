@@ -6,7 +6,7 @@
         "website": "https://petes-painting.null",
         "entityPhone": "+442074848484",
         "turnover": 150000,
-        "email": "pete@dev.null",
+        "email": "api-test-user01@ic3.dev",
         "categories": [ 
             "Painting"
         ],
@@ -42,7 +42,7 @@
         "website": "https://joes-woodworking.null",
         "entityPhone": "+442089292929",
         "turnover": 50000,
-        "email": "joe@dev.null",
+        "email": "api-test-user02@ic3.dev",
         "categories": [ 
             "Carpentry"
         ],
@@ -82,7 +82,7 @@
         "website": "https://farmer-freddy.null",
         "entityPhone": "+4420832132132",
         "turnover": 10000,
-        "email": "fred@dev.null",
+        "email": "api-test-user03@ic3.dev",
         "categories": [ 
             "Organic Produce"
         ],
@@ -126,7 +126,7 @@
         "website": "https://betty-bakes.null",
         "entityPhone": "+442087070707",
         "turnover": 32000,
-        "email": "betty@dev.null",
+        "email": "api-test-user04@ic3.dev",
         "categories": [ 
             "Bakery"
         ],
@@ -170,7 +170,7 @@
         "website": "https://herbie-brews.null",
         "entityPhone": "+442012345678",
         "turnover": 250000,
-        "email": "herbie@dev.null",
+        "email": "api-test-user05@ic3.dev",
         "categories": [ 
             "Brewery",
             "Restaurant"
@@ -199,7 +199,7 @@
                 "createdAt": "2020-02-27T17:12:30.849Z"
             }
         ],
-        "description": "The tastiest baked goods in this solar system!",
+        "description": "Quality brews, tasty pizza...what more could you want?",
         "locationAddress": "575 Main",
         "locationCity": "London",
         "locationRegion": "Greater London",
@@ -207,5 +207,42 @@
         "locationCountry": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-27T17:12:30.849Z"
+    },
+    {
+        "entityName": "AA",
+        "email": "api-test-user06@ic3.dev",
+        "status": "tradingRejected",
+        "createdAt": "2020-02-28T17:12:30.849Z"
+    },
+    {
+        "entityName": "DD",
+        "email": "api-test-user07@ic3.dev",
+        "status": "tradingPending",
+        "createdAt": "2020-02-29T17:12:30.849Z"
+    },
+    {
+        "entityName": "EE",
+        "email": "api-test-user08@ic3.dev",
+        "status": "accepted",
+        "createdAt": "2020-03-01T17:12:30.849Z"
+    },
+    {
+        "entityName": "GG",
+        "email": "api-test-user09@ic3.dev",
+        "status": "tradingRejected",
+        "createdAt": "2020-03-02T17:12:30.849Z"
+    },
+    {
+        "entityName": "II",
+        "email": "api-test-user10@ic3.dev",
+        "status": "tradingPending",
+        "createdAt": "2020-03-03T07:12:30.849Z"
+    },
+    {
+        "entityName": "JJ",
+        "email": "api-test-user11@ic3.dev",
+        "status": "accepted",
+        "createdAt": "2020-03-03T07:13:30.849Z"
     }
+
 ]
