@@ -15,6 +15,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
@@ -266,6 +267,22 @@ func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
+		if viper.GetString("env") == "development" {
+			type data struct {
+				SenderEntityName   string `json:"sender_entity_name"`
+				ReceiverEntityName string `json:"receiver_entity_name"`
+				Body               string `json:"body"`
+			}
+			type respond struct {
+				Data data `json:"data"`
+			}
+			api.Respond(w, r, http.StatusOK, respond{Data: data{
+				SenderEntityName:   SenderEntity.EntityName,
+				ReceiverEntityName: ReceiverEntity.EntityName,
+				Body:               req.Body,
+			}})
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 	}
 }
