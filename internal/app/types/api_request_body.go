@@ -297,7 +297,7 @@ func validatePassword(password string) []error {
 		errs = append(errs, errors.New("Password must have at least one letter."))
 	}
 	if !hasNumber {
-		errs = append(errs, errors.New("Password must have at least one numeric value."))
+		errs = append(errs, errors.New("Password must have at least one number."))
 	}
 	if !hasSpecial {
 		errs = append(errs, errors.New("Password must have at least one special character."))

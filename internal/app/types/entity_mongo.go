@@ -57,23 +57,26 @@ func (entity *Entity) Validate() []error {
 	if len(entity.Website) > 100 {
 		errs = append(errs, errors.New("Website URL length cannot exceed 100 characters."))
 	}
+	if entity.Turnover < 0 {
+		errs = append(errs, errors.New("Turnover should be a positive number."))
+	}
 	if len(entity.Description) > 500 {
 		errs = append(errs, errors.New("Description length cannot exceed 500 characters."))
 	}
-	if len(entity.LocationCountry) > 10 {
-		errs = append(errs, errors.New("Country length cannot exceed 50 characters."))
+	if len(entity.LocationAddress) > 255 {
+		errs = append(errs, errors.New("Address length cannot exceed 255 characters."))
 	}
 	if len(entity.LocationCity) > 10 {
 		errs = append(errs, errors.New("City length cannot exceed 50 characters."))
-	}
-	if len(entity.LocationAddress) > 255 {
-		errs = append(errs, errors.New("Address length cannot exceed 255 characters."))
 	}
 	if len(entity.LocationRegion) > 50 {
 		errs = append(errs, errors.New("Region length cannot exceed 50 characters."))
 	}
 	if len(entity.LocationPostalCode) > 10 {
 		errs = append(errs, errors.New("Postal code length cannot exceed 10 characters."))
+	}
+	if len(entity.LocationCountry) > 10 {
+		errs = append(errs, errors.New("Country length cannot exceed 50 characters."))
 	}
 	return errs
 }
