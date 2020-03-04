@@ -27,25 +27,38 @@ type TagESRecord struct {
 }
 
 type TagDifference struct {
-	OffersAdded   []string
-	OffersRemoved []string
-	WantsAdded    []string
-	WantsRemoved  []string
+	NewAddedOffers []string
+	NewAddedWants  []string
+	OffersRemoved  []string
+	WantsRemoved   []string
+	// End result for offers and wants.
+	Offers []string
+	Wants  []string
 }
 
-func NewTagDifference(oldOffers, newOffers, oldWants, newWants []string) *TagDifference {
-	var offersAdded, offersRemoved, wantsAdded, wantsRemoved []string
-	if len(newOffers) != 0 {
-		offersAdded, offersRemoved = util.TagDifference(newOffers, oldOffers)
+func NewTagDifference(oldOffers, updateOffers, oldWants, updateWants []string) *TagDifference {
+	var offers, wants, newAddedOffers, offersRemoved, newAddedWants, wantsRemoved []string
+
+	if len(updateOffers) != 0 {
+		offers = updateOffers
+		newAddedOffers, offersRemoved = util.TagDifference(updateOffers, oldOffers)
+	} else {
+		offers = oldOffers
 	}
-	if len(newWants) != 0 {
-		wantsAdded, wantsRemoved = util.TagDifference(newWants, oldWants)
+	if len(updateWants) != 0 {
+		wants = updateWants
+		newAddedWants, wantsRemoved = util.TagDifference(updateWants, oldWants)
+	} else {
+		wants = oldWants
 	}
+
 	return &TagDifference{
-		OffersAdded:   offersAdded,
-		OffersRemoved: offersRemoved,
-		WantsAdded:    wantsAdded,
-		WantsRemoved:  wantsRemoved,
+		Offers:         offers,
+		Wants:          wants,
+		NewAddedOffers: newAddedOffers,
+		NewAddedWants:  newAddedWants,
+		OffersRemoved:  offersRemoved,
+		WantsRemoved:   wantsRemoved,
 	}
 }
 

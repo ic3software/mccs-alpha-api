@@ -42,7 +42,7 @@ func (a *categoryHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	a.once.Do(func() {
-		public.Path("/api/v1/categories").HandlerFunc(a.searchCategory()).Methods("GET")
+		public.Path("/categories").HandlerFunc(a.searchCategory()).Methods("GET")
 
 		adminPrivate.Path("​/categories").HandlerFunc(a.searchAdminTags()).Methods("GET")
 		adminPrivate.Path("/api/admin-tags").HandlerFunc(a.createAdminTag()).Methods("POST")

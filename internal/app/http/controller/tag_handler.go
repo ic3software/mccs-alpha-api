@@ -36,7 +36,7 @@ func (handler *tagHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	handler.once.Do(func() {
-		public.Path("/api/v1/tags").HandlerFunc(handler.searchTag()).Methods("GET")
+		public.Path("/tags").HandlerFunc(handler.searchTag()).Methods("GET")
 
 		adminPrivate.Path("/api/user-tags").HandlerFunc(handler.createTag()).Methods("POST")
 		adminPrivate.Path("/api/user-tags/{id}").HandlerFunc(handler.renameTag()).Methods("PUT")

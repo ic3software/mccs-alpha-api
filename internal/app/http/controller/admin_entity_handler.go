@@ -42,7 +42,7 @@ func (handler *adminEntityHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	handler.once.Do(func() {
-		adminPrivate.Path("api/v1/entities/{entityID}").HandlerFunc(handler.updateEntity()).Methods("PATCH")
+		adminPrivate.Path("/entities/{entityID}").HandlerFunc(handler.updateEntity()).Methods("PATCH")
 
 		adminPrivate.Path("/entities/{id}").HandlerFunc(handler.updateEntityOld()).Methods("POST")
 		adminPrivate.Path("/api/entities/{id}").HandlerFunc(handler.deleteEntity()).Methods("DELETE")
@@ -63,6 +63,7 @@ func (handler *adminEntityHandler) updateOfferAndWants(oldEntity *types.Entity, 
 		l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		return
 	}
+
 	// Admin Update tags logic:
 	// 	1. When a entity' status is changed from pending/rejected to accepted.
 	// 	   - update all tags.
@@ -73,21 +74,21 @@ func (handler *adminEntityHandler) updateOfferAndWants(oldEntity *types.Entity, 
 		if err != nil {
 			l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
-		err = TagHandler.UpdateOffers(offers)
+		err = TagHandler.UpdateOffers(tagDifference.Offers)
 		if err != nil {
 			l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
-		err = TagHandler.UpdateWants(wants)
+		err = TagHandler.UpdateWants(tagDifference.Wants)
 		if err != nil {
 			l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
 	}
 	if util.IsAcceptedStatus(oldEntity.Status) && util.IsAcceptedStatus(newStatus) {
-		err := TagHandler.UpdateOffers(tagDifference.OffersAdded)
+		err := TagHandler.UpdateOffers(tagDifference.NewAddedOffers)
 		if err != nil {
 			l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
-		err = TagHandler.UpdateWants(tagDifference.WantsAdded)
+		err = TagHandler.UpdateWants(tagDifference.NewAddedWants)
 		if err != nil {
 			l.Logger.Error("[Error] AdminEntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
@@ -96,7 +97,7 @@ func (handler *adminEntityHandler) updateOfferAndWants(oldEntity *types.Entity, 
 
 func (handler *adminEntityHandler) updateEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.EntityRespond `json:"data"`
+		Data *types.AdminEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, err := types.NewAdminUpdateEntityReqBody(r)
@@ -134,6 +135,7 @@ func (handler *adminEntityHandler) updateEntity() func(http.ResponseWriter, *htt
 			LocationRegion:     req.LocationRegion,
 			LocationPostalCode: req.LocationPostalCode,
 			LocationCountry:    req.LocationCountry,
+			Categories:         req.Categories,
 			Status:             req.Status,
 		})
 		if err != nil {
@@ -153,7 +155,7 @@ func (handler *adminEntityHandler) updateEntity() func(http.ResponseWriter, *htt
 		if len(req.Wants) != 0 {
 			newEntity.Wants = types.ToTagFields(req.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(newEntity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminEntityRespond(newEntity)})
 	}
 }
 

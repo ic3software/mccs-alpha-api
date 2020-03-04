@@ -40,22 +40,22 @@ func (handler *userHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	handler.once.Do(func() {
-		public.Path("/api/v1/login").HandlerFunc(handler.login()).Methods("POST")
-		public.Path("/api/v1/signup").HandlerFunc(handler.signup()).Methods("POST")
-		private.Path("/api/v1/logout").HandlerFunc(handler.logout()).Methods("POST")
+		public.Path("/login").HandlerFunc(handler.login()).Methods("POST")
+		public.Path("/signup").HandlerFunc(handler.signup()).Methods("POST")
+		private.Path("/logout").HandlerFunc(handler.logout()).Methods("POST")
 
-		public.Path("/api/v1/password-reset").HandlerFunc(handler.requestPasswordReset()).Methods("POST")
-		public.Path("/api/v1/password-reset/{token}").HandlerFunc(handler.passwordReset()).Methods("POST")
-		private.Path("/api/v1/password-change").HandlerFunc(handler.passwordChange()).Methods("POST")
+		public.Path("/password-reset").HandlerFunc(handler.requestPasswordReset()).Methods("POST")
+		public.Path("/password-reset/{token}").HandlerFunc(handler.passwordReset()).Methods("POST")
+		private.Path("/password-change").HandlerFunc(handler.passwordChange()).Methods("POST")
 
-		private.Path("/api/v1/users/{userID}").HandlerFunc(handler.getUser()).Methods("GET")
+		private.Path("/users/{userID}").HandlerFunc(handler.getUser()).Methods("GET")
 
-		private.Path("/api/v1/user").HandlerFunc(handler.userProfile()).Methods("GET")
-		private.Path("/api/v1/user").HandlerFunc(handler.updateUser()).Methods("PATCH")
-		private.Path("/api/v1/user/entities").HandlerFunc(handler.listUserEntities()).Methods("GET")
-		private.Path("/api/v1/user/entities/{entityID}").HandlerFunc(handler.updateUserEntity()).Methods("PATCH")
+		private.Path("/user").HandlerFunc(handler.userProfile()).Methods("GET")
+		private.Path("/user").HandlerFunc(handler.updateUser()).Methods("PATCH")
+		private.Path("/user/entities").HandlerFunc(handler.listUserEntities()).Methods("GET")
+		private.Path("/user/entities/{entityID}").HandlerFunc(handler.updateUserEntity()).Methods("PATCH")
 
-		private.Path("/api/v1/users/toggleShowRecentMatchedTags").HandlerFunc(handler.toggleShowRecentMatchedTags()).Methods("POST")
+		private.Path("/users/toggleShowRecentMatchedTags").HandlerFunc(handler.toggleShowRecentMatchedTags()).Methods("POST")
 	})
 }
 
@@ -101,7 +101,7 @@ func (u *userHandler) updateLoginAttempts(email string) {
 	}
 }
 
-func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 	type data struct {
 		Token string `json:"token"`
 	}
@@ -109,9 +109,7 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.LoginReqBody
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
+		req, err := types.NewLoginReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -128,7 +126,7 @@ func (u *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.login failed", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
-			go u.updateLoginAttempts(req.Email)
+			go handler.updateLoginAttempts(req.Email)
 			return
 		}
 

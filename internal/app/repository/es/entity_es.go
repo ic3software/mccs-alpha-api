@@ -48,10 +48,10 @@ func (es *entity) Create(id primitive.ObjectID, data *types.Entity) error {
 }
 
 func (es *entity) Update(update *types.Entity) error {
-	doc := map[string]interface{}{
-		"entityName":      update.EntityName,
-		"locationCity":    update.LocationCity,
-		"locationCountry": update.LocationCountry,
+	doc := types.EntityESRecord{
+		EntityName:      update.EntityName,
+		LocationCountry: update.LocationCity,
+		LocationCity:    update.LocationCountry,
 	}
 	_, err := es.c.Update().
 		Index(es.index).
@@ -65,11 +65,11 @@ func (es *entity) Update(update *types.Entity) error {
 }
 
 func (es *entity) AdminUpdate(update *types.Entity) error {
-	doc := map[string]interface{}{
-		"entityName":      update.EntityName,
-		"locationCity":    update.LocationCity,
-		"locationCountry": update.LocationCountry,
-		"status":          update.Status,
+	doc := types.EntityESRecord{
+		EntityName:      update.EntityName,
+		LocationCountry: update.LocationCity,
+		LocationCity:    update.LocationCountry,
+		Status:          update.Status,
 	}
 	_, err := es.c.Update().
 		Index(es.index).
@@ -84,8 +84,8 @@ func (es *entity) AdminUpdate(update *types.Entity) error {
 
 func (es *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
 	params := map[string]interface{}{
-		"offersAdded":   helper.ToTagFields(difference.OffersAdded),
-		"wantsAdded":    helper.ToTagFields(difference.WantsAdded),
+		"offersAdded":   helper.ToTagFields(difference.NewAddedOffers),
+		"wantsAdded":    helper.ToTagFields(difference.NewAddedWants),
 		"offersRemoved": difference.OffersRemoved,
 		"wantsRemoved":  difference.WantsRemoved,
 	}
@@ -246,11 +246,15 @@ func (es *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) err
 
 	script := elastic.
 		NewScript(`
-			for (int i = 0; i < ctx._source.offers.length; i++) {
-				ctx._source.offers[i].createdAt = params.createdAt
+			if (ctx._source.offers !== null) {
+				for (int i = 0; i < ctx._source.offers.length; i++) {
+					ctx._source.offers[i].createdAt = params.createdAt
+				}
 			}
-			for (int i = 0; i < ctx._source.wants.length; i++) {
-				ctx._source.wants[i].createdAt = params.createdAt
+			if (ctx._source.wants !== null) {
+				for (int i = 0; i < ctx._source.wants.length; i++) {
+					ctx._source.wants[i].createdAt = params.createdAt
+				}
 			}
 		`).
 		Params(params)

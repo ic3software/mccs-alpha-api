@@ -30,7 +30,34 @@ func (b *entity) Create(data *types.Entity) (primitive.ObjectID, error) {
 	if err != nil {
 		return primitive.ObjectID{}, err
 	}
-	return res.InsertedID.(primitive.ObjectID), nil
+	entityID := res.InsertedID.(primitive.ObjectID)
+
+	// Make sure "offers" and "wants" fields exist so it's much easier to update later on.
+	err = b.setDefaultOffersAndWants(entityID, data.Offers, data.Wants)
+
+	return entityID, nil
+}
+
+func (b *entity) setDefaultOffersAndWants(entityID primitive.ObjectID, offers []*types.TagField, wants []*types.TagField) error {
+	if len(offers) == 0 || len(wants) == 0 {
+		filter := bson.M{"_id": entityID}
+		update := bson.M{}
+		if len(offers) == 0 {
+			update["offers"] = []*types.TagField{}
+		}
+		if len(wants) == 0 {
+			update["wants"] = []*types.TagField{}
+		}
+		_, err := b.c.UpdateOne(
+			context.Background(),
+			filter,
+			bson.M{"$set": update},
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (en *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
@@ -98,11 +125,11 @@ func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 	}
 
 	push := bson.M{}
-	if len(difference.OffersAdded) != 0 {
-		push["offers"] = bson.M{"$each": types.ToTagFields(difference.OffersAdded)}
+	if len(difference.NewAddedOffers) != 0 {
+		push["offers"] = bson.M{"$each": types.ToTagFields(difference.NewAddedOffers)}
 	}
-	if len(difference.WantsAdded) != 0 {
-		push["wants"] = bson.M{"$each": types.ToTagFields(difference.WantsAdded)}
+	if len(difference.NewAddedWants) != 0 {
+		push["wants"] = bson.M{"$each": types.ToTagFields(difference.NewAddedWants)}
 	}
 	if len(push) != 0 {
 		updates = append(updates, bson.M{"$push": push})

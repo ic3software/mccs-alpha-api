@@ -84,6 +84,16 @@ func (req *SignupReqBody) Validate() []error {
 	return errs
 }
 
+func NewLoginReqBody(r *http.Request) (*LoginReqBody, error) {
+	var req LoginReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
+}
+
 type LoginReqBody struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
