@@ -40,8 +40,17 @@ func (_ *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
 	return nil
 }
 
-func (_ *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
-	entity, err := mongo.Entity.FindByID(id)
+func (_ *entity) FindByID(objectID primitive.ObjectID) (*types.Entity, error) {
+	entity, err := mongo.Entity.FindByID(objectID)
+	if err != nil {
+		return nil, err
+	}
+	return entity, nil
+}
+
+func (_ *entity) FindByStringID(id string) (*types.Entity, error) {
+	objectID, _ := primitive.ObjectIDFromHex(id)
+	entity, err := mongo.Entity.FindByID(objectID)
 	if err != nil {
 		return nil, err
 	}

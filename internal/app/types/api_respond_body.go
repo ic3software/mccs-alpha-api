@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/util"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func NewUserRespond(user *User) *UserRespond {
@@ -78,6 +79,56 @@ func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
 }
 
 type EntityRespond struct {
+	ID                 string   `json:"id"`
+	AccountNumber      string   `json:"accountNumber"`
+	EntityName         string   `json:"entityName"`
+	Email              string   `json:"email,omitempty"`
+	EntityPhone        string   `json:"entityPhone"`
+	IncType            string   `json:"incType"`
+	CompanyNumber      string   `json:"companyNumber"`
+	Website            string   `json:"website"`
+	Turnover           int      `json:"turnover"`
+	Description        string   `json:"description"`
+	LocationAddress    string   `json:"locationAddress"`
+	LocationCity       string   `json:"locationCity"`
+	LocationRegion     string   `json:"locationRegion"`
+	LocationPostalCode string   `json:"locationPostalCode"`
+	LocationCountry    string   `json:"locationCountry"`
+	Status             string   `json:"status"`
+	Offers             []string `json:"offers"`
+	Wants              []string `json:"wants"`
+}
+
+func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favoriteEntities []primitive.ObjectID) *SearchEntityRespond {
+	email := ""
+	if util.IsTradingAccepted(entity.Status) && util.IsTradingAccepted(queryingEntityStatus) {
+		email = entity.Email
+	}
+	return &SearchEntityRespond{
+		ID:                 entity.ID.Hex(),
+		AccountNumber:      entity.AccountNumber,
+		EntityName:         entity.EntityName,
+		Email:              email,
+		EntityPhone:        entity.EntityPhone,
+		IncType:            entity.IncType,
+		CompanyNumber:      entity.CompanyNumber,
+		Website:            entity.Website,
+		Turnover:           entity.Turnover,
+		Description:        entity.Description,
+		LocationAddress:    entity.LocationAddress,
+		LocationCity:       entity.LocationCity,
+		LocationRegion:     entity.LocationRegion,
+		LocationPostalCode: entity.LocationPostalCode,
+		LocationCountry:    entity.LocationCountry,
+		Status:             entity.Status,
+		Offers:             TagFieldToNames(entity.Offers),
+		Wants:              TagFieldToNames(entity.Wants),
+		IsFavorite:         util.ContainID(favoriteEntities, entity.ID),
+	}
+}
+
+// SearchEntityRespond will always return IsFavorite.
+type SearchEntityRespond struct {
 	ID                 string   `json:"id"`
 	AccountNumber      string   `json:"accountNumber"`
 	EntityName         string   `json:"entityName"`

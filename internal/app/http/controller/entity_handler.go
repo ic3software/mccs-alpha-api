@@ -40,7 +40,7 @@ func (b *entityHandler) RegisterRoutes(
 ) {
 	b.once.Do(func() {
 		public.Path("/entities").HandlerFunc(b.searchEntity()).Methods("GET")
-		public.Path("/entities/{entityID}").HandlerFunc(b.getEntity()).Methods("GET")
+		public.Path("/entities/{searchEntityID}").HandlerFunc(b.getEntity()).Methods("GET")
 		private.Path("/favorites").HandlerFunc(b.addToFavoriteEntities()).Methods("POST")
 		private.Path("/send-email").HandlerFunc(b.sendEmailToEntity()).Methods("POST")
 
@@ -113,16 +113,16 @@ func (handler *entityHandler) UpdateOffersAndWants(old *types.Entity, offers, wa
 	}
 }
 
-func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
+func (handler *entityHandler) getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
 	query, err := types.NewSearchEntityQuery(q)
 	if err != nil {
 		return nil, err
 	}
-	query.FavoriteEntities = getFavoriteEntities(q.Get("querying_entity_id"))
+	query.FavoriteEntities = handler.getFavoriteEntities(q.Get("querying_entity_id"))
 	return query, nil
 }
 
-func getFavoriteEntities(entityID string) []primitive.ObjectID {
+func (handler *entityHandler) getFavoriteEntities(entityID string) []primitive.ObjectID {
 	entity, err := EntityHandler.FindByID(entityID)
 	if err == nil {
 		return entity.FavoriteEntities
@@ -130,7 +130,7 @@ func getFavoriteEntities(entityID string) []primitive.ObjectID {
 	return []primitive.ObjectID{}
 }
 
-func getQueryingEntityState(entityID string) string {
+func (handler *entityHandler) getQueryingEntityStatus(entityID string) string {
 	entity, err := EntityHandler.FindByID(entityID)
 	if err == nil {
 		return entity.Status
@@ -144,26 +144,19 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 		TotalPages      int `json:"totalPages"`
 	}
 	type respond struct {
-		Data []*types.EntityRespond `json:"data"`
-		Meta meta                   `json:"meta"`
+		Data []*types.SearchEntityRespond `json:"data"`
+		Meta meta                         `json:"meta"`
 	}
-	toData := func(query *types.SearchEntityQuery, entities []*types.Entity) []*types.EntityRespond {
-		result := []*types.EntityRespond{}
-		queryingEntityState := getQueryingEntityState(query.QueryingEntityID)
+	toData := func(query *types.SearchEntityQuery, entities []*types.Entity) []*types.SearchEntityRespond {
+		result := []*types.SearchEntityRespond{}
+		queryingEntityStatus := handler.getQueryingEntityStatus(query.QueryingEntityID)
 		for _, entity := range entities {
-			var respond *types.EntityRespond
-			if util.IsTradingAccepted(queryingEntityState) && util.IsTradingAccepted(entity.Status) {
-				respond = types.NewEntityRespondWithEmail(entity)
-			} else {
-				respond = types.NewEntityRespondWithoutEmail(entity)
-			}
-			respond.IsFavorite = util.ContainID(query.FavoriteEntities, entity.ID)
-			result = append(result, respond)
+			result = append(result, types.NewSearchEntityRespond(entity, queryingEntityStatus, query.FavoriteEntities))
 		}
 		return result
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := getSearchEntityQueryParams(r.URL.Query())
+		query, err := handler.getSearchEntityQueryParams(r.URL.Query())
 		if err != nil {
 			l.Logger.Info("[INFO] EntityHandler.searchEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -195,18 +188,23 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 
 func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.EntityRespond `json:"data"`
+		Data *types.SearchEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
-		entity, err := logic.Entity.FindByID(entityID)
+		searchEntity, err := logic.Entity.FindByStringID(vars["searchEntityID"])
 		if err != nil {
 			l.Logger.Info("[INFO] EntityHandler.getEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithoutEmail(entity)})
+
+		q := r.URL.Query()
+		queryingEntityID := q.Get("querying_entity_id")
+		queryingEntityStatus := handler.getQueryingEntityStatus(queryingEntityID)
+		favoriteEntities := handler.getFavoriteEntities(queryingEntityID)
+
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewSearchEntityRespond(searchEntity, queryingEntityStatus, favoriteEntities)})
 	}
 }
 
