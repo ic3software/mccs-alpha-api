@@ -40,7 +40,7 @@ func (b *entityHandler) RegisterRoutes(
 ) {
 	b.once.Do(func() {
 		public.Path("/api/v1/entities").HandlerFunc(b.searchEntity()).Methods("GET")
-		public.Path("/api/v1/entities/{entityID}").HandlerFunc(b.getEntity()).Methods("GET")
+		public.Path("/api/v1/entities/{searchEntityID}").HandlerFunc(b.getEntity()).Methods("GET")
 		private.Path("/api/v1/favorites").HandlerFunc(b.addToFavoriteEntities()).Methods("POST")
 		private.Path("/api/v1/send-email").HandlerFunc(b.sendEmailToEntity()).Methods("POST")
 
@@ -87,16 +87,16 @@ func (handler *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	return bs, nil
 }
 
-func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
+func (handler *entityHandler) getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
 	query, err := types.NewSearchEntityQuery(q)
 	if err != nil {
 		return nil, err
 	}
-	query.FavoriteEntities = getFavoriteEntities(q.Get("querying_entity_id"))
+	query.FavoriteEntities = handler.getFavoriteEntities(q.Get("querying_entity_id"))
 	return query, nil
 }
 
-func getFavoriteEntities(entityID string) []primitive.ObjectID {
+func (handler *entityHandler) getFavoriteEntities(entityID string) []primitive.ObjectID {
 	entity, err := EntityHandler.FindByID(entityID)
 	if err == nil {
 		return entity.FavoriteEntities
@@ -104,7 +104,7 @@ func getFavoriteEntities(entityID string) []primitive.ObjectID {
 	return []primitive.ObjectID{}
 }
 
-func getQueryingEntityState(entityID string) string {
+func (handler *entityHandler) getQueryingEntityState(entityID string) string {
 	entity, err := EntityHandler.FindByID(entityID)
 	if err == nil {
 		return entity.Status
@@ -123,7 +123,7 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 	}
 	toData := func(query *types.SearchEntityQuery, entities []*types.Entity) []*types.SearchEntityRespond {
 		result := []*types.SearchEntityRespond{}
-		queryingEntityState := getQueryingEntityState(query.QueryingEntityID)
+		queryingEntityState := handler.getQueryingEntityState(query.QueryingEntityID)
 		for _, entity := range entities {
 			var respond *types.SearchEntityRespond
 			if util.IsTradingAccepted(queryingEntityState) && util.IsTradingAccepted(entity.Status) {
@@ -137,7 +137,7 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 		return result
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := getSearchEntityQueryParams(r.URL.Query())
+		query, err := handler.getSearchEntityQueryParams(r.URL.Query())
 		if err != nil {
 			l.Logger.Info("[INFO] EntityHandler.searchEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -173,14 +173,26 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
-		entity, err := logic.Entity.FindByID(entityID)
+		searchEntity, err := logic.Entity.FindByStringID(vars["searchEntityID"])
 		if err != nil {
 			l.Logger.Info("[INFO] EntityHandler.getEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewSearchEntityRespondWithoutEmail(entity)})
+
+		q := r.URL.Query()
+		queryingEntityID := q.Get("querying_entity_id")
+		queryingEntityState := handler.getQueryingEntityState(queryingEntityID)
+
+		var data *types.SearchEntityRespond
+		if util.IsTradingAccepted(queryingEntityState) && util.IsTradingAccepted(searchEntity.Status) {
+			data = types.NewSearchEntityRespondWithEmail(searchEntity)
+		} else {
+			data = types.NewSearchEntityRespondWithoutEmail(searchEntity)
+		}
+		data.IsFavorite = util.ContainID(handler.getFavoriteEntities(queryingEntityID), searchEntity.ID)
+
+		api.Respond(w, r, http.StatusOK, respond{Data: data})
 	}
 }
 

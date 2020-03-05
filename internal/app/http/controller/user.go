@@ -460,7 +460,7 @@ func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.R
 	toData := func(entities []*types.Entity) []*types.EntityRespond {
 		result := []*types.EntityRespond{}
 		for _, entity := range entities {
-			result = append(result, types.NewEntityRespond(entity))
+			result = append(result, types.NewEntityRespondWithEmail(entity))
 		}
 		return result
 	}
@@ -576,7 +576,7 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 		if len(req.Wants) != 0 {
 			entity.Wants = types.ToTagFields(req.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespond(entity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(entity)})
 	}
 }
 
