@@ -44,6 +44,9 @@ type User struct {
 
 func (user *User) Validate() []error {
 	errs := []error{}
+
+	errs = append(errs, validateEmail(user.Email)...)
+
 	if len(user.FirstName) > 100 {
 		errs = append(errs, errors.New("First name length cannot exceed 100 characters."))
 	}

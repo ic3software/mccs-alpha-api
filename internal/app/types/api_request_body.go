@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"unicode"
 
@@ -53,7 +52,6 @@ type SignupReqBody struct {
 func (req *SignupReqBody) Validate() []error {
 	errs := []error{}
 
-	errs = append(errs, validateEmail(req.Email)...)
 	errs = append(errs, validatePassword(req.Password)...)
 
 	user := User{
@@ -264,20 +262,6 @@ func validateTags(tags []string) []error {
 			errs = append(errs, errors.New("Tag length cannot exceed 50 characters."))
 			break
 		}
-	}
-	return errs
-}
-
-func validateEmail(email string) []error {
-	errs := []error{}
-	email = strings.ToLower(email)
-	emailMaxLen := viper.GetInt("validate.email.maxLen")
-	if email == "" {
-		errs = append(errs, errors.New("Email is missing."))
-	} else if len(email) > emailMaxLen {
-		errs = append(errs, errors.New("Email address length cannot exceed "+strconv.Itoa(emailMaxLen)+" characters."))
-	} else if util.IsInValidEmail(email) {
-		errs = append(errs, errors.New("Email is invalid."))
 	}
 	return errs
 }
