@@ -9,6 +9,7 @@ import (
 func NewUserRespond(user *User) *UserRespond {
 	return &UserRespond{
 		ID:                            user.ID.Hex(),
+		Email:                         user.Email,
 		UserPhone:                     user.Telephone,
 		FirstName:                     user.FirstName,
 		LastName:                      user.LastName,
@@ -21,6 +22,7 @@ func NewUserRespond(user *User) *UserRespond {
 
 type UserRespond struct {
 	ID                            string    `json:"id"`
+	Email                         string    `json:"email"`
 	FirstName                     string    `json:"firstName"`
 	LastName                      string    `json:"lastName"`
 	UserPhone                     string    `json:"userPhone"`
