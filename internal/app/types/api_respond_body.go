@@ -138,5 +138,4 @@ type SearchEntityRespond struct {
 	Status             string   `json:"status"`
 	Offers             []string `json:"offers"`
 	Wants              []string `json:"wants"`
-	IsFavorite         bool     `json:"isFavorite"`
 }
