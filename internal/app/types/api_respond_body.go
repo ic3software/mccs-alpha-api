@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/util"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func NewUserRespond(user *User) *UserRespond {
@@ -98,34 +99,16 @@ type EntityRespond struct {
 	Wants              []string `json:"wants"`
 }
 
-func NewSearchEntityRespondWithEmail(entity *Entity) *SearchEntityRespond {
-	return &SearchEntityRespond{
-		ID:                 entity.ID.Hex(),
-		AccountNumber:      entity.AccountNumber,
-		EntityName:         entity.EntityName,
-		Email:              entity.Email,
-		EntityPhone:        entity.EntityPhone,
-		IncType:            entity.IncType,
-		CompanyNumber:      entity.CompanyNumber,
-		Website:            entity.Website,
-		Turnover:           entity.Turnover,
-		Description:        entity.Description,
-		LocationAddress:    entity.LocationAddress,
-		LocationCity:       entity.LocationCity,
-		LocationRegion:     entity.LocationRegion,
-		LocationPostalCode: entity.LocationPostalCode,
-		LocationCountry:    entity.LocationCountry,
-		Status:             entity.Status,
-		Offers:             TagFieldToNames(entity.Offers),
-		Wants:              TagFieldToNames(entity.Wants),
+func NewSearchEntityRespond(entity *Entity, queryingEntityState string, favoriteEntities []primitive.ObjectID) *SearchEntityRespond {
+	email := ""
+	if util.IsTradingAccepted(entity.Status) && util.IsTradingAccepted(queryingEntityState) {
+		email = entity.Email
 	}
-}
-
-func NewSearchEntityRespondWithoutEmail(entity *Entity) *SearchEntityRespond {
 	return &SearchEntityRespond{
 		ID:                 entity.ID.Hex(),
 		AccountNumber:      entity.AccountNumber,
 		EntityName:         entity.EntityName,
+		Email:              email,
 		EntityPhone:        entity.EntityPhone,
 		IncType:            entity.IncType,
 		CompanyNumber:      entity.CompanyNumber,
@@ -140,6 +123,7 @@ func NewSearchEntityRespondWithoutEmail(entity *Entity) *SearchEntityRespond {
 		Status:             entity.Status,
 		Offers:             TagFieldToNames(entity.Offers),
 		Wants:              TagFieldToNames(entity.Wants),
+		IsFavorite:         util.ContainID(favoriteEntities, entity.ID),
 	}
 }
 

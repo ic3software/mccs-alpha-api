@@ -151,14 +151,7 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 		result := []*types.SearchEntityRespond{}
 		queryingEntityState := handler.getQueryingEntityState(query.QueryingEntityID)
 		for _, entity := range entities {
-			var respond *types.SearchEntityRespond
-			if util.IsTradingAccepted(queryingEntityState) && util.IsTradingAccepted(entity.Status) {
-				respond = types.NewSearchEntityRespondWithEmail(entity)
-			} else {
-				respond = types.NewSearchEntityRespondWithoutEmail(entity)
-			}
-			respond.IsFavorite = util.ContainID(query.FavoriteEntities, entity.ID)
-			result = append(result, respond)
+			result = append(result, types.NewSearchEntityRespond(entity, queryingEntityState, query.FavoriteEntities))
 		}
 		return result
 	}
@@ -209,16 +202,9 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 		q := r.URL.Query()
 		queryingEntityID := q.Get("querying_entity_id")
 		queryingEntityState := handler.getQueryingEntityState(queryingEntityID)
+		favoriteEntities := handler.getFavoriteEntities(queryingEntityID)
 
-		var data *types.SearchEntityRespond
-		if util.IsTradingAccepted(queryingEntityState) && util.IsTradingAccepted(searchEntity.Status) {
-			data = types.NewSearchEntityRespondWithEmail(searchEntity)
-		} else {
-			data = types.NewSearchEntityRespondWithoutEmail(searchEntity)
-		}
-		data.IsFavorite = util.ContainID(handler.getFavoriteEntities(queryingEntityID), searchEntity.ID)
-
-		api.Respond(w, r, http.StatusOK, respond{Data: data})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewSearchEntityRespond(searchEntity, queryingEntityState, favoriteEntities)})
 	}
 }
 
