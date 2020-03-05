@@ -30,7 +30,7 @@ type UserRespond struct {
 	ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
 }
 
-func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
+func NewEntityRespond(entity *Entity) *EntityRespond {
 	return &EntityRespond{
 		ID:                 entity.ID.Hex(),
 		AccountNumber:      entity.AccountNumber,
@@ -53,8 +53,52 @@ func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
 	}
 }
 
-func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
-	return &EntityRespond{
+type EntityRespond struct {
+	ID                 string   `json:"id"`
+	AccountNumber      string   `json:"accountNumber"`
+	EntityName         string   `json:"entityName"`
+	Email              string   `json:"email,omitempty"`
+	EntityPhone        string   `json:"entityPhone"`
+	IncType            string   `json:"incType"`
+	CompanyNumber      string   `json:"companyNumber"`
+	Website            string   `json:"website"`
+	Turnover           int      `json:"turnover"`
+	Description        string   `json:"description"`
+	LocationAddress    string   `json:"locationAddress"`
+	LocationCity       string   `json:"locationCity"`
+	LocationRegion     string   `json:"locationRegion"`
+	LocationPostalCode string   `json:"locationPostalCode"`
+	LocationCountry    string   `json:"locationCountry"`
+	Status             string   `json:"status"`
+	Offers             []string `json:"offers"`
+	Wants              []string `json:"wants"`
+}
+
+func NewSearchEntityRespondWithEmail(entity *Entity) *SearchEntityRespond {
+	return &SearchEntityRespond{
+		ID:                 entity.ID.Hex(),
+		AccountNumber:      entity.AccountNumber,
+		EntityName:         entity.EntityName,
+		Email:              entity.Email,
+		EntityPhone:        entity.EntityPhone,
+		IncType:            entity.IncType,
+		CompanyNumber:      entity.CompanyNumber,
+		Website:            entity.Website,
+		Turnover:           entity.Turnover,
+		Description:        entity.Description,
+		LocationAddress:    entity.LocationAddress,
+		LocationCity:       entity.LocationCity,
+		LocationRegion:     entity.LocationRegion,
+		LocationPostalCode: entity.LocationPostalCode,
+		LocationCountry:    entity.LocationCountry,
+		Status:             entity.Status,
+		Offers:             TagFieldToNames(entity.Offers),
+		Wants:              TagFieldToNames(entity.Wants),
+	}
+}
+
+func NewSearchEntityRespondWithoutEmail(entity *Entity) *SearchEntityRespond {
+	return &SearchEntityRespond{
 		ID:                 entity.ID.Hex(),
 		AccountNumber:      entity.AccountNumber,
 		EntityName:         entity.EntityName,
@@ -75,7 +119,7 @@ func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
 	}
 }
 
-type EntityRespond struct {
+type SearchEntityRespond struct {
 	ID                 string   `json:"id"`
 	AccountNumber      string   `json:"accountNumber"`
 	EntityName         string   `json:"entityName"`

@@ -118,18 +118,18 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 		TotalPages      int `json:"totalPages"`
 	}
 	type respond struct {
-		Data []*types.EntityRespond `json:"data"`
-		Meta meta                   `json:"meta"`
+		Data []*types.SearchEntityRespond `json:"data"`
+		Meta meta                         `json:"meta"`
 	}
-	toData := func(query *types.SearchEntityQuery, entities []*types.Entity) []*types.EntityRespond {
-		result := []*types.EntityRespond{}
+	toData := func(query *types.SearchEntityQuery, entities []*types.Entity) []*types.SearchEntityRespond {
+		result := []*types.SearchEntityRespond{}
 		queryingEntityState := getQueryingEntityState(query.QueryingEntityID)
 		for _, entity := range entities {
-			var respond *types.EntityRespond
+			var respond *types.SearchEntityRespond
 			if util.IsTradingAccepted(queryingEntityState) && util.IsTradingAccepted(entity.Status) {
-				respond = types.NewEntityRespondWithEmail(entity)
+				respond = types.NewSearchEntityRespondWithEmail(entity)
 			} else {
-				respond = types.NewEntityRespondWithoutEmail(entity)
+				respond = types.NewSearchEntityRespondWithoutEmail(entity)
 			}
 			respond.IsFavorite = util.ContainID(query.FavoriteEntities, entity.ID)
 			result = append(result, respond)
@@ -169,7 +169,7 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 
 func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.EntityRespond `json:"data"`
+		Data *types.SearchEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -180,7 +180,7 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithoutEmail(entity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewSearchEntityRespondWithoutEmail(entity)})
 	}
 }
 
