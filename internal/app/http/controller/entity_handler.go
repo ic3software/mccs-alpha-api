@@ -39,10 +39,10 @@ func (b *entityHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	b.once.Do(func() {
-		public.Path("/api/v1/entities").HandlerFunc(b.searchEntity()).Methods("GET")
-		public.Path("/api/v1/entities/{entityID}").HandlerFunc(b.getEntity()).Methods("GET")
-		private.Path("/api/v1/favorites").HandlerFunc(b.addToFavoriteEntities()).Methods("POST")
-		private.Path("/api/v1/send-email").HandlerFunc(b.sendEmailToEntity()).Methods("POST")
+		public.Path("/entities").HandlerFunc(b.searchEntity()).Methods("GET")
+		public.Path("/entities/{entityID}").HandlerFunc(b.getEntity()).Methods("GET")
+		private.Path("/favorites").HandlerFunc(b.addToFavoriteEntities()).Methods("POST")
+		private.Path("/send-email").HandlerFunc(b.sendEmailToEntity()).Methods("POST")
 
 		private.Path("/entities/search/match-tags").HandlerFunc(b.searhMatchTags()).Methods("GET")
 		private.Path("/api/entityStatus").HandlerFunc(b.entityStatus()).Methods("GET")
@@ -85,6 +85,32 @@ func (handler *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 		return nil, err
 	}
 	return bs, nil
+}
+
+func (handler *entityHandler) UpdateOffersAndWants(old *types.Entity, offers, wants []string) {
+	if len(offers) == 0 && len(wants) == 0 {
+		return
+	}
+
+	tagDifference := types.NewTagDifference(types.TagFieldToNames(old.Offers), offers, types.TagFieldToNames(old.Wants), wants)
+	err := logic.Entity.UpdateTags(old.ID, tagDifference)
+	if err != nil {
+		l.Logger.Error("[Error] EntityHandler.UpdateOffersAndWants failed:", zap.Error(err))
+		return
+	}
+
+	if util.IsAcceptedStatus(old.Status) {
+		// User Update tags logic:
+		// 	1. Update the tags collection only when the entity is in accepted status.
+		err := TagHandler.UpdateOffers(tagDifference.NewAddedOffers)
+		if err != nil {
+			l.Logger.Error("[Error] EntityHandler.UpdateOffersAndWants failed:", zap.Error(err))
+		}
+		err = TagHandler.UpdateWants(tagDifference.NewAddedWants)
+		if err != nil {
+			l.Logger.Error("[Error] EntityHandler.UpdateOffersAndWants failed:", zap.Error(err))
+		}
+	}
 }
 
 func getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {

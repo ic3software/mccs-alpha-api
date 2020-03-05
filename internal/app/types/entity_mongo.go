@@ -42,6 +42,11 @@ type Entity struct {
 
 func (entity *Entity) Validate() []error {
 	errs := []error{}
+
+	if len(entity.Email) != 0 {
+		errs = append(errs, validateEmail(entity.Email)...)
+	}
+
 	if len(entity.EntityName) > 100 {
 		errs = append(errs, errors.New("Entity name length cannot exceed 100 characters."))
 	}
@@ -82,13 +87,6 @@ func (entity *Entity) Validate() []error {
 }
 
 // Helper types
-
-type TagDifference struct {
-	OffersAdded   []string
-	OffersRemoved []string
-	WantsAdded    []string
-	WantsRemoved  []string
-}
 
 type FindEntityResult struct {
 	Entities        []*Entity

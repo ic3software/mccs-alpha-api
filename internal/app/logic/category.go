@@ -10,6 +10,23 @@ type category struct{}
 
 var Category = &category{}
 
+func (c *category) Create(categories ...string) error {
+	if len(categories) == 1 {
+		err := mongo.Category.Create(categories[0])
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	for _, category := range categories {
+		err := mongo.Category.Create(category)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryResult, error) {
 	result, err := mongo.Category.Find(query)
 	if err != nil {
@@ -19,14 +36,6 @@ func (c *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryRe
 }
 
 // TO BE REMOVED
-
-func (c *category) Create(name string) error {
-	err := mongo.Category.Create(name)
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func (c *category) FindByName(name string) (*types.Category, error) {
 	adminTag, err := mongo.Category.FindByName(name)

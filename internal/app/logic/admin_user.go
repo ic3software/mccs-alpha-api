@@ -1,6 +1,8 @@
 package logic
 
 import (
+	"errors"
+
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
@@ -15,16 +17,18 @@ var AdminUser = &adminUser{}
 func (a *adminUser) Login(email string, password string) (*types.AdminUser, error) {
 	user, err := mongo.AdminUser.FindByEmail(email)
 	if err != nil {
-		return &types.AdminUser{}, e.Wrap(err, "login admin user failed")
+		return &types.AdminUser{}, err
 	}
 
 	err = bcrypt.CompareHash(user.Password, password)
 	if err != nil {
-		return &types.AdminUser{}, e.New(e.PasswordIncorrect, err)
+		return nil, errors.New("Invalid password.")
 	}
 
 	return user, nil
 }
+
+// TO BE REMOVED
 
 func (a *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
 	adminUser, err := mongo.AdminUser.FindByID(id)
