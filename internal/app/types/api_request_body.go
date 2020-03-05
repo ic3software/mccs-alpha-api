@@ -52,14 +52,17 @@ type SignupReqBody struct {
 func (req *SignupReqBody) Validate() []error {
 	errs := []error{}
 
+	errs = append(errs, validateEmail(req.Email)...)
 	errs = append(errs, validatePassword(req.Password)...)
 
 	user := User{
+		Email:     req.Email,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Telephone: req.UserPhone,
 	}
 	entity := Entity{
+		Email:              req.Email,
 		EntityName:         req.EntityName,
 		EntityPhone:        req.EntityPhone,
 		IncType:            req.IncType,
@@ -388,6 +391,7 @@ func (req *AdminUpdateEntityReqBody) Validate() []error {
 	}
 
 	entity := Entity{
+		Email:              req.Email,
 		EntityName:         req.EntityName,
 		EntityPhone:        req.EntityPhone,
 		IncType:            req.IncType,
