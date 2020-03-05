@@ -64,27 +64,6 @@ func (t *tag) Find(query *types.SearchTagQuery) (*types.FindTagResult, error) {
 	}, nil
 }
 
-// TO BE REMOVED
-
-// Create creates a tag record in the table
-func (t *tag) Create(name string) (primitive.ObjectID, error) {
-	filter := bson.M{"name": name}
-	update := bson.M{"$setOnInsert": bson.M{
-		"name":      name,
-		"createdAt": time.Now(),
-	}}
-	res, err := t.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-		options.Update().SetUpsert(true),
-	)
-	if err != nil {
-		return primitive.ObjectID{}, err
-	}
-	return res.UpsertedID.(primitive.ObjectID), nil
-}
-
 func (t *tag) UpdateOffer(name string) (primitive.ObjectID, error) {
 	filter := bson.M{"name": name}
 	update := bson.M{
@@ -110,7 +89,7 @@ func (t *tag) UpdateOffer(name string) (primitive.ObjectID, error) {
 	tag := types.Tag{}
 	err := res.Decode(&tag)
 	if err != nil {
-		return primitive.ObjectID{}, e.Wrap(err, "TagMongo UpdateOffer failed")
+		return primitive.ObjectID{}, err
 	}
 	return tag.ID, nil
 }
@@ -140,9 +119,30 @@ func (t *tag) UpdateWant(name string) (primitive.ObjectID, error) {
 	tag := types.Tag{}
 	err := res.Decode(&tag)
 	if err != nil {
-		return primitive.ObjectID{}, e.Wrap(err, "TagMongo UpdateWant failed")
+		return primitive.ObjectID{}, err
 	}
 	return tag.ID, nil
+}
+
+// TO BE REMOVED
+
+// Create creates a tag record in the table
+func (t *tag) Create(name string) (primitive.ObjectID, error) {
+	filter := bson.M{"name": name}
+	update := bson.M{"$setOnInsert": bson.M{
+		"name":      name,
+		"createdAt": time.Now(),
+	}}
+	res, err := t.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+		options.Update().SetUpsert(true),
+	)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	return res.UpsertedID.(primitive.ObjectID), nil
 }
 
 func (t *tag) FindByName(name string) (*types.Tag, error) {

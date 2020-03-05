@@ -22,6 +22,32 @@ func (t *tag) Find(query *types.SearchTagQuery) (*types.FindTagResult, error) {
 	return found, nil
 }
 
+// UpdateOffer will add/modify the offer tag.
+func (t *tag) UpdateOffer(name string) error {
+	id, err := mongo.Tag.UpdateOffer(name)
+	if err != nil {
+		return err
+	}
+	err = es.Tag.UpdateOffer(id.Hex(), name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UpdateWant will add/modify the want tag.
+func (t *tag) UpdateWant(name string) error {
+	id, err := mongo.Tag.UpdateWant(name)
+	if err != nil {
+		return err
+	}
+	err = es.Tag.UpdateWant(id.Hex(), name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (t *tag) Create(name string) error {
@@ -32,32 +58,6 @@ func (t *tag) Create(name string) error {
 	err = es.Tag.Create(id, name)
 	if err != nil {
 		return e.Wrap(err, "TagService Create failed")
-	}
-	return nil
-}
-
-// UpdateOffer will add/modify the offer tag.
-func (t *tag) UpdateOffer(name string) error {
-	id, err := mongo.Tag.UpdateOffer(name)
-	if err != nil {
-		return e.Wrap(err, "TagService UpdateOffer failed")
-	}
-	err = es.Tag.UpdateOffer(id.Hex(), name)
-	if err != nil {
-		return e.Wrap(err, "TagService UpdateOffer failed")
-	}
-	return nil
-}
-
-// UpdateWant will add/modify the want tag.
-func (t *tag) UpdateWant(name string) error {
-	id, err := mongo.Tag.UpdateWant(name)
-	if err != nil {
-		return e.Wrap(err, "TagService UpdateWant failed")
-	}
-	err = es.Tag.UpdateWant(id.Hex(), name)
-	if err != nil {
-		return e.Wrap(err, "TagService UpdateWant failed")
 	}
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 func NewUserRespond(user *User) *UserRespond {
 	return &UserRespond{
 		ID:                            user.ID.Hex(),
+		Email:                         user.Email,
 		UserPhone:                     user.Telephone,
 		FirstName:                     user.FirstName,
 		LastName:                      user.LastName,
@@ -21,6 +22,7 @@ func NewUserRespond(user *User) *UserRespond {
 
 type UserRespond struct {
 	ID                            string    `json:"id"`
+	Email                         string    `json:"email"`
 	FirstName                     string    `json:"firstName"`
 	LastName                      string    `json:"lastName"`
 	UserPhone                     string    `json:"userPhone"`
@@ -162,4 +164,50 @@ type SearchEntityRespond struct {
 	Offers             []string `json:"offers"`
 	Wants              []string `json:"wants"`
 	IsFavorite         bool     `json:"isFavorite"`
+}
+
+func NewAdminEntityRespond(entity *Entity) *AdminEntityRespond {
+	return &AdminEntityRespond{
+		ID:                 entity.ID.Hex(),
+		AccountNumber:      entity.AccountNumber,
+		EntityName:         entity.EntityName,
+		Email:              entity.Email,
+		EntityPhone:        entity.EntityPhone,
+		IncType:            entity.IncType,
+		CompanyNumber:      entity.CompanyNumber,
+		Website:            entity.Website,
+		Turnover:           entity.Turnover,
+		Description:        entity.Description,
+		LocationAddress:    entity.LocationAddress,
+		LocationCity:       entity.LocationCity,
+		LocationRegion:     entity.LocationRegion,
+		LocationPostalCode: entity.LocationPostalCode,
+		LocationCountry:    entity.LocationCountry,
+		Status:             entity.Status,
+		Offers:             TagFieldToNames(entity.Offers),
+		Wants:              TagFieldToNames(entity.Wants),
+		Categories:         entity.Categories,
+	}
+}
+
+type AdminEntityRespond struct {
+	ID                 string   `json:"id"`
+	AccountNumber      string   `json:"accountNumber"`
+	EntityName         string   `json:"entityName"`
+	Email              string   `json:"email,omitempty"`
+	EntityPhone        string   `json:"entityPhone"`
+	IncType            string   `json:"incType"`
+	CompanyNumber      string   `json:"companyNumber"`
+	Website            string   `json:"website"`
+	Turnover           int      `json:"turnover"`
+	Description        string   `json:"description"`
+	LocationAddress    string   `json:"locationAddress"`
+	LocationCity       string   `json:"locationCity"`
+	LocationRegion     string   `json:"locationRegion"`
+	LocationPostalCode string   `json:"locationPostalCode"`
+	LocationCountry    string   `json:"locationCountry"`
+	Status             string   `json:"status"`
+	Offers             []string `json:"offers,omitempty"`
+	Wants              []string `json:"wants,omitempty"`
+	Categories         []string `json:"categories,omitempty"`
 }

@@ -9,13 +9,13 @@ import (
 )
 
 func RegisterRoutes(r *mux.Router) {
-	public := r.PathPrefix("/").Subrouter()
+	public := r.PathPrefix("/api/v1").Subrouter()
 	public.Use(middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser())
-	private := r.PathPrefix("/").Subrouter()
+	private := r.PathPrefix("/api/v1").Subrouter()
 	private.Use(middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser(), middleware.RequireUser())
-	adminPublic := r.PathPrefix("/admin").Subrouter()
+	adminPublic := r.PathPrefix("/api/v1/admin").Subrouter()
 	adminPublic.Use(middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser())
-	adminPrivate := r.PathPrefix("/admin").Subrouter()
+	adminPrivate := r.PathPrefix("/api/v1/admin").Subrouter()
 	adminPrivate.Use(middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser(), middleware.RequireAdmin())
 
 	// Serving static files.

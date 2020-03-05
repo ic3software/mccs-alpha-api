@@ -42,7 +42,7 @@ func (es *tag) Create(id primitive.ObjectID, name string) error {
 func (es *tag) UpdateOffer(id string, name string) error {
 	exists, err := es.c.Exists().Index(es.index).Id(id).Do(context.TODO())
 	if err != nil {
-		return e.Wrap(err, "TagES UpdateOffer failed")
+		return err
 	}
 	if !exists {
 		body := types.TagESRecord{
@@ -56,7 +56,7 @@ func (es *tag) UpdateOffer(id string, name string) error {
 			BodyJson(body).
 			Do(context.Background())
 		if err != nil {
-			return e.Wrap(err, "TagES UpdateOffer failed")
+			return err
 		}
 		return nil
 	}
@@ -76,7 +76,7 @@ func (es *tag) UpdateOffer(id string, name string) error {
 		Script(script).
 		Do(context.Background())
 	if err != nil {
-		return e.Wrap(err, "TagES UpdateOffer failed")
+		return err
 	}
 	return nil
 }
@@ -84,7 +84,7 @@ func (es *tag) UpdateOffer(id string, name string) error {
 func (es *tag) UpdateWant(id string, name string) error {
 	exists, err := es.c.Exists().Index(es.index).Id(id).Do(context.TODO())
 	if err != nil {
-		return e.Wrap(err, "TagES UpdateWant failed")
+		return err
 	}
 	if !exists {
 		body := types.TagESRecord{
@@ -98,7 +98,7 @@ func (es *tag) UpdateWant(id string, name string) error {
 			BodyJson(body).
 			Do(context.Background())
 		if err != nil {
-			return e.Wrap(err, "TagES UpdateWant failed")
+			return err
 		}
 		return nil
 	}
@@ -118,10 +118,12 @@ func (es *tag) UpdateWant(id string, name string) error {
 		Script(script).
 		Do(context.Background())
 	if err != nil {
-		return e.Wrap(err, "TagES UpdateWant failed")
+		return err
 	}
 	return nil
 }
+
+// TO BE REMOVED
 
 func (es *tag) Rename(t *types.Tag) error {
 	params := map[string]interface{}{

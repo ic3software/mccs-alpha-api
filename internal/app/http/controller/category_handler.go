@@ -42,13 +42,20 @@ func (a *categoryHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	a.once.Do(func() {
-		public.Path("/api/v1/categories").HandlerFunc(a.searchCategory()).Methods("GET")
+		public.Path("/categories").HandlerFunc(a.searchCategory()).Methods("GET")
 
 		adminPrivate.Path("​/categories").HandlerFunc(a.searchAdminTags()).Methods("GET")
 		adminPrivate.Path("/api/admin-tags").HandlerFunc(a.createAdminTag()).Methods("POST")
 		adminPrivate.Path("/api/admin-tags/{id}").HandlerFunc(a.renameAdminTag()).Methods("PUT")
 		adminPrivate.Path("/api/admin-tags/{id}").HandlerFunc(a.deleteAdminTag()).Methods("DELETE")
 	})
+}
+
+func (handler *categoryHandler) Update(categories []string) {
+	err := logic.Category.Create(categories...)
+	if err != nil {
+		l.Logger.Error("[Error] CategoryHandler.Update failed:", zap.Error(err))
+	}
 }
 
 func getSearchCategoryQueryParams(q url.Values) (*types.SearchCategoryQuery, error) {
