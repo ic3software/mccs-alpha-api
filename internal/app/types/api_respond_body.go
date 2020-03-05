@@ -141,5 +141,4 @@ type AdminEntityRespond struct {
 	Offers             []string `json:"offers,omitempty"`
 	Wants              []string `json:"wants,omitempty"`
 	Categories         []string `json:"categories,omitempty"`
-	IsFavorite         bool     `json:"isFavorite"`
 }
