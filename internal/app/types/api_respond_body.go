@@ -99,9 +99,9 @@ type EntityRespond struct {
 	Wants              []string `json:"wants"`
 }
 
-func NewSearchEntityRespond(entity *Entity, queryingEntityState string, favoriteEntities []primitive.ObjectID) *SearchEntityRespond {
+func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favoriteEntities []primitive.ObjectID) *SearchEntityRespond {
 	email := ""
-	if util.IsTradingAccepted(entity.Status) && util.IsTradingAccepted(queryingEntityState) {
+	if util.IsTradingAccepted(entity.Status) && util.IsTradingAccepted(queryingEntityStatus) {
 		email = entity.Email
 	}
 	return &SearchEntityRespond{

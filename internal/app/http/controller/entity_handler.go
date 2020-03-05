@@ -130,7 +130,7 @@ func (handler *entityHandler) getFavoriteEntities(entityID string) []primitive.O
 	return []primitive.ObjectID{}
 }
 
-func (handler *entityHandler) getQueryingEntityState(entityID string) string {
+func (handler *entityHandler) getQueryingEntityStatus(entityID string) string {
 	entity, err := EntityHandler.FindByID(entityID)
 	if err == nil {
 		return entity.Status
@@ -149,9 +149,9 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 	}
 	toData := func(query *types.SearchEntityQuery, entities []*types.Entity) []*types.SearchEntityRespond {
 		result := []*types.SearchEntityRespond{}
-		queryingEntityState := handler.getQueryingEntityState(query.QueryingEntityID)
+		queryingEntityStatus := handler.getQueryingEntityStatus(query.QueryingEntityID)
 		for _, entity := range entities {
-			result = append(result, types.NewSearchEntityRespond(entity, queryingEntityState, query.FavoriteEntities))
+			result = append(result, types.NewSearchEntityRespond(entity, queryingEntityStatus, query.FavoriteEntities))
 		}
 		return result
 	}
@@ -201,10 +201,10 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 
 		q := r.URL.Query()
 		queryingEntityID := q.Get("querying_entity_id")
-		queryingEntityState := handler.getQueryingEntityState(queryingEntityID)
+		queryingEntityStatus := handler.getQueryingEntityStatus(queryingEntityID)
 		favoriteEntities := handler.getFavoriteEntities(queryingEntityID)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewSearchEntityRespond(searchEntity, queryingEntityState, favoriteEntities)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewSearchEntityRespond(searchEntity, queryingEntityStatus, favoriteEntities)})
 	}
 }
 
