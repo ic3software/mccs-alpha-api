@@ -60,11 +60,11 @@ func RequireAdmin() mux.MiddlewareFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			admin, err := strconv.ParseBool(r.Header.Get("admin"))
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				api.Respond(w, r, http.StatusUnauthorized, api.ErrUnauthorized)
 				return
 			}
 			if admin != true {
-				w.WriteHeader(http.StatusForbidden)
+				api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
 				return
 			}
 			next.ServeHTTP(w, r)
