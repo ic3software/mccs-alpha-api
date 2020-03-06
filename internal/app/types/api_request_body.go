@@ -201,6 +201,7 @@ func (req *UpdateUserEntityReqBody) Validate() []error {
 	}
 
 	entity := Entity{
+		Email:              req.Email,
 		EntityName:         req.EntityName,
 		EntityPhone:        req.EntityPhone,
 		IncType:            req.IncType,
