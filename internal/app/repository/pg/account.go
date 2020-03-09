@@ -1,8 +1,6 @@
 package pg
 
 import (
-	"errors"
-
 	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
@@ -23,17 +21,20 @@ func (a *account) ifAccountExisted(db *gorm.DB, accountNumber string) bool {
 	`, accountNumber).Scan(&result).RecordNotFound()
 }
 
+func (a *account) generateAccountNumber(db *gorm.DB) string {
+	accountNumber := goluhn.Generate(16)
+	for a.ifAccountExisted(db, accountNumber) {
+		accountNumber = goluhn.Generate(16)
+	}
+	return accountNumber
+}
+
 func (a *account) Create() (*types.Account, error) {
 	tx := db.Begin()
 
-	accountNumber := goluhn.Generate(16)
-	found := a.ifAccountExisted(tx, accountNumber)
-	if found {
-		tx.Rollback()
-		return nil, errors.New("duplicate account number")
-	}
-
+	accountNumber := a.generateAccountNumber(tx)
 	account := &types.Account{AccountNumber: accountNumber, Balance: 0}
+
 	var result types.Account
 	err := tx.Create(account).Scan(&result).Error
 	if err != nil {
