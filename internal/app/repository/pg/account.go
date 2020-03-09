@@ -1,20 +1,38 @@
 package pg
 
 import (
+	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/segmentio/ksuid"
+	"github.com/jinzhu/gorm"
 )
 
 type account struct{}
 
 var Account = &account{}
 
+func (a *account) ifAccountExisted(db *gorm.DB, accountNumber string) bool {
+	var result types.Account
+	return !db.Raw(`
+		SELECT account_number
+		FROM accounts
+		WHERE accounts.account_number = ?
+		LIMIT 1
+	`, accountNumber).Scan(&result).RecordNotFound()
+}
+
+func (a *account) generateAccountNumber(db *gorm.DB) string {
+	accountNumber := goluhn.Generate(16)
+	for a.ifAccountExisted(db, accountNumber) {
+		accountNumber = goluhn.Generate(16)
+	}
+	return accountNumber
+}
+
 func (a *account) Create() (*types.Account, error) {
 	tx := db.Begin()
 
-	// TODO
-	accountNumber := ksuid.New().String()
+	accountNumber := a.generateAccountNumber(tx)
 	account := &types.Account{AccountNumber: accountNumber, Balance: 0}
 
 	var result types.Account
