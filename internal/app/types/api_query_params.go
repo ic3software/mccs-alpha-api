@@ -60,11 +60,11 @@ func (query *SearchEntityQuery) Validate() []error {
 	errs := []error{}
 
 	if query.FavoritesOnly == true && query.QueryingEntityID == "" {
-		errs = append(errs, errors.New("Please specify the querying_entity_id"))
+		errs = append(errs, errors.New("Please specify the querying_entity_id."))
 	}
 
 	if !query.TaggedSince.IsZero() && len(query.Wants) == 0 && len(query.Offers) == 0 {
-		errs = append(errs, errors.New("Please specify the wants or tags"))
+		errs = append(errs, errors.New("Please specify an offer or want tag."))
 	}
 
 	return errs
