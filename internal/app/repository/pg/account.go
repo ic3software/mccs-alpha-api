@@ -1,9 +1,9 @@
 package pg
 
 import (
+	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
-	"github.com/segmentio/ksuid"
 )
 
 type account struct{}
@@ -13,8 +13,7 @@ var Account = &account{}
 func (a *account) Create() (*types.Account, error) {
 	tx := db.Begin()
 
-	// TODO
-	accountNumber := ksuid.New().String()
+	accountNumber := goluhn.Generate(16)
 	account := &types.Account{AccountNumber: accountNumber, Balance: 0}
 
 	var result types.Account
