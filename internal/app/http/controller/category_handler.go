@@ -67,7 +67,7 @@ func (a *categoryHandler) searchCategory() func(http.ResponseWriter, *http.Reque
 	return func(w http.ResponseWriter, r *http.Request) {
 		query, err := types.NewSearchCategoryQuery(r.URL.Query())
 		if err != nil {
-			l.Logger.Info("[Info] TagHandler.searchCategory failed:", zap.Error(err))
+			l.Logger.Info("[Info] CategoryHandler.searchCategory failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -80,7 +80,7 @@ func (a *categoryHandler) searchCategory() func(http.ResponseWriter, *http.Reque
 
 		found, err := logic.Category.Find(query)
 		if err != nil {
-			l.Logger.Error("[Error] TagHandler.searchCategory failed:", zap.Error(err))
+			l.Logger.Error("[Error] CategoryHandler.searchCategory failed:", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
