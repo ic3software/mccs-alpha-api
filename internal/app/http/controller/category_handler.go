@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
-	"net/url"
 	"strconv"
 
 	"sync"
@@ -17,8 +16,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
-	"github.com/ic3network/mccs-alpha-api/util"
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
@@ -58,23 +55,6 @@ func (handler *categoryHandler) Update(categories []string) {
 	}
 }
 
-func getSearchCategoryQueryParams(q url.Values) (*types.SearchCategoryQuery, error) {
-	page, err := util.ToInt(q.Get("page"), 1)
-	if err != nil {
-		return nil, err
-	}
-	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
-	if err != nil {
-		return nil, err
-	}
-	return &types.SearchCategoryQuery{
-		Fragment: q.Get("fragment"),
-		Prefix:   q.Get("prefix"),
-		Page:     page,
-		PageSize: pageSize,
-	}, nil
-}
-
 func (a *categoryHandler) searchCategory() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
@@ -85,7 +65,12 @@ func (a *categoryHandler) searchCategory() func(http.ResponseWriter, *http.Reque
 		Meta meta     `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := getSearchCategoryQueryParams(r.URL.Query())
+		query, err := types.NewSearchCategoryQuery(r.URL.Query())
+		if err != nil {
+			l.Logger.Info("[Info] CategoryHandler.searchCategory failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
 
 		errs := query.Validate()
 		if len(errs) > 0 {
@@ -95,7 +80,7 @@ func (a *categoryHandler) searchCategory() func(http.ResponseWriter, *http.Reque
 
 		found, err := logic.Category.Find(query)
 		if err != nil {
-			l.Logger.Error("[Error] TagHandler.searchCategory failed:", zap.Error(err))
+			l.Logger.Error("[Error] CategoryHandler.searchCategory failed:", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
