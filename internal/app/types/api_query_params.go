@@ -70,35 +70,48 @@ func (query *SearchEntityQuery) Validate() []error {
 	return errs
 }
 
+func NewSearchTagQuery(q url.Values) (*SearchTagQuery, error) {
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, err
+	}
+	return &SearchTagQuery{
+		Fragment: q.Get("fragment"),
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
 type SearchTagQuery struct {
 	Fragment string `json:"fragment"`
-	Page     string `json:"page"`
-	PageSize string `json:"pageSize"`
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
 }
 
 func (q *SearchTagQuery) Validate() []error {
 	errs := []error{}
-
-	_, err := util.ToInt(q.Page)
-	if err != nil {
-		errs = append(errs, err)
-	}
-	_, err = util.ToInt(q.PageSize)
-	if err != nil {
-		errs = append(errs, err)
-	}
-
 	return errs
 }
 
-func (q *SearchTagQuery) GetPage() int64 {
-	page, _ := util.ToInt64(q.PageSize, 1)
-	return page
-}
-
-func (q *SearchTagQuery) GetPageSize() int64 {
-	pageSize, _ := util.ToInt64(q.PageSize, viper.GetInt64("page_size"))
-	return pageSize
+func NewSearchCategoryQuery(q url.Values) (*SearchCategoryQuery, error) {
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, err
+	}
+	return &SearchCategoryQuery{
+		Fragment: q.Get("fragment"),
+		Prefix:   q.Get("prefix"),
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
 }
 
 type SearchCategoryQuery struct {

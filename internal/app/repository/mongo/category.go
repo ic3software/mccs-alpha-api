@@ -52,7 +52,7 @@ func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryRe
 		"name":      primitive.Regex{Pattern: "^" + query.Prefix + ".*" + query.Fragment + ".*", Options: "i"},
 		"deletedAt": bson.M{"$exists": false},
 	}
-	cur, err := a.c.Find(context.TODO(), filter)
+	cur, err := a.c.Find(context.TODO(), filter, findOptions)
 	if err != nil {
 		return nil, err
 	}
