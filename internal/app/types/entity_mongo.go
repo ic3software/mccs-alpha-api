@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -45,6 +46,9 @@ func (entity *Entity) Validate() []error {
 
 	if len(entity.Email) != 0 {
 		errs = append(errs, validateEmail(entity.Email)...)
+	}
+	if len(entity.Status) != 0 && !util.IsValidStatus(entity.Status) {
+		errs = append(errs, errors.New("Please specify a valid status."))
 	}
 
 	if len(entity.EntityName) > 100 {

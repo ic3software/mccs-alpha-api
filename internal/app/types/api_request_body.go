@@ -406,6 +406,7 @@ func (req *AdminUpdateEntityReqBody) Validate() []error {
 		LocationRegion:     req.LocationRegion,
 		LocationPostalCode: req.LocationPostalCode,
 		Categories:         req.Categories,
+		Status:             req.Status,
 	}
 	errs = append(errs, entity.Validate()...)
 	errs = append(errs, validateTags(req.Offers)...)
