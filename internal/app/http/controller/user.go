@@ -48,8 +48,6 @@ func (handler *userHandler) RegisterRoutes(
 		public.Path("/password-reset/{token}").HandlerFunc(handler.passwordReset()).Methods("POST")
 		private.Path("/password-change").HandlerFunc(handler.passwordChange()).Methods("POST")
 
-		private.Path("/users/{userID}").HandlerFunc(handler.getUser()).Methods("GET")
-
 		private.Path("/user").HandlerFunc(handler.userProfile()).Methods("GET")
 		private.Path("/user").HandlerFunc(handler.updateUser()).Methods("PATCH")
 		private.Path("/user/entities").HandlerFunc(handler.listUserEntities()).Methods("GET")
@@ -429,23 +427,6 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
-	}
-}
-
-func (handler *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
-	type respond struct {
-		Data *types.UserRespond `json:"data"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		userID, _ := primitive.ObjectIDFromHex(vars["userID"])
-		user, err := logic.User.FindByID(userID)
-		if err != nil {
-			l.Logger.Info("[INFO] UserHandler.getUser failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
