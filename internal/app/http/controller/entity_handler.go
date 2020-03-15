@@ -169,6 +169,13 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 			return
 		}
 
+		if query.QueryingEntityID != "" {
+			if !UserHandler.IsEntityBelongsToUser(query.QueryingEntityID, r.Header.Get("userID")) {
+				api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
+				return
+			}
+		}
+
 		found, err := logic.Entity.Find(query)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.searchEntity failed:", zap.Error(err))
