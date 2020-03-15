@@ -169,6 +169,17 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 			return
 		}
 
+		if query.QueryingEntityID != "" {
+			if r.Header.Get("userID") == "" {
+				api.Respond(w, r, http.StatusUnauthorized, api.ErrUnauthorized)
+				return
+			}
+			if !UserHandler.IsEntityBelongsToUser(query.QueryingEntityID, r.Header.Get("userID")) {
+				api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
+				return
+			}
+		}
+
 		found, err := logic.Entity.Find(query)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.searchEntity failed:", zap.Error(err))
@@ -201,6 +212,18 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 
 		q := r.URL.Query()
 		queryingEntityID := q.Get("querying_entity_id")
+
+		if queryingEntityID != "" {
+			if r.Header.Get("userID") == "" {
+				api.Respond(w, r, http.StatusUnauthorized, api.ErrUnauthorized)
+				return
+			}
+			if !UserHandler.IsEntityBelongsToUser(queryingEntityID, r.Header.Get("userID")) {
+				api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
+				return
+			}
+		}
+
 		queryingEntityStatus := handler.getQueryingEntityStatus(queryingEntityID)
 		favoriteEntities := handler.getFavoriteEntities(queryingEntityID)
 
