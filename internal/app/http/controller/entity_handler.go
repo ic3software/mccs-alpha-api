@@ -170,6 +170,10 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 		}
 
 		if query.QueryingEntityID != "" {
+			if r.Header.Get("userID") == "" {
+				api.Respond(w, r, http.StatusUnauthorized, api.ErrUnauthorized)
+				return
+			}
 			if !UserHandler.IsEntityBelongsToUser(query.QueryingEntityID, r.Header.Get("userID")) {
 				api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
 				return
