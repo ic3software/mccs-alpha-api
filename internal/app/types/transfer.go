@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type Transaction struct {
+type Transfer struct {
 	ID             uint // Journal ID
 	TransactionID  string
 	IsInitiator    bool

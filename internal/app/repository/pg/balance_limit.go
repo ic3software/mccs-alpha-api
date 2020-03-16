@@ -26,16 +26,23 @@ func (b balanceLimit) Create(tx *gorm.DB, accountID uint) error {
 	return nil
 }
 
-// TO BE REMOVED
-
 func (b balanceLimit) FindByAccountID(accountID uint) (*types.BalanceLimit, error) {
-	balance := new(types.BalanceLimit)
-	err := db.Where("account_id = ?", accountID).First(balance).Error
+	var result types.BalanceLimit
+
+	err := db.Raw(`
+		SELECT max_pos_bal, max_neg_bal
+		FROM balance_limits
+		WHERE balance_limits.account_id = ?
+		LIMIT 1
+	`, accountID).Scan(&result).Error
 	if err != nil {
-		return nil, e.Wrap(err, "pg.BalanceLimit.FindByAccountID failed")
+		return nil, err
 	}
-	return balance, nil
+
+	return &result, nil
 }
+
+// TO BE REMOVED
 
 func (b balanceLimit) Update(id uint, maxPosBal float64, maxNegBal float64) error {
 	if math.Abs(maxNegBal) == 0 {

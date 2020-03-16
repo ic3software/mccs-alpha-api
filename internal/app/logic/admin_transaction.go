@@ -47,7 +47,7 @@ func (a *adminTransaction) Create(
 		return e.New(e.ExceedMaxPosBalance, "max positive exceed")
 	}
 
-	err = pg.Transaction.Create(
+	err = pg.Transfer.Create(
 		from.ID,
 		fromEmail,
 		fromEntityName,

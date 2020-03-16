@@ -48,7 +48,7 @@ func (h *adminHistoryHandler) historyPage() func(http.ResponseWriter, *http.Requ
 		FormData     formData
 		TotalPages   int
 		Balance      float64
-		Transactions []*types.Transaction
+		Transactions []*types.Transfer
 		Email        string
 		EntityID     string
 	}
@@ -87,7 +87,7 @@ func (h *adminHistoryHandler) historyPage() func(http.ResponseWriter, *http.Requ
 		res.Balance = account.Balance
 
 		// Get the recent transactions.
-		transactions, totalPages, err := logic.Transaction.FindInRange(
+		transactions, totalPages, err := logic.Transfer.FindInRange(
 			account.ID,
 			util.ParseTime(f.DateFrom),
 			util.ParseTime(f.DateTo),

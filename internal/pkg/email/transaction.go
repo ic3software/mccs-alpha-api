@@ -3,6 +3,7 @@ package email
 import (
 	"fmt"
 
+	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/spf13/viper"
 )
@@ -11,6 +12,33 @@ type transaction struct{}
 
 var Transaction = &transaction{}
 
+func (tr *transaction) Initiate(proposal *types.TransferProposal) error {
+	url := viper.GetString("url") + "/pending_transactions"
+
+	var body string
+	if proposal.TransferType == constant.TransferType.Out {
+		body = proposal.InitiatorEntityName + " wants to send " + fmt.Sprintf("%.2f", proposal.Amount) + " Credits to you. <a href=" + url + ">Click here to review this pending transaction</a>."
+	}
+	if proposal.TransferType == constant.TransferType.In {
+		body = proposal.InitiatorEntityName + " wants to receive " + fmt.Sprintf("%.2f", proposal.Amount) + " Credits from you. <a href=" + url + ">Click here to review this pending transaction</a>."
+	}
+
+	d := emailData{
+		receiver:      proposal.ReceiverEntityName,
+		receiverEmail: proposal.ReceiverEmail,
+		subject:       "OCN Transaction Requiring Your Approval",
+		text:          body,
+		html:          body,
+	}
+	err := e.send(d)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// TO BE REMOVED
+
 type emailInfo struct {
 	InitiatorEmail,
 	InitiatorEntityName,
@@ -18,7 +46,7 @@ type emailInfo struct {
 	ReceiverEntityName string
 }
 
-func (tr *transaction) getEmailInfo(t *types.Transaction) *emailInfo {
+func (tr *transaction) getEmailInfo(t *types.Transfer) *emailInfo {
 	var initiatorEmail, initiatorEntityName, receiverEmail, receiverEntityName string
 	if t.InitiatedBy == t.FromID {
 		initiatorEntityName = t.FromEntityName
@@ -39,32 +67,7 @@ func (tr *transaction) getEmailInfo(t *types.Transaction) *emailInfo {
 	}
 }
 
-func (tr *transaction) Initiate(transactionType string, t *types.Transaction) error {
-	info := tr.getEmailInfo(t)
-	url := viper.GetString("url") + "/pending_transactions"
-
-	var body string
-	if transactionType == "send" {
-		body = info.InitiatorEntityName + " wants to send " + fmt.Sprintf("%.2f", t.Amount) + " Credits to you. <a href=" + url + ">Click here to review this pending transaction</a>."
-	} else {
-		body = info.InitiatorEntityName + " wants to receive " + fmt.Sprintf("%.2f", t.Amount) + " Credits from you. <a href=" + url + ">Click here to review this pending transaction</a>."
-	}
-
-	d := emailData{
-		receiver:      info.ReceiverEntityName,
-		receiverEmail: info.ReceiverEmail,
-		subject:       "OCN Transaction Requiring Your Approval",
-		text:          body,
-		html:          body,
-	}
-	err := e.send(d)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (tr *transaction) Accept(t *types.Transaction) error {
+func (tr *transaction) Accept(t *types.Transfer) error {
 	info := tr.getEmailInfo(t)
 
 	var body string
@@ -88,7 +91,7 @@ func (tr *transaction) Accept(t *types.Transaction) error {
 	return nil
 }
 
-func (tr *transaction) Cancel(t *types.Transaction, reason string) error {
+func (tr *transaction) Cancel(t *types.Transfer, reason string) error {
 	info := tr.getEmailInfo(t)
 
 	var body string
@@ -116,7 +119,7 @@ func (tr *transaction) Cancel(t *types.Transaction, reason string) error {
 	return nil
 }
 
-func (tr *transaction) CancelBySystem(t *types.Transaction, reason string) error {
+func (tr *transaction) CancelBySystem(t *types.Transfer, reason string) error {
 	info := tr.getEmailInfo(t)
 	body := "The system has cancelled the transaction you initiated with " + info.ReceiverEntityName + " for the following reason: " + reason
 	d := emailData{
@@ -133,7 +136,7 @@ func (tr *transaction) CancelBySystem(t *types.Transaction, reason string) error
 	return nil
 }
 
-func (tr *transaction) Reject(t *types.Transaction) error {
+func (tr *transaction) Reject(t *types.Transfer) error {
 	info := tr.getEmailInfo(t)
 
 	var body string

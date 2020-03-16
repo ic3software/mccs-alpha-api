@@ -48,6 +48,14 @@ func (_ *entity) FindByID(objectID primitive.ObjectID) (*types.Entity, error) {
 	return entity, nil
 }
 
+func (_ *entity) FindByAccountNumber(accountNumber string) (*types.Entity, error) {
+	entity, err := mongo.Entity.FindByAccountNumber(accountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return entity, nil
+}
+
 func (_ *entity) FindByStringID(id string) (*types.Entity, error) {
 	objectID, _ := primitive.ObjectIDFromHex(id)
 	entity, err := mongo.Entity.FindByID(objectID)
