@@ -14,7 +14,7 @@ var Account = &account{}
 func (a *account) FindByID(accountID uint) (*types.Account, error) {
 	var result types.Account
 	err := db.Raw(`
-		SELECT A.id, A.entity_id, A.balance
+		SELECT A.id, A.balance
 		FROM accounts AS A
 		WHERE A.id = ?
 		LIMIT 1
@@ -28,7 +28,7 @@ func (a *account) FindByID(accountID uint) (*types.Account, error) {
 func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, error) {
 	var result types.Account
 	err := db.Raw(`
-		SELECT id, entity_id, balance
+		SELECT id, balance
 		FROM accounts
 		WHERE accounts.account_number = ?
 		LIMIT 1

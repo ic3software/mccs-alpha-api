@@ -150,6 +150,28 @@ type SearchEntityRespond struct {
 	IsFavorite         bool     `json:"isFavorite"`
 }
 
+type ProposeTransferRespond struct {
+	ID          string  `json:"id"`
+	From        string  `json:"from"`
+	To          string  `json:"to"`
+	Amount      float64 `json:"amount"`
+	Description string  `json:"description"`
+	Status      string  `json:"status"`
+}
+
+func NewProposeTransferRespond(journal *Journal) *ProposeTransferRespond {
+	return &ProposeTransferRespond{
+		ID:          journal.TransferID,
+		From:        journal.FromAccountNumber,
+		To:          journal.ToAccountNumber,
+		Amount:      journal.Amount,
+		Description: journal.Description,
+		Status:      journal.Status,
+	}
+}
+
+// Admin
+
 func NewAdminEntityRespond(entity *Entity) *AdminEntityRespond {
 	return &AdminEntityRespond{
 		ID:                 entity.ID.Hex(),

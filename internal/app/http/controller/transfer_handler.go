@@ -53,7 +53,7 @@ func (handler *transferHandler) RegisterRoutes(
 
 func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.Journal `json:"data"`
+		Data *types.ProposeTransferRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewTransferReqBody(r)
@@ -88,7 +88,7 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: journal})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewProposeTransferRespond(journal)})
 
 		go func() {
 			err := email.Transaction.Initiate(proposal)

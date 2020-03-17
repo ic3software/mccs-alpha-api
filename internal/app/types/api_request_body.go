@@ -354,8 +354,8 @@ func NewTransferReqBody(r *http.Request) (*TransferReqBody, []error) {
 
 type TransferReqBody struct {
 	Transfer               string  `json:"transfer"`
-	InitiatorAccountNumber string  `json:"initiator_account_number"`
-	ReceiverAccountNumber  string  `json:"receiver_account_number"`
+	InitiatorAccountNumber string  `json:"initiator"`
+	ReceiverAccountNumber  string  `json:"receiver"`
 	Amount                 float64 `json:"amount"`
 	Description            string  `json:"description"`
 }
@@ -366,16 +366,27 @@ func (req *TransferReqBody) validate() []error {
 	if req.Transfer != constant.TransferType.In && req.Transfer != constant.TransferType.Out {
 		errs = append(errs, errors.New("transfer can be only 'in' or 'out'"))
 	}
-	err := goluhn.Validate(req.InitiatorAccountNumber)
-	if err != nil {
-		errs = append(errs, errors.New("initiator_account_number is wrong"))
+
+	if req.InitiatorAccountNumber == "" {
+		errs = append(errs, errors.New("initiator is empty"))
+	} else {
+		err := goluhn.Validate(req.InitiatorAccountNumber)
+		if err != nil {
+			errs = append(errs, errors.New("initiator is wrong"))
+		}
 	}
-	err = goluhn.Validate(req.ReceiverAccountNumber)
-	if err != nil {
-		errs = append(errs, errors.New("receiver_account_number is wrong"))
+
+	if req.ReceiverAccountNumber == "" {
+		errs = append(errs, errors.New("receiver is empty"))
+	} else {
+		err := goluhn.Validate(req.ReceiverAccountNumber)
+		if err != nil {
+			errs = append(errs, errors.New("receiver is wrong"))
+		}
 	}
+
 	// Amount should be positive value and with up to two decimal places.
-	if err != nil || req.Amount <= 0 || !util.IsDecimalValid(req.Amount) {
+	if req.Amount <= 0 || !util.IsDecimalValid(req.Amount) {
 		errs = append(errs, errors.New("Please enter a valid numeric amount to send with up to two decimal places."))
 	}
 
