@@ -77,9 +77,12 @@ func (proposal *TransferProposal) validate() []error {
 	errs := []error{}
 
 	// Only allow transfers with accounts that also have "trading-accepted" status
-	if (proposal.FromStatus != constant.Trading.Accepted) || (proposal.ToStatus != constant.Trading.Accepted) {
-		errs = append(errs, errors.New("Recipient is not a trading member. You can only make transfers to other entities that have trading member status."))
+	if proposal.FromStatus != constant.Trading.Accepted {
+		errs = append(errs, errors.New("Sender is not a trading member. Transfers can only be made when both entities have trading member status."))
+	} else if proposal.ToStatus != constant.Trading.Accepted {
+		errs = append(errs, errors.New("Recipient is not a trading member. Transfers can only be made when both entities have trading member status."))
 	}
+
 	// Check if the user is doing the transaction to himself.
 	if proposal.FromAccountNumber == proposal.ToAccountNumber {
 		errs = append(errs, errors.New("You cannot create a transaction with yourself."))

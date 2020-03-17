@@ -122,10 +122,10 @@ func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http
 
 		// Only allow transfers with accounts that also have "trading-accepted" status
 		if from.Status != constant.Trading.Accepted {
-			t.Render(w, r, res, []string{"Sender is not a trading member. You can only make transfers from entities that have trading member status."})
+			t.Render(w, r, res, []string{"Sender is not a trading member. Transfers can only be made when both entities have trading member status."})
 			return
 		} else if to.Status != constant.Trading.Accepted {
-			t.Render(w, r, res, []string{"Receiver is not a trading member. You can only make transfers to entities that have trading member status."})
+			t.Render(w, r, res, []string{"Receiver is not a trading member. Transfers can only be made when both entities have trading member status."})
 			return
 		}
 		if f.FromEmail == f.ToEmail {
