@@ -75,6 +75,11 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 			return
 		}
 
+		if !UserHandler.IsEntityBelongsToUser(initiatorEntity.ID.Hex(), r.Header.Get("userID")) {
+			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
+			return
+		}
+
 		proposal, errs := types.NewTransferProposal(req, initiatorEntity, receiverEntity)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
