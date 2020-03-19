@@ -1,0 +1,27 @@
+[
+    {
+        "accountID": 1,
+        "maxNegBal": 10,
+        "maxPosBal": 20
+    },
+    {
+        "accountID": 2,
+        "maxNegBal": 10,
+        "maxPosBal": 20
+    },
+    {
+        "accountID": 3,
+        "maxNegBal": 10,
+        "maxPosBal": 20
+    },
+    {
+        "accountID": 4,
+        "maxNegBal": 10,
+        "maxPosBal": 20
+    },
+    {
+        "accountID": 5,
+        "maxNegBal": 10,
+        "maxPosBal": 20
+    }
+]
