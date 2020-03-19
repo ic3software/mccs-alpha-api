@@ -8,7 +8,9 @@ import (
 
 	"unicode"
 
+	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/gorilla/mux"
+	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -335,6 +337,57 @@ func (req *EmailReqBody) Validate() []error {
 	}
 	if len(req.Body) == 0 {
 		errs = append(errs, errors.New("body is empty"))
+	}
+
+	return errs
+}
+
+func NewTransferReqBody(r *http.Request) (*TransferReqBody, []error) {
+	var req TransferReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, []error{err}
+	}
+	return &req, req.validate()
+}
+
+type TransferReqBody struct {
+	Transfer               string  `json:"transfer"`
+	InitiatorAccountNumber string  `json:"initiator"`
+	ReceiverAccountNumber  string  `json:"receiver"`
+	Amount                 float64 `json:"amount"`
+	Description            string  `json:"description"`
+}
+
+func (req *TransferReqBody) validate() []error {
+	errs := []error{}
+
+	if req.Transfer != constant.TransferType.In && req.Transfer != constant.TransferType.Out {
+		errs = append(errs, errors.New("transfer can be only 'in' or 'out'"))
+	}
+
+	if req.InitiatorAccountNumber == "" {
+		errs = append(errs, errors.New("initiator is empty"))
+	} else {
+		err := goluhn.Validate(req.InitiatorAccountNumber)
+		if err != nil {
+			errs = append(errs, errors.New("initiator account number is wrong"))
+		}
+	}
+
+	if req.ReceiverAccountNumber == "" {
+		errs = append(errs, errors.New("receiver is empty"))
+	} else {
+		err := goluhn.Validate(req.ReceiverAccountNumber)
+		if err != nil {
+			errs = append(errs, errors.New("receiver account number is wrong"))
+		}
+	}
+
+	// Amount should be positive value and with up to two decimal places.
+	if req.Amount <= 0 || !util.IsDecimalValid(req.Amount) {
+		errs = append(errs, errors.New("Please enter a valid numeric amount to send with up to two decimal places."))
 	}
 
 	return errs

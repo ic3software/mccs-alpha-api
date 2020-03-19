@@ -1,10 +1,13 @@
 package util
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // IsDecimalValid checks the num is positive value and with up to two decimal places.
-func IsDecimalValid(num string) bool {
-	numArr := strings.Split(num, ".")
+func IsDecimalValid(num float64) bool {
+	numArr := strings.Split(fmt.Sprintf("%g", num), ".")
 	if len(numArr) == 1 {
 		return true
 	}

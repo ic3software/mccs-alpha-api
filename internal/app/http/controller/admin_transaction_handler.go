@@ -97,7 +97,7 @@ func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http
 		}
 		amount, err := strconv.ParseFloat(r.FormValue("amount"), 64)
 		// Amount should be positive value and with up to two decimal places.
-		if err != nil || amount <= 0 || !util.IsDecimalValid(r.FormValue("amount")) {
+		if err != nil || amount <= 0 || !util.IsDecimalValid(0.0) {
 			errorMessages = append(errorMessages, "Please enter a valid numeric amount to send with up to two decimal places.")
 		}
 		res.FormData.Amount = amount
@@ -122,10 +122,10 @@ func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http
 
 		// Only allow transfers with accounts that also have "trading-accepted" status
 		if from.Status != constant.Trading.Accepted {
-			t.Render(w, r, res, []string{"Sender is not a trading member. You can only make transfers from entities that have trading member status."})
+			t.Render(w, r, res, []string{"Sender is not a trading member. Transfers can only be made when both entities have trading member status."})
 			return
 		} else if to.Status != constant.Trading.Accepted {
-			t.Render(w, r, res, []string{"Receiver is not a trading member. You can only make transfers to entities that have trading member status."})
+			t.Render(w, r, res, []string{"Receiver is not a trading member. Transfers can only be made when both entities have trading member status."})
 			return
 		}
 		if f.FromEmail == f.ToEmail {
@@ -171,7 +171,7 @@ func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http
 
 func (tr *adminTransactionHandler) pendingTransactions() func(http.ResponseWriter, *http.Request) {
 	type response struct {
-		Transactions []*types.Transaction
+		Transactions []*types.Transfer
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
@@ -188,7 +188,7 @@ func (tr *adminTransactionHandler) pendingTransactions() func(http.ResponseWrite
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		transactions, err := logic.Transaction.FindPendings(account.ID)
+		transactions, err := logic.Transfer.FindPendings(account.ID)
 		if err != nil {
 			l.Logger.Error("AdminTransactionHandler.pendingTransactions failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -201,12 +201,12 @@ func (tr *adminTransactionHandler) pendingTransactions() func(http.ResponseWrite
 	}
 }
 
-func (tr *adminTransactionHandler) isInitiatedStatus(w http.ResponseWriter, t *types.Transaction) (bool, error) {
+func (tr *adminTransactionHandler) isInitiatedStatus(w http.ResponseWriter, t *types.Transfer) (bool, error) {
 	type response struct {
 		Error string `json:"error,omitempty"`
 	}
 
-	if t.Status == constant.Transaction.Completed {
+	if t.Status == constant.Transfer.Completed {
 		js, err := json.Marshal(response{Error: "The transaction has already been completed."})
 		if err != nil {
 			return false, err
@@ -214,7 +214,7 @@ func (tr *adminTransactionHandler) isInitiatedStatus(w http.ResponseWriter, t *t
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(js)
 		return false, nil
-	} else if t.Status == constant.Transaction.Cancelled {
+	} else if t.Status == constant.Transfer.Cancelled {
 		js, err := json.Marshal(response{Error: "The transaction has already been cancelled."})
 		if err != nil {
 			return false, err
@@ -243,7 +243,7 @@ func (tr *adminTransactionHandler) cancelTransaction() func(http.ResponseWriter,
 			return
 		}
 
-		transaction, err := logic.Transaction.Find(req.TransactionID)
+		transaction, err := logic.Transfer.Find(req.TransactionID)
 		if err != nil {
 			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -260,7 +260,7 @@ func (tr *adminTransactionHandler) cancelTransaction() func(http.ResponseWriter,
 			return
 		}
 
-		err = logic.Transaction.Cancel(req.TransactionID, req.Reason)
+		err = logic.Transfer.Cancel(req.TransactionID, req.Reason)
 		if err != nil {
 			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)

@@ -26,7 +26,7 @@ func RegisterRoutes(r *mux.Router) {
 	controller.DashBoardHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.EntityHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.UserHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
-	controller.TransactionHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
+	controller.TransferHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.HistoryHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.TradingHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 

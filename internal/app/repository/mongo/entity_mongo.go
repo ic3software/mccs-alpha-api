@@ -91,6 +91,20 @@ func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
 	return &entity, nil
 }
 
+func (b *entity) FindByAccountNumber(accountNumber string) (*types.Entity, error) {
+	ctx := context.Background()
+	entity := types.Entity{}
+	filter := bson.M{
+		"accountNumber": accountNumber,
+		"deletedAt":     bson.M{"$exists": false},
+	}
+	err := b.c.FindOne(ctx, filter).Decode(&entity)
+	if err != nil {
+		return nil, err
+	}
+	return &entity, nil
+}
+
 func (b *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 	filter := bson.M{"_id": update.ID}
 	update.UpdatedAt = time.Now()

@@ -11,6 +11,34 @@ type account struct{}
 
 var Account = &account{}
 
+func (a *account) FindByID(accountID uint) (*types.Account, error) {
+	var result types.Account
+	err := db.Raw(`
+		SELECT A.id, A.balance
+		FROM accounts AS A
+		WHERE A.id = ?
+		LIMIT 1
+	`, accountID).Scan(&result).Error
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, error) {
+	var result types.Account
+	err := db.Raw(`
+		SELECT id, balance
+		FROM accounts
+		WHERE accounts.account_number = ?
+		LIMIT 1
+	`, accountNumber).Scan(&result).Error
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (a *account) ifAccountExisted(db *gorm.DB, accountNumber string) bool {
 	var result types.Account
 	return !db.Raw(`
@@ -50,19 +78,7 @@ func (a *account) Create() (*types.Account, error) {
 	return &result, tx.Commit().Error
 }
 
-func (a *account) FindByID(accountID uint) (*types.Account, error) {
-	var result types.Account
-	err := db.Raw(`
-	SELECT A.id, A.entity_id, A.balance
-	FROM accounts AS A
-	WHERE A.id = ?
-	LIMIT 1
-	`, accountID).Scan(&result).Error
-	if err != nil {
-		return nil, e.Wrap(err, "pg.Account.FindByID")
-	}
-	return &result, nil
-}
+// TO BE REMOVED
 
 func (a *account) FindByEntityID(entityID string) (*types.Account, error) {
 	account := new(types.Account)

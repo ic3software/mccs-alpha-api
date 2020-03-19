@@ -12,12 +12,37 @@ import (
 	"github.com/spf13/viper"
 )
 
-type transaction struct{}
+type transfer struct{}
 
-var Transaction = &transaction{}
+var Transfer = &transfer{}
+
+func (t *transfer) Propose(proposal *types.TransferProposal) (*types.Journal, error) {
+	journalRecord := &types.Journal{
+		TransferID:        ksuid.New().String(),
+		InitiatedBy:       proposal.InitiatorAccountNumber,
+		FromAccountNumber: proposal.FromAccountNumber,
+		FromEmail:         proposal.FromEmail,
+		FromEntityName:    proposal.FromEntityName,
+		ToAccountNumber:   proposal.ToAccountNumber,
+		ToEmail:           proposal.ToEmail,
+		ToEntityName:      proposal.ToEntityName,
+		Amount:            proposal.Amount,
+		Description:       proposal.Description,
+		Type:              constant.Journal.Transfer,
+		Status:            constant.Transfer.Initiated,
+	}
+	err := db.Create(journalRecord).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return journalRecord, nil
+}
+
+// TO BE REMOVED
 
 // Create makes a transaction directly.
-func (t *transaction) Create(
+func (t *transfer) Create(
 	fromID uint,
 	fromEmail string,
 	fromEntityName string,
@@ -32,17 +57,17 @@ func (t *transaction) Create(
 	tx := db.Begin()
 
 	journalRecord := &types.Journal{
-		TransactionID:  ksuid.New().String(),
-		FromID:         fromID,
-		FromEmail:      fromEmail,
-		FromEntityName: fromEntityName,
-		ToID:           toID,
-		ToEmail:        toEmail,
-		ToEntityName:   toEntityName,
-		Amount:         amount,
-		Description:    desc,
-		Type:           constant.Journal.Transfer,
-		Status:         constant.Transaction.Completed,
+		TransferID:        ksuid.New().String(),
+		FromAccountNumber: "TODO",
+		FromEmail:         fromEmail,
+		FromEntityName:    fromEntityName,
+		ToAccountNumber:   "TODO",
+		ToEmail:           toEmail,
+		ToEntityName:      toEntityName,
+		Amount:            amount,
+		Description:       desc,
+		Type:              constant.Journal.Transfer,
+		Status:            constant.Transfer.Completed,
 	}
 	err := tx.Create(journalRecord).Error
 	if err != nil {
@@ -53,12 +78,12 @@ func (t *transaction) Create(
 	journalID := journalRecord.ID
 
 	// Create postings.
-	err = tx.Create(&types.Posting{AccountID: fromID, JournalID: journalID, Amount: -amount}).Error
+	err = tx.Create(&types.Posting{AccountNumber: fromID, JournalID: journalID, Amount: -amount}).Error
 	if err != nil {
 		tx.Rollback()
 		return e.Wrap(err, "pg.Transaction.Create")
 	}
-	err = tx.Create(&types.Posting{AccountID: toID, JournalID: journalID, Amount: amount}).Error
+	err = tx.Create(&types.Posting{AccountNumber: toID, JournalID: journalID, Amount: amount}).Error
 	if err != nil {
 		tx.Rollback()
 		return e.Wrap(err, "pg.Transaction.Create")
@@ -79,57 +104,9 @@ func (t *transaction) Create(
 	return tx.Commit().Error
 }
 
-// Propose proposes a transaction.
-func (t *transaction) Propose(
-	initiatedBy uint,
-
-	fromID uint,
-	fromEmail string,
-	fromEntityName string,
-
-	toID uint,
-	toEmail string,
-	toEntityName string,
-
-	amount float64,
-	desc string,
-) (*types.Transaction, error) {
-	journalRecord := &types.Journal{
-		TransactionID:  ksuid.New().String(),
-		InitiatedBy:    initiatedBy,
-		FromID:         fromID,
-		FromEmail:      fromEmail,
-		FromEntityName: fromEntityName,
-		ToID:           toID,
-		ToEmail:        toEmail,
-		ToEntityName:   toEntityName,
-		Amount:         amount,
-		Description:    desc,
-		Type:           constant.Journal.Transfer,
-		Status:         constant.Transaction.Initiated,
-	}
-	err := db.Create(journalRecord).Error
-	if err != nil {
-		return nil, e.Wrap(err, "pg.Transaction.Create failed")
-	}
-	return &types.Transaction{
-		TransactionID:  journalRecord.TransactionID,
-		InitiatedBy:    initiatedBy,
-		FromID:         fromID,
-		FromEmail:      fromEmail,
-		FromEntityName: fromEntityName,
-		ToID:           toID,
-		ToEmail:        toEmail,
-		ToEntityName:   toEntityName,
-		Amount:         amount,
-		Description:    desc,
-		Status:         journalRecord.Status,
-	}, nil
-}
-
 // Find finds a transaction.
-func (t *transaction) Find(transactionID uint) (*types.Transaction, error) {
-	var result types.Transaction
+func (t *transfer) Find(transactionID uint) (*types.Transfer, error) {
+	var result types.Transfer
 	err := db.Raw(`
 	SELECT
 		J.id, J.transaction_id, J.initiated_by, J.from_id, J.from_email, J.from_entity_name,
@@ -146,12 +123,12 @@ func (t *transaction) Find(transactionID uint) (*types.Transaction, error) {
 }
 
 // Cancel cancels a transaction.
-func (t *transaction) Cancel(transactionID uint, reason string) error {
+func (t *transfer) Cancel(transactionID uint, reason string) error {
 	err := db.Exec(`
 	UPDATE journals
 	SET status=?, cancellation_reason = ?, updated_at=?
 	WHERE id=?
-	`, constant.Transaction.Cancelled, reason, time.Now(), transactionID).Error
+	`, constant.Transfer.Cancelled, reason, time.Now(), transactionID).Error
 
 	if err != nil {
 		return e.Wrap(err, "pg.Transaction.Cancel failed")
@@ -160,7 +137,7 @@ func (t *transaction) Cancel(transactionID uint, reason string) error {
 }
 
 // Accept accepts a transaction.
-func (t *transaction) Accept(
+func (t *transfer) Accept(
 	transactionID uint,
 	fromID uint,
 	toID uint,
@@ -170,18 +147,18 @@ func (t *transaction) Accept(
 
 	// Create postings.
 	err := tx.Create(&types.Posting{
-		AccountID: fromID,
-		JournalID: transactionID,
-		Amount:    -amount,
+		AccountNumber: fromID,
+		JournalID:     transactionID,
+		Amount:        -amount,
 	}).Error
 	if err != nil {
 		tx.Rollback()
 		return e.Wrap(err, "pg.Transaction.Accept")
 	}
 	err = tx.Create(&types.Posting{
-		AccountID: toID,
-		JournalID: transactionID,
-		Amount:    amount,
+		AccountNumber: toID,
+		JournalID:     transactionID,
+		Amount:        amount,
 	}).Error
 	if err != nil {
 		tx.Rollback()
@@ -205,7 +182,7 @@ func (t *transaction) Accept(
 	UPDATE journals
 	SET status=?, updated_at=?
 	WHERE id=?
-	`, constant.Transaction.Completed, time.Now(), transactionID).Error
+	`, constant.Transfer.Completed, time.Now(), transactionID).Error
 	if err != nil {
 		tx.Rollback()
 		return e.Wrap(err, "pg.Transaction.Accept")
@@ -215,8 +192,8 @@ func (t *transaction) Accept(
 }
 
 // FindPendings finds the pending transactions.
-func (t *transaction) FindPendings(id uint) ([]*types.Transaction, error) {
-	var result []*types.Transaction
+func (t *transfer) FindPendings(id uint) ([]*types.Transfer, error) {
+	var result []*types.Transfer
 	err := db.Raw(`
 	SELECT
 		J.id, J.transaction_id, CAST((CASE WHEN J.initiated_by = ? THEN 1 ELSE 0 END) AS BIT) AS "is_initiator",
@@ -225,7 +202,7 @@ func (t *transaction) FindPendings(id uint) ([]*types.Transaction, error) {
 	FROM journals AS J
 	WHERE (J.from_id = ? OR J.to_id = ?) AND J.status = ?
 	ORDER BY J.created_at DESC
-	`, id, id, id, constant.Transaction.Initiated).Scan(&result).Error
+	`, id, id, id, constant.Transfer.Initiated).Scan(&result).Error
 
 	if err != nil {
 		return nil, e.Wrap(err, "pg.Transaction.FindPendingTransactions failed")
@@ -234,8 +211,8 @@ func (t *transaction) FindPendings(id uint) ([]*types.Transaction, error) {
 }
 
 // FindRecent finds the recent 3 completed transactions.
-func (t *transaction) FindRecent(id uint) ([]*types.Transaction, error) {
-	var result []*types.Transaction
+func (t *transfer) FindRecent(id uint) ([]*types.Transfer, error) {
+	var result []*types.Transfer
 	err := db.Raw(`
 	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
 	FROM postings AS P
@@ -252,7 +229,7 @@ func (t *transaction) FindRecent(id uint) ([]*types.Transaction, error) {
 }
 
 // FindInRange finds the completed transactions in specific time range.
-func (t *transaction) FindInRange(id uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.Transaction, int, error) {
+func (t *transfer) FindInRange(id uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.Transfer, int, error) {
 	limit := viper.GetInt("page_size")
 	offset := viper.GetInt("page_size") * (page - 1)
 
@@ -266,7 +243,7 @@ func (t *transaction) FindInRange(id uint, dateFrom time.Time, dateTo time.Time,
 	// Add 24 hours to include the end date.
 	dateTo = dateTo.Add(24 * time.Hour)
 
-	var result []*types.Transaction
+	var result []*types.Transfer
 	err := db.Raw(`
 	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
 	FROM postings AS P

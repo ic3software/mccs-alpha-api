@@ -62,7 +62,7 @@ func (h *historyHandler) searchHistory() func(http.ResponseWriter, *http.Request
 		FormData     formData
 		TotalPages   int
 		Balance      float64
-		Transactions []*types.Transaction
+		Transactions []*types.Transfer
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
@@ -98,7 +98,7 @@ func (h *historyHandler) searchHistory() func(http.ResponseWriter, *http.Request
 		res.Balance = account.Balance
 
 		// Get the recent transactions.
-		transactions, totalPages, err := logic.Transaction.FindInRange(
+		transactions, totalPages, err := logic.Transfer.FindInRange(
 			account.ID,
 			util.ParseTime(f.DateFrom),
 			util.ParseTime(f.DateTo),
