@@ -16,20 +16,14 @@ type transfer struct{}
 var Transfer = &transfer{}
 
 func (t *transfer) Propose(proposal *types.TransferProposal) (*types.Journal, error) {
-	err := t.checkBalance(proposal)
-	if err != nil {
-		return nil, err
-	}
-
 	journal, err := pg.Transfer.Propose(proposal)
 	if err != nil {
 		return nil, err
 	}
-
 	return journal, nil
 }
 
-func (t *transfer) checkBalance(proposal *types.TransferProposal) error {
+func (t *transfer) CheckBalance(proposal *types.TransferProposal) error {
 	from, err := pg.Account.FindByAccountNumber(proposal.FromAccountNumber)
 	if err != nil {
 		return err

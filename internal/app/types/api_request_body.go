@@ -372,7 +372,7 @@ func (req *TransferReqBody) validate() []error {
 	} else {
 		err := goluhn.Validate(req.InitiatorAccountNumber)
 		if err != nil {
-			errs = append(errs, errors.New("initiator is wrong"))
+			errs = append(errs, errors.New("initiator account number is wrong"))
 		}
 	}
 
@@ -381,7 +381,7 @@ func (req *TransferReqBody) validate() []error {
 	} else {
 		err := goluhn.Validate(req.ReceiverAccountNumber)
 		if err != nil {
-			errs = append(errs, errors.New("receiver is wrong"))
+			errs = append(errs, errors.New("receiver account number is wrong"))
 		}
 	}
 

@@ -86,6 +86,12 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 			return
 		}
 
+		err = logic.Transfer.CheckBalance(proposal)
+		if err != nil {
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
 		journal, err := logic.Transfer.Propose(proposal)
 		if err != nil {
 			l.Logger.Error("[Error] TransferHandler.proposeTransfer failed:", zap.Error(err))
