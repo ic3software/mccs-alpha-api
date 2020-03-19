@@ -73,3 +73,8 @@ func autoMigrate(db *gorm.DB) {
 		panic(err)
 	}
 }
+
+// For seed/migration/restore data
+func DB() *gorm.DB {
+	return db
+}
