@@ -30,21 +30,21 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 		SELECT
 			transfer_id, amount, description, status, created_at,
 			CASE
-				WHEN initiated_by = from_account_number THEN
+				WHEN from_account_number = ? THEN
 					'out'
 				ELSE
 					'in'
 				END
 			AS transfer,
 			CASE
-				WHEN initiated_by = from_account_number THEN
+				WHEN from_account_number = ? THEN
 					to_account_number
 				ELSE
 					from_account_number
 				END
 			AS account_number,
 			CASE
-				WHEN initiated_by = from_account_number THEN
+				WHEN from_account_number = ? THEN
 					to_entity_name
 				ELSE
 					from_entity_name
@@ -66,13 +66,29 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 
 	if q.Status == "all" {
 		err = db.Raw(countSQL, q.QueryingAccountNumber, q.QueryingAccountNumber).Count(&numberOfResults).Error
-		err = db.Raw(searchSQL+"ORDER BY created_at DESC LIMIT ? OFFSET ?", q.QueryingAccountNumber, q.QueryingAccountNumber, q.QueryingAccountNumber, q.PageSize, q.Offset).
+		err = db.Raw(searchSQL+"ORDER BY created_at DESC LIMIT ? OFFSET ?",
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.PageSize,
+			q.Offset).
 			Scan(&transfers).Error
 	} else {
 		err = db.Raw(countSQL+"AND status = ?", q.QueryingAccountNumber, q.QueryingAccountNumber, constant.MapTransferType(q.Status)).
 			Count(&numberOfResults).Error
 		err = db.Raw(searchSQL+"AND status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
-			q.QueryingAccountNumber, q.QueryingAccountNumber, q.QueryingAccountNumber, constant.MapTransferType(q.Status), q.PageSize, q.Offset).
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			constant.MapTransferType(q.Status),
+			q.PageSize,
+			q.Offset).
 			Scan(&transfers).Error
 	}
 	if err != nil {
