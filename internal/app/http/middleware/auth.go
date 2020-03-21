@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
+	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 )
 

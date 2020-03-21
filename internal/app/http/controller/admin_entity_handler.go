@@ -10,9 +10,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
+	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
@@ -100,7 +100,7 @@ func (handler *adminEntityHandler) updateEntity() func(http.ResponseWriter, *htt
 		Data *types.AdminEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewAdminUpdateEntityReqBody(r)
+		req, err := api.NewAdminUpdateEntityReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] AdminEntityHandler.updateEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -155,7 +155,7 @@ func (handler *adminEntityHandler) updateEntity() func(http.ResponseWriter, *htt
 		if len(req.Wants) != 0 {
 			newEntity.Wants = types.ToTagFields(req.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminEntityRespond(newEntity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: api.NewAdminEntityRespond(newEntity)})
 	}
 }
 

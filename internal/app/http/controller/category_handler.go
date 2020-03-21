@@ -8,9 +8,9 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
@@ -65,7 +65,7 @@ func (a *categoryHandler) searchCategory() func(http.ResponseWriter, *http.Reque
 		Meta meta     `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := types.NewSearchCategoryQuery(r.URL.Query())
+		query, err := api.NewSearchCategoryQuery(r.URL.Query())
 		if err != nil {
 			l.Logger.Info("[Info] CategoryHandler.searchCategory failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)

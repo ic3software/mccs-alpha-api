@@ -8,9 +8,9 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
+	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/cookie"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
@@ -107,7 +107,7 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewLoginReqBody(r)
+		req, err := api.NewLoginReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -144,7 +144,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewSignupReqBody(r)
+		req, err := api.NewSignupReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.signup failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -388,7 +388,7 @@ func (handler *userHandler) userProfile() func(http.ResponseWriter, *http.Reques
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
+		api.Respond(w, r, http.StatusOK, respond{Data: api.NewUserRespond(user)})
 	}
 }
 
@@ -427,7 +427,7 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
+		api.Respond(w, r, http.StatusOK, respond{Data: api.NewUserRespond(user)})
 	}
 }
 
@@ -438,7 +438,7 @@ func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.R
 	toData := func(entities []*types.Entity) []*types.EntityRespond {
 		result := []*types.EntityRespond{}
 		for _, entity := range entities {
-			result = append(result, types.NewEntityRespondWithEmail(entity))
+			result = append(result, api.NewEntityRespondWithEmail(entity))
 		}
 		return result
 	}
@@ -459,7 +459,7 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 		Data *types.EntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewUpdateUserEntityReqBody(r)
+		req, err := api.NewUpdateUserEntityReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.updateUserEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -516,7 +516,7 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 		if len(req.Wants) != 0 {
 			entity.Wants = types.ToTagFields(req.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(entity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: api.NewEntityRespondWithEmail(entity)})
 	}
 }
 

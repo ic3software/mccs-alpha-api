@@ -2,12 +2,8 @@ package types
 
 import (
 	"errors"
-	"net/url"
 	"time"
 
-	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/util"
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -28,34 +24,6 @@ type SearchEntityQuery struct {
 	LocationCity    string
 }
 
-func NewSearchEntityQuery(q url.Values) (*SearchEntityQuery, error) {
-	page, err := util.ToInt(q.Get("page"), 1)
-	if err != nil {
-		return nil, err
-	}
-	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
-	if err != nil {
-		return nil, err
-	}
-	return &SearchEntityQuery{
-		QueryingEntityID: q.Get("querying_entity_id"),
-		Page:             page,
-		PageSize:         pageSize,
-		EntityName:       q.Get("entity_name"),
-		Category:         q.Get("category"),
-		Offers:           util.ToSearchTags(q.Get("offers")),
-		Wants:            util.ToSearchTags(q.Get("wants")),
-		TaggedSince:      util.ParseTime(q.Get("tagged_since")),
-		FavoritesOnly:    q.Get("favorites_only") == "true",
-		Statuses: []string{
-			constant.Entity.Accepted,
-			constant.Trading.Pending,
-			constant.Trading.Accepted,
-			constant.Trading.Rejected,
-		},
-	}, nil
-}
-
 func (query *SearchEntityQuery) Validate() []error {
 	errs := []error{}
 
@@ -70,22 +38,6 @@ func (query *SearchEntityQuery) Validate() []error {
 	return errs
 }
 
-func NewSearchTagQuery(q url.Values) (*SearchTagQuery, error) {
-	page, err := util.ToInt(q.Get("page"), 1)
-	if err != nil {
-		return nil, err
-	}
-	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
-	if err != nil {
-		return nil, err
-	}
-	return &SearchTagQuery{
-		Fragment: q.Get("fragment"),
-		Page:     page,
-		PageSize: pageSize,
-	}, nil
-}
-
 type SearchTagQuery struct {
 	Fragment string `json:"fragment"`
 	Page     int    `json:"page"`
@@ -97,23 +49,6 @@ func (q *SearchTagQuery) Validate() []error {
 	return errs
 }
 
-func NewSearchCategoryQuery(q url.Values) (*SearchCategoryQuery, error) {
-	page, err := util.ToInt(q.Get("page"), 1)
-	if err != nil {
-		return nil, err
-	}
-	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
-	if err != nil {
-		return nil, err
-	}
-	return &SearchCategoryQuery{
-		Fragment: q.Get("fragment"),
-		Prefix:   q.Get("prefix"),
-		Page:     page,
-		PageSize: pageSize,
-	}, nil
-}
-
 type SearchCategoryQuery struct {
 	Fragment string `json:"fragment"`
 	Prefix   string `json:"prefix"`
@@ -123,5 +58,28 @@ type SearchCategoryQuery struct {
 
 func (query *SearchCategoryQuery) Validate() []error {
 	errs := []error{}
+	return errs
+}
+
+type SearchTransferQuery struct {
+	Page             int
+	PageSize         int
+	Status           string
+	QueryingEntityID string
+
+	QueryingAccountNumber string
+	Offset                int
+}
+
+func (query *SearchTransferQuery) Validate() []error {
+	errs := []error{}
+
+	if query.QueryingEntityID == "" {
+		errs = append(errs, errors.New("Please specify the querying_entity_id."))
+	}
+	if query.Status != "all" && query.Status != "initiated" && query.Status != "completed" && query.Status != "cancelled" {
+		errs = append(errs, errors.New("Please specify valid status."))
+	}
+
 	return errs
 }
