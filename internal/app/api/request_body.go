@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -68,6 +69,32 @@ func NewTransferReqBody(r *http.Request) (*types.TransferReqBody, []error) {
 	if err != nil {
 		return nil, []error{err}
 	}
+	return &req, req.Validate()
+}
+
+func NewUpdateTransferReqBody(r *http.Request) (*types.UpdateTransferReqBody, []error) {
+	var body struct {
+		Action string `json:"action"`
+		Reason string `json:"reason"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&body)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	var req types.UpdateTransferReqBody
+
+	req.Action = body.Action
+	req.Reason = body.Reason
+	req.TransferID = mux.Vars(r)["searchEntityID"]
+
+	journal, err := logic.Transfer.FindJournal(req.TransferID)
+	if err != nil {
+		return nil, []error{err}
+	}
+	req.Journal = journal
+
 	return &req, req.Validate()
 }
 

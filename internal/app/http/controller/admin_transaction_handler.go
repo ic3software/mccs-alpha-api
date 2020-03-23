@@ -1,21 +1,9 @@
 package controller
 
 import (
-	"fmt"
-	"net/http"
-	"strconv"
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/flash"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
-	"github.com/ic3network/mccs-alpha-api/util"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.uber.org/zap"
 )
 
 type adminTransactionHandler struct {
@@ -37,135 +25,116 @@ func (tr *adminTransactionHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	tr.once.Do(func() {
-		adminPrivate.Path("/transaction").HandlerFunc(tr.transactionPage()).Methods("GET")
-		adminPrivate.Path("/transaction").HandlerFunc(tr.transaction()).Methods("POST")
+		// adminPrivate.Path("/transaction").HandlerFunc(tr.transaction()).Methods("POST")
 
 		// adminPrivate.Path("/api/pendingTransactions").HandlerFunc(tr.pendingTransactions()).Methods("GET")
 		// adminPrivate.Path("/api/cancelTransaction").HandlerFunc(tr.cancelTransaction()).Methods("POST")
 	})
 }
 
-func (tr *adminTransactionHandler) transactionPage() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("admin/transaction")
-	type formData struct {
-		FromEmail   string
-		ToEmail     string
-		Amount      float64
-		Description string
-	}
-	type response struct {
-		FormData      formData
-		CurBalance    float64
-		MaxNegBalance float64
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		t.Render(w, r, nil, nil)
-	}
-}
+// func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http.Request) {
+// 	t := template.NewView("admin/transaction")
+// 	type formData struct {
+// 		FromEmail   string
+// 		ToEmail     string
+// 		Amount      float64
+// 		Description string
+// 	}
+// 	type response struct {
+// 		FormData      formData
+// 		CurBalance    float64
+// 		MaxNegBalance float64
+// 	}
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		r.ParseForm()
+// 		f := formData{
+// 			FromEmail:   r.FormValue("from_email_address"),
+// 			ToEmail:     r.FormValue("to_email_address"),
+// 			Description: r.FormValue("description"),
+// 		}
+// 		res := response{FormData: f}
 
-func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("admin/transaction")
-	type formData struct {
-		FromEmail   string
-		ToEmail     string
-		Amount      float64
-		Description string
-	}
-	type response struct {
-		FormData      formData
-		CurBalance    float64
-		MaxNegBalance float64
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
-		f := formData{
-			FromEmail:   r.FormValue("from_email_address"),
-			ToEmail:     r.FormValue("to_email_address"),
-			Description: r.FormValue("description"),
-		}
-		res := response{FormData: f}
+// 		// Validate user inputs.
+// 		errorMessages := []string{}
+// 		if !util.IsValidEmail(f.FromEmail) {
+// 			errorMessages = append(errorMessages, "Please enter a valid sender email address.")
+// 		}
+// 		if !util.IsValidEmail(f.ToEmail) {
+// 			errorMessages = append(errorMessages, "Please enter a valid recipient email address.")
+// 		}
+// 		amount, err := strconv.ParseFloat(r.FormValue("amount"), 64)
+// 		// Amount should be positive value and with up to two decimal places.
+// 		if err != nil || amount <= 0 || !util.IsDecimalValid(0.0) {
+// 			errorMessages = append(errorMessages, "Please enter a valid numeric amount to send with up to two decimal places.")
+// 		}
+// 		res.FormData.Amount = amount
+// 		if len(errorMessages) > 0 {
+// 			t.Render(w, r, res, errorMessages)
+// 			return
+// 		}
+// 		f.Amount = amount
 
-		// Validate user inputs.
-		errorMessages := []string{}
-		if !util.IsValidEmail(f.FromEmail) {
-			errorMessages = append(errorMessages, "Please enter a valid sender email address.")
-		}
-		if !util.IsValidEmail(f.ToEmail) {
-			errorMessages = append(errorMessages, "Please enter a valid recipient email address.")
-		}
-		amount, err := strconv.ParseFloat(r.FormValue("amount"), 64)
-		// Amount should be positive value and with up to two decimal places.
-		if err != nil || amount <= 0 || !util.IsDecimalValid(0.0) {
-			errorMessages = append(errorMessages, "Please enter a valid numeric amount to send with up to two decimal places.")
-		}
-		res.FormData.Amount = amount
-		if len(errorMessages) > 0 {
-			t.Render(w, r, res, errorMessages)
-			return
-		}
-		f.Amount = amount
+// 		from, err := EntityHandler.FindByEmail(f.FromEmail)
+// 		if err != nil {
+// 			l.Logger.Info("Transaction failed", zap.Error(err))
+// 			t.Error(w, r, res, err)
+// 			return
+// 		}
+// 		to, err := EntityHandler.FindByEmail(f.ToEmail)
+// 		if err != nil {
+// 			l.Logger.Info("Transaction failed", zap.Error(err))
+// 			t.Error(w, r, res, err)
+// 			return
+// 		}
 
-		from, err := EntityHandler.FindByEmail(f.FromEmail)
-		if err != nil {
-			l.Logger.Info("Transaction failed", zap.Error(err))
-			t.Error(w, r, res, err)
-			return
-		}
-		to, err := EntityHandler.FindByEmail(f.ToEmail)
-		if err != nil {
-			l.Logger.Info("Transaction failed", zap.Error(err))
-			t.Error(w, r, res, err)
-			return
-		}
+// 		// Only allow transfers with accounts that also have "trading-accepted" status
+// 		if from.Status != constant.Trading.Accepted {
+// 			t.Render(w, r, res, []string{"Sender is not a trading member. Transfers can only be made when both entities have trading member status."})
+// 			return
+// 		} else if to.Status != constant.Trading.Accepted {
+// 			t.Render(w, r, res, []string{"Receiver is not a trading member. Transfers can only be made when both entities have trading member status."})
+// 			return
+// 		}
+// 		if f.FromEmail == f.ToEmail {
+// 			t.Render(w, r, res, []string{"You cannot create a transaction from and to the same account."})
+// 			return
+// 		}
 
-		// Only allow transfers with accounts that also have "trading-accepted" status
-		if from.Status != constant.Trading.Accepted {
-			t.Render(w, r, res, []string{"Sender is not a trading member. Transfers can only be made when both entities have trading member status."})
-			return
-		} else if to.Status != constant.Trading.Accepted {
-			t.Render(w, r, res, []string{"Receiver is not a trading member. Transfers can only be made when both entities have trading member status."})
-			return
-		}
-		if f.FromEmail == f.ToEmail {
-			t.Render(w, r, res, []string{"You cannot create a transaction from and to the same account."})
-			return
-		}
+// 		err = logic.AdminTransaction.Create(
+// 			from.ID.Hex(),
+// 			f.FromEmail,
+// 			from.EntityName,
+// 			to.ID.Hex(),
+// 			f.ToEmail,
+// 			to.EntityName,
+// 			f.Amount,
+// 			f.Description,
+// 		)
+// 		if err != nil {
+// 			l.Logger.Info("Transaction failed", zap.Error(err))
+// 			t.Error(w, r, res, err)
+// 			return
+// 		}
 
-		err = logic.AdminTransaction.Create(
-			from.ID.Hex(),
-			f.FromEmail,
-			from.EntityName,
-			to.ID.Hex(),
-			f.ToEmail,
-			to.EntityName,
-			f.Amount,
-			f.Description,
-		)
-		if err != nil {
-			l.Logger.Info("Transaction failed", zap.Error(err))
-			t.Error(w, r, res, err)
-			return
-		}
+// 		go func() {
+// 			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
+// 			adminUser, err := logic.AdminUser.FindByID(objID)
+// 			if err != nil {
+// 				l.Logger.Error("log.Admin.Transaction failed", zap.Error(err))
+// 				return
+// 			}
+// 			err = logic.UserAction.Log(
+// 				log.Admin.Transfer(adminUser, f.FromEmail, f.ToEmail, f.Amount, f.Description),
+// 			)
+// 			if err != nil {
+// 				l.Logger.Error("log.Admin.Transaction failed", zap.Error(err))
+// 			}
+// 		}()
 
-		go func() {
-			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-			adminUser, err := logic.AdminUser.FindByID(objID)
-			if err != nil {
-				l.Logger.Error("log.Admin.Transaction failed", zap.Error(err))
-				return
-			}
-			err = logic.UserAction.Log(
-				log.Admin.Transfer(adminUser, f.FromEmail, f.ToEmail, f.Amount, f.Description),
-			)
-			if err != nil {
-				l.Logger.Error("log.Admin.Transaction failed", zap.Error(err))
-			}
-		}()
-
-		flash.Success(w, f.FromEmail+" has transferred "+fmt.Sprintf("%.2f", f.Amount)+" Credits to "+f.ToEmail)
-		http.Redirect(w, r, "/admin/transaction", http.StatusFound)
-	}
-}
+// 		flash.Success(w, f.FromEmail+" has transferred "+fmt.Sprintf("%.2f", f.Amount)+" Credits to "+f.ToEmail)
+// 		http.Redirect(w, r, "/admin/transaction", http.StatusFound)
+// 	}
+// }
 
 // func (tr *adminTransactionHandler) pendingTransactions() func(http.ResponseWriter, *http.Request) {
 // 	type response struct {

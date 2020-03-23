@@ -7,7 +7,6 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/pg"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 )
 
 type transfer struct{}
@@ -20,6 +19,14 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 		return nil, err
 	}
 	return transactions, nil
+}
+
+func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
+	journal, err := pg.Transfer.FindJournal(transferID)
+	if err != nil {
+		return nil, err
+	}
+	return journal, nil
 }
 
 func (t *transfer) Propose(proposal *types.TransferProposal) (*types.Journal, error) {
@@ -89,6 +96,22 @@ func (t *transfer) maxNegativeBalanceCanBeTransferred(a *types.Account) (float64
 	return maxNegBal - math.Abs(a.Balance), nil
 }
 
+func (t *transfer) Cancel(transferID string, reason string) error {
+	err := pg.Transfer.Cancel(transferID, reason)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *transfer) Accept(j *types.Journal) error {
+	err := pg.Transfer.Accept(j)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 // func (t *transfer) Find(transactionID uint) (*types.Transfer, error) {
@@ -106,32 +129,6 @@ func (t *transfer) maxNegativeBalanceCanBeTransferred(a *types.Account) (float64
 // 	}
 // 	return transactions, nil
 // }
-
-func (t *transfer) Cancel(transactionID uint, reason string) error {
-	err := pg.Transfer.Cancel(transactionID, reason)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (t *transfer) Accept(
-	transactionID uint,
-	fromID uint,
-	toID uint,
-	amount float64,
-) error {
-	err := pg.Transfer.Accept(
-		transactionID,
-		fromID,
-		toID,
-		amount,
-	)
-	if err != nil {
-		return e.Wrap(err, "service.Account.MakeTransfer failed")
-	}
-	return nil
-}
 
 // func (t *transfer) FindRecent(accountID uint) ([]*types.Transfer, error) {
 // 	transactions, err := pg.Transfer.FindRecent(accountID)

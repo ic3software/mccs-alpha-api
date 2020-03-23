@@ -329,6 +329,30 @@ func (req *TransferReqBody) Validate() []error {
 	return errs
 }
 
+type UpdateTransferReqBody struct {
+	TransferID string
+	Action     string
+	Reason     string
+
+	Journal *Journal
+	User    *User
+}
+
+func (req *UpdateTransferReqBody) Validate() []error {
+	errs := []error{}
+
+	if req.Action != "accept" && req.Action != "reject" && req.Action != "cancel" {
+		errs = append(errs, errors.New("Please enter a valid action"))
+	}
+	if req.Journal.Status == constant.Transfer.Completed {
+		errs = append(errs, errors.New("The transaction has already been completed by the counterparty."))
+	} else if req.Journal.Status == constant.Transfer.Cancelled {
+		errs = append(errs, errors.New("The transaction has already been cancelled by the counterparty."))
+	}
+
+	return errs
+}
+
 // Admin
 
 type AdminUpdateEntityReqBody struct {
