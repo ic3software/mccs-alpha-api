@@ -14,5 +14,5 @@ var (
 	// ErrUnauthorized occurs when the user is unauthorized.
 	ErrUnauthorized = errors.New("Could not authenticate you.")
 	// ErrPermissionDenied occurs when the user does not have permission to perform the action.
-	ErrPermissionDenied = errors.New("Permission denied")
+	ErrPermissionDenied = errors.New("Permission denied.")
 )
