@@ -9,9 +9,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
+	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
@@ -114,7 +114,7 @@ func (handler *entityHandler) UpdateOffersAndWants(old *types.Entity, offers, wa
 }
 
 func (handler *entityHandler) getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
-	query, err := types.NewSearchEntityQuery(q)
+	query, err := api.NewSearchEntityQuery(q)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 		result := []*types.SearchEntityRespond{}
 		queryingEntityStatus := handler.getQueryingEntityStatus(query.QueryingEntityID)
 		for _, entity := range entities {
-			result = append(result, types.NewSearchEntityRespond(entity, queryingEntityStatus, query.FavoriteEntities))
+			result = append(result, api.NewSearchEntityRespond(entity, queryingEntityStatus, query.FavoriteEntities))
 		}
 		return result
 	}
@@ -227,7 +227,7 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 		queryingEntityStatus := handler.getQueryingEntityStatus(queryingEntityID)
 		favoriteEntities := handler.getFavoriteEntities(queryingEntityID)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewSearchEntityRespond(searchEntity, queryingEntityStatus, favoriteEntities)})
+		api.Respond(w, r, http.StatusOK, respond{Data: api.NewSearchEntityRespond(searchEntity, queryingEntityStatus, favoriteEntities)})
 	}
 }
 
@@ -272,7 +272,7 @@ func (handler *entityHandler) checkEntityStatus(SenderEntity, ReceiverEntity *ty
 
 func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewEmailReqBody(r)
+		req, err := api.NewEmailReqBody(r)
 		if err != nil {
 			l.Logger.Info("[Info] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)

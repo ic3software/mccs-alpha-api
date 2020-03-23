@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/pg"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -14,6 +13,14 @@ import (
 type transfer struct{}
 
 var Transfer = &transfer{}
+
+func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRespond, error) {
+	transactions, err := pg.Transfer.Search(q)
+	if err != nil {
+		return nil, err
+	}
+	return transactions, nil
+}
 
 func (t *transfer) Propose(proposal *types.TransferProposal) (*types.Journal, error) {
 	journal, err := pg.Transfer.Propose(proposal)
@@ -84,21 +91,21 @@ func (t *transfer) maxNegativeBalanceCanBeTransferred(a *types.Account) (float64
 
 // TO BE REMOVED
 
-func (t *transfer) Find(transactionID uint) (*types.Transfer, error) {
-	transaction, err := pg.Transfer.Find(transactionID)
-	if err != nil {
-		return nil, err
-	}
-	return transaction, nil
-}
+// func (t *transfer) Find(transactionID uint) (*types.Transfer, error) {
+// 	transaction, err := pg.Transfer.Find(transactionID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return transaction, nil
+// }
 
-func (t *transfer) FindPendings(accountID uint) ([]*types.Transfer, error) {
-	transactions, err := pg.Transfer.FindPendings(accountID)
-	if err != nil {
-		return nil, err
-	}
-	return transactions, nil
-}
+// func (t *transfer) FindPendings(accountID uint) ([]*types.Transfer, error) {
+// 	transactions, err := pg.Transfer.FindPendings(accountID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return transactions, nil
+// }
 
 func (t *transfer) Cancel(transactionID uint, reason string) error {
 	err := pg.Transfer.Cancel(transactionID, reason)
@@ -126,18 +133,18 @@ func (t *transfer) Accept(
 	return nil
 }
 
-func (t *transfer) FindRecent(accountID uint) ([]*types.Transfer, error) {
-	transactions, err := pg.Transfer.FindRecent(accountID)
-	if err != nil {
-		return nil, err
-	}
-	return transactions, nil
-}
+// func (t *transfer) FindRecent(accountID uint) ([]*types.Transfer, error) {
+// 	transactions, err := pg.Transfer.FindRecent(accountID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return transactions, nil
+// }
 
-func (t *transfer) FindInRange(accountID uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.Transfer, int, error) {
-	transactions, totalPages, err := pg.Transfer.FindInRange(accountID, dateFrom, dateTo, page)
-	if err != nil {
-		return nil, 0, err
-	}
-	return transactions, totalPages, nil
-}
+// func (t *transfer) FindInRange(accountID uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.Transfer, int, error) {
+// 	transactions, totalPages, err := pg.Transfer.FindInRange(accountID, dateFrom, dateTo, page)
+// 	if err != nil {
+// 		return nil, 0, err
+// 	}
+// 	return transactions, totalPages, nil
+// }

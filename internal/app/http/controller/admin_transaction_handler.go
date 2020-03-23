@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
-	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/flash"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
@@ -42,8 +40,8 @@ func (tr *adminTransactionHandler) RegisterRoutes(
 		adminPrivate.Path("/transaction").HandlerFunc(tr.transactionPage()).Methods("GET")
 		adminPrivate.Path("/transaction").HandlerFunc(tr.transaction()).Methods("POST")
 
-		adminPrivate.Path("/api/pendingTransactions").HandlerFunc(tr.pendingTransactions()).Methods("GET")
-		adminPrivate.Path("/api/cancelTransaction").HandlerFunc(tr.cancelTransaction()).Methods("POST")
+		// adminPrivate.Path("/api/pendingTransactions").HandlerFunc(tr.pendingTransactions()).Methods("GET")
+		// adminPrivate.Path("/api/cancelTransaction").HandlerFunc(tr.cancelTransaction()).Methods("POST")
 	})
 }
 
@@ -169,103 +167,103 @@ func (tr *adminTransactionHandler) transaction() func(http.ResponseWriter, *http
 	}
 }
 
-func (tr *adminTransactionHandler) pendingTransactions() func(http.ResponseWriter, *http.Request) {
-	type response struct {
-		Transactions []*types.Transfer
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
+// func (tr *adminTransactionHandler) pendingTransactions() func(http.ResponseWriter, *http.Request) {
+// 	type response struct {
+// 		Transactions []*types.Transfer
+// 	}
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		q := r.URL.Query()
 
-		user, err := UserHandler.FindByEntityID(q.Get("entity_id"))
-		if err != nil {
-			l.Logger.Error("AdminTransactionHandler.pendingTransactions failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		account, err := AccountHandler.FindByUserID(user.ID.Hex())
-		if err != nil {
-			l.Logger.Error("AdminTransactionHandler.pendingTransactions failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		transactions, err := logic.Transfer.FindPendings(account.ID)
-		if err != nil {
-			l.Logger.Error("AdminTransactionHandler.pendingTransactions failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		res := response{Transactions: transactions}
-		js, err := json.Marshal(res)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
-	}
-}
+// 		user, err := UserHandler.FindByEntityID(q.Get("entity_id"))
+// 		if err != nil {
+// 			l.Logger.Error("AdminTransactionHandler.pendingTransactions failed", zap.Error(err))
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			return
+// 		}
+// 		account, err := AccountHandler.FindByUserID(user.ID.Hex())
+// 		if err != nil {
+// 			l.Logger.Error("AdminTransactionHandler.pendingTransactions failed", zap.Error(err))
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			return
+// 		}
+// 		transactions, err := logic.Transfer.FindPendings(account.ID)
+// 		if err != nil {
+// 			l.Logger.Error("AdminTransactionHandler.pendingTransactions failed", zap.Error(err))
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			return
+// 		}
+// 		res := response{Transactions: transactions}
+// 		js, err := json.Marshal(res)
+// 		w.Header().Set("Content-Type", "application/json")
+// 		w.Write(js)
+// 	}
+// }
 
-func (tr *adminTransactionHandler) isInitiatedStatus(w http.ResponseWriter, t *types.Transfer) (bool, error) {
-	type response struct {
-		Error string `json:"error,omitempty"`
-	}
+// func (tr *adminTransactionHandler) isInitiatedStatus(w http.ResponseWriter, t *types.Transfer) (bool, error) {
+// 	type response struct {
+// 		Error string `json:"error,omitempty"`
+// 	}
 
-	if t.Status == constant.Transfer.Completed {
-		js, err := json.Marshal(response{Error: "The transaction has already been completed."})
-		if err != nil {
-			return false, err
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
-		return false, nil
-	} else if t.Status == constant.Transfer.Cancelled {
-		js, err := json.Marshal(response{Error: "The transaction has already been cancelled."})
-		if err != nil {
-			return false, err
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
-		return false, nil
-	}
+// 	if t.Status == constant.Transfer.Completed {
+// 		js, err := json.Marshal(response{Error: "The transaction has already been completed."})
+// 		if err != nil {
+// 			return false, err
+// 		}
+// 		w.Header().Set("Content-Type", "application/json")
+// 		w.Write(js)
+// 		return false, nil
+// 	} else if t.Status == constant.Transfer.Cancelled {
+// 		js, err := json.Marshal(response{Error: "The transaction has already been cancelled."})
+// 		if err != nil {
+// 			return false, err
+// 		}
+// 		w.Header().Set("Content-Type", "application/json")
+// 		w.Write(js)
+// 		return false, nil
+// 	}
 
-	return true, nil
-}
+// 	return true, nil
+// }
 
-func (tr *adminTransactionHandler) cancelTransaction() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		TransactionID uint   `json:"id"`
-		Reason        string `json:"reason"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
+// func (tr *adminTransactionHandler) cancelTransaction() func(http.ResponseWriter, *http.Request) {
+// 	type request struct {
+// 		TransactionID uint   `json:"id"`
+// 		Reason        string `json:"reason"`
+// 	}
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		var req request
 
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
-		if err != nil {
-			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+// 		decoder := json.NewDecoder(r.Body)
+// 		err := decoder.Decode(&req)
+// 		if err != nil {
+// 			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			return
+// 		}
 
-		transaction, err := logic.Transfer.Find(req.TransactionID)
-		if err != nil {
-			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+// 		transaction, err := logic.Transfer.Find(req.TransactionID)
+// 		if err != nil {
+// 			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			return
+// 		}
 
-		shouldContinue, err := tr.isInitiatedStatus(w, transaction)
-		if err != nil {
-			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if !shouldContinue {
-			return
-		}
+// 		shouldContinue, err := tr.isInitiatedStatus(w, transaction)
+// 		if err != nil {
+// 			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			return
+// 		}
+// 		if !shouldContinue {
+// 			return
+// 		}
 
-		err = logic.Transfer.Cancel(req.TransactionID, req.Reason)
-		if err != nil {
-			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	}
-}
+// 		err = logic.Transfer.Cancel(req.TransactionID, req.Reason)
+// 		if err != nil {
+// 			l.Logger.Error("AdminTransactionHandler.cancelTransaction failed", zap.Error(err))
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			return
+// 		}
+// 		w.WriteHeader(http.StatusOK)
+// 	}
+// }

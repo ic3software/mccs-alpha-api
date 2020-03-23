@@ -16,6 +16,94 @@ type transfer struct{}
 
 var Transfer = &transfer{}
 
+func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRespond, error) {
+	var transfers []*types.Transfer
+	var numberOfResults int
+	var err error
+
+	countSQL := `
+		SELECT COUNT(*)
+		FROM journals
+		WHERE (from_account_number = ? OR to_account_number = ?)
+	`
+	searchSQL := `
+		SELECT
+			transfer_id, amount, description, status, created_at,
+			CASE
+				WHEN from_account_number = ? THEN
+					'out'
+				ELSE
+					'in'
+				END
+			AS transfer,
+			CASE
+				WHEN from_account_number = ? THEN
+					to_account_number
+				ELSE
+					from_account_number
+				END
+			AS account_number,
+			CASE
+				WHEN from_account_number = ? THEN
+					to_entity_name
+				ELSE
+					from_entity_name
+				END
+			AS entity_name,
+			CAST(
+					CASE
+						WHEN initiated_by = ? THEN
+							1
+						ELSE
+							0
+						END
+					AS BIT
+				)
+			AS is_initiator
+		FROM journals
+		WHERE (from_account_number = ? OR to_account_number = ?)
+	`
+
+	if q.Status == "all" {
+		err = db.Raw(countSQL, q.QueryingAccountNumber, q.QueryingAccountNumber).Count(&numberOfResults).Error
+		err = db.Raw(searchSQL+"ORDER BY created_at DESC LIMIT ? OFFSET ?",
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.PageSize,
+			q.Offset).
+			Scan(&transfers).Error
+	} else {
+		err = db.Raw(countSQL+"AND status = ?", q.QueryingAccountNumber, q.QueryingAccountNumber, constant.MapTransferType(q.Status)).
+			Count(&numberOfResults).Error
+		err = db.Raw(searchSQL+"AND status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			q.QueryingAccountNumber,
+			constant.MapTransferType(q.Status),
+			q.PageSize,
+			q.Offset).
+			Scan(&transfers).Error
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	found := &types.SearchTransferRespond{
+		Transfers:       transfers,
+		NumberOfResults: numberOfResults,
+		TotalPages:      util.GetNumberOfPages(numberOfResults, q.PageSize),
+	}
+
+	return found, nil
+}
+
 func (t *transfer) Propose(proposal *types.TransferProposal) (*types.Journal, error) {
 	journalRecord := &types.Journal{
 		TransferID:        ksuid.New().String(),
@@ -105,8 +193,8 @@ func (t *transfer) Create(
 }
 
 // Find finds a transaction.
-func (t *transfer) Find(transactionID uint) (*types.Transfer, error) {
-	var result types.Transfer
+func (t *transfer) Find(transactionID uint) (*types.SearchTransferRespond, error) {
+	var result types.SearchTransferRespond
 	err := db.Raw(`
 	SELECT
 		J.id, J.transaction_id, J.initiated_by, J.from_id, J.from_email, J.from_entity_name,
@@ -192,8 +280,8 @@ func (t *transfer) Accept(
 }
 
 // FindPendings finds the pending transactions.
-func (t *transfer) FindPendings(id uint) ([]*types.Transfer, error) {
-	var result []*types.Transfer
+func (t *transfer) FindPendings(id uint) ([]*types.SearchTransferRespond, error) {
+	var result []*types.SearchTransferRespond
 	err := db.Raw(`
 	SELECT
 		J.id, J.transaction_id, CAST((CASE WHEN J.initiated_by = ? THEN 1 ELSE 0 END) AS BIT) AS "is_initiator",
@@ -211,8 +299,8 @@ func (t *transfer) FindPendings(id uint) ([]*types.Transfer, error) {
 }
 
 // FindRecent finds the recent 3 completed transactions.
-func (t *transfer) FindRecent(id uint) ([]*types.Transfer, error) {
-	var result []*types.Transfer
+func (t *transfer) FindRecent(id uint) ([]*types.SearchTransferRespond, error) {
+	var result []*types.SearchTransferRespond
 	err := db.Raw(`
 	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
 	FROM postings AS P
@@ -229,7 +317,7 @@ func (t *transfer) FindRecent(id uint) ([]*types.Transfer, error) {
 }
 
 // FindInRange finds the completed transactions in specific time range.
-func (t *transfer) FindInRange(id uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.Transfer, int, error) {
+func (t *transfer) FindInRange(id uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.SearchTransferRespond, int, error) {
 	limit := viper.GetInt("page_size")
 	offset := viper.GetInt("page_size") * (page - 1)
 
@@ -243,7 +331,7 @@ func (t *transfer) FindInRange(id uint, dateFrom time.Time, dateTo time.Time, pa
 	// Add 24 hours to include the end date.
 	dateTo = dateTo.Add(24 * time.Hour)
 
-	var result []*types.Transfer
+	var result []*types.SearchTransferRespond
 	err := db.Raw(`
 	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
 	FROM postings AS P

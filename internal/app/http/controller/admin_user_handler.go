@@ -5,9 +5,9 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/cookie"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
@@ -49,7 +49,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewLoginReqBody(r)
+		req, err := api.NewLoginReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] AdminUserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)

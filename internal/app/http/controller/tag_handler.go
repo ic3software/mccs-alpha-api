@@ -9,7 +9,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 
 	"github.com/gorilla/mux"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/api"
+	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
@@ -76,7 +76,7 @@ func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) 
 		Meta meta     `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := types.NewSearchTagQuery(r.URL.Query())
+		query, err := api.NewSearchTagQuery(r.URL.Query())
 		if err != nil {
 			l.Logger.Info("[Info] TagHandler.searchTag failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
