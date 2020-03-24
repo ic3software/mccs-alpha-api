@@ -26,7 +26,7 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 	`
 	searchSQL := `
 		SELECT
-			transfer_id, amount, description, status, created_at,
+			transfer_id, amount, description, status, created_at, completed_at,
 			CASE
 				WHEN from_account_number = ? THEN
 					'out'
@@ -102,18 +102,18 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 	return found, nil
 }
 
-func (t *transfer) Propose(proposal *types.TransferProposal) (*types.Journal, error) {
+func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
 	journalRecord := &types.Journal{
 		TransferID:        ksuid.New().String(),
-		InitiatedBy:       proposal.InitiatorAccountNumber,
-		FromAccountNumber: proposal.FromAccountNumber,
-		FromEmail:         proposal.FromEmail,
-		FromEntityName:    proposal.FromEntityName,
-		ToAccountNumber:   proposal.ToAccountNumber,
-		ToEmail:           proposal.ToEmail,
-		ToEntityName:      proposal.ToEntityName,
-		Amount:            proposal.Amount,
-		Description:       proposal.Description,
+		InitiatedBy:       req.InitiatorAccountNumber,
+		FromAccountNumber: req.FromAccountNumber,
+		FromEmail:         req.FromEmail,
+		FromEntityName:    req.FromEntityName,
+		ToAccountNumber:   req.ToAccountNumber,
+		ToEmail:           req.ToEmail,
+		ToEntityName:      req.ToEntityName,
+		Amount:            req.Amount,
+		Description:       req.Description,
 		Type:              constant.Journal.Transfer,
 		Status:            constant.Transfer.Initiated,
 	}
@@ -192,9 +192,9 @@ func (t *transfer) Accept(j *types.Journal) error {
 	// Update the transaction status.
 	err = tx.Exec(`
 		UPDATE journals
-		SET status = ?, updated_at = ?
+		SET status = ?, completed_at = ?, updated_at = ?
 		WHERE transfer_id=?
-	`, constant.Transfer.Completed, time.Now(), j.TransferID).Error
+	`, constant.Transfer.Completed, time.Now(), time.Now(), j.TransferID).Error
 	if err != nil {
 		tx.Rollback()
 		return err

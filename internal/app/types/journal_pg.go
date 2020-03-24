@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	"github.com/jinzhu/gorm"
 )
 
@@ -25,6 +27,8 @@ type Journal struct {
 	Description string  `gorm:"type:varchar(510);not null;default:''"`
 	Type        string  `gorm:"type:varchar(31);not null;default:'transfer'"`
 	Status      string  `gorm:"type:varchar(31);not null;default:''"`
+
+	CompletedAt time.Time
 
 	CancellationReason string `gorm:"type:varchar(510);not null;default:''"`
 }

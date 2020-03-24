@@ -12,20 +12,20 @@ type transfer struct{}
 
 var Transfer = &transfer{}
 
-func (tr *transfer) Initiate(proposal *types.TransferProposal) error {
+func (tr *transfer) Initiate(req *types.TransferReqBody) error {
 	url := viper.GetString("url") + "/pending_transactions"
 
 	var body string
-	if proposal.TransferType == constant.TransferType.Out {
-		body = proposal.InitiatorEntityName + " wants to send " + fmt.Sprintf("%.2f", proposal.Amount) + " Credits to you. <a href=" + url + ">Click here to review this pending transaction</a>."
+	if req.TransferType == constant.TransferType.Out {
+		body = req.InitiatorEntityName + " wants to send " + fmt.Sprintf("%.2f", req.Amount) + " Credits to you. <a href=" + url + ">Click here to review this pending transaction</a>."
 	}
-	if proposal.TransferType == constant.TransferType.In {
-		body = proposal.InitiatorEntityName + " wants to receive " + fmt.Sprintf("%.2f", proposal.Amount) + " Credits from you. <a href=" + url + ">Click here to review this pending transaction</a>."
+	if req.TransferType == constant.TransferType.In {
+		body = req.InitiatorEntityName + " wants to receive " + fmt.Sprintf("%.2f", req.Amount) + " Credits from you. <a href=" + url + ">Click here to review this pending transaction</a>."
 	}
 
 	d := emailData{
-		receiver:      proposal.ReceiverEntityName,
-		receiverEmail: proposal.ReceiverEmail,
+		receiver:      req.ReceiverEntityName,
+		receiverEmail: req.ReceiverEmail,
 		subject:       "OCN Transaction Requiring Your Approval",
 		text:          body,
 		html:          body,
@@ -61,7 +61,7 @@ func (tr *transfer) Accept(j *types.Journal) error {
 	return nil
 }
 
-func (tr *transfer) Reject(j *types.Journal) error {
+func (tr *transfer) Reject(j *types.Journal, reason string) error {
 	info := tr.getEmailInfo(j)
 
 	var body string
@@ -69,6 +69,10 @@ func (tr *transfer) Reject(j *types.Journal) error {
 		body = info.ReceiverEntityName + " has rejected the transaction you initiated for -" + fmt.Sprintf("%.2f", j.Amount) + " Credits."
 	} else {
 		body = info.ReceiverEntityName + " has rejected the transaction you initiated for +" + fmt.Sprintf("%.2f", j.Amount) + " Credits."
+	}
+
+	if reason != "" {
+		body += "<br/><br/> Reason: <br/><br/>" + reason
 	}
 
 	d := emailData{

@@ -79,6 +79,7 @@ type Transfer struct {
 	Description   string    `json:"description"`
 	Status        string    `json:"status"`
 	CreatedAt     time.Time `json:"dateProposed"`
+	CompletedAt   time.Time `json:"dateCompleted,omitempty"`
 }
 
 type SearchTransferRespond struct {

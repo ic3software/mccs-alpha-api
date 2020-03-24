@@ -29,25 +29,25 @@ func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
 	return journal, nil
 }
 
-func (t *transfer) Propose(proposal *types.TransferProposal) (*types.Journal, error) {
-	journal, err := pg.Transfer.Propose(proposal)
+func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
+	journal, err := pg.Transfer.Propose(req)
 	if err != nil {
 		return nil, err
 	}
 	return journal, nil
 }
 
-func (t *transfer) CheckBalance(proposal *types.TransferProposal) error {
-	from, err := pg.Account.FindByAccountNumber(proposal.FromAccountNumber)
+func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
+	from, err := pg.Account.FindByAccountNumber(req.FromAccountNumber)
 	if err != nil {
 		return err
 	}
-	to, err := pg.Account.FindByAccountNumber(proposal.ToAccountNumber)
+	to, err := pg.Account.FindByAccountNumber(req.ToAccountNumber)
 	if err != nil {
 		return err
 	}
 
-	exceed, err := BalanceLimit.IsExceedLimit(from.ID, from.Balance-proposal.Amount)
+	exceed, err := BalanceLimit.IsExceedLimit(from.ID, from.Balance-req.Amount)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (t *transfer) CheckBalance(proposal *types.TransferProposal) error {
 		return errors.New("Sender will exceed its credit limit." + " The maximum amount that can be sent is: " + fmt.Sprintf("%.2f", amount))
 	}
 
-	exceed, err = BalanceLimit.IsExceedLimit(to.ID, to.Balance+proposal.Amount)
+	exceed, err = BalanceLimit.IsExceedLimit(to.ID, to.Balance+req.Amount)
 	if err != nil {
 		return err
 	}

@@ -4,8 +4,10 @@ import (
 	"errors"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -52,37 +54,18 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 			return
 		}
 
-		initiatorEntity, err := logic.Entity.FindByAccountNumber(req.InitiatorAccountNumber)
-		if err != nil {
-			l.Logger.Error("[Error] TransferHandler.proposeTransfer failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusInternalServerError, err)
-			return
-		}
-		receiverEntity, err := logic.Entity.FindByAccountNumber(req.ReceiverAccountNumber)
-		if err != nil {
-			l.Logger.Error("[Error] TransferHandler.proposeTransfer failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		if !UserHandler.IsEntityBelongsToUser(initiatorEntity.ID.Hex(), r.Header.Get("userID")) {
+		if !UserHandler.IsEntityBelongsToUser(req.InitiatorEntity.ID.Hex(), r.Header.Get("userID")) {
 			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
 			return
 		}
 
-		proposal, errs := types.NewTransferProposal(req, initiatorEntity, receiverEntity)
-		if len(errs) > 0 {
-			api.Respond(w, r, http.StatusBadRequest, errs)
-			return
-		}
-
-		err = logic.Transfer.CheckBalance(proposal)
+		err := logic.Transfer.CheckBalance(req)
 		if err != nil {
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		journal, err := logic.Transfer.Propose(proposal)
+		journal, err := logic.Transfer.Propose(req)
 		if err != nil {
 			l.Logger.Error("[Error] TransferHandler.proposeTransfer failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
@@ -92,7 +75,7 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 		api.Respond(w, r, http.StatusOK, respond{Data: api.NewProposeTransferRespond(journal)})
 
 		go func() {
-			err := email.Transfer.Initiate(proposal)
+			err := email.Transfer.Initiate(req)
 			if err != nil {
 				l.Logger.Error("email.Transfer.Initiate failed", zap.Error(err))
 			}
@@ -148,6 +131,36 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 	type respond struct {
 		Data *types.Transfer `json:"data"`
 	}
+	var generateRespond = func(req *types.UpdateTransferReqBody) *types.Transfer {
+		t := &types.Transfer{
+			TransferID:  req.TransferID,
+			Description: req.Journal.Description,
+			Amount:      req.Journal.Amount,
+			CreatedAt:   req.Journal.CreatedAt,
+		}
+
+		if util.ContainID(req.InitiateEntity.Users, req.LoggedInUserID) {
+			t.IsInitiator = true
+		}
+		if util.ContainID(req.FromEntity.Users, req.LoggedInUserID) {
+			t.Transfer = "out"
+			t.AccountNumber = req.Journal.ToAccountNumber
+			t.EntityName = req.Journal.ToEntityName
+		} else {
+			t.Transfer = "in"
+			t.AccountNumber = req.Journal.FromAccountNumber
+			t.EntityName = req.Journal.FromEntityName
+		}
+
+		if req.Action == "reject" || req.Action == "cancel" {
+			t.Status = constant.Transfer.Cancelled
+		} else {
+			t.Status = constant.Transfer.Completed
+			t.CompletedAt = time.Now()
+		}
+
+		return t
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := api.NewUpdateTransferReqBody(r)
 		if len(errs) > 0 {
@@ -155,7 +168,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 			return
 		}
 
-		err := handler.checkPermissions(r, req)
+		err := handler.checkPermissions(req)
 		if err != nil {
 			api.Respond(w, r, http.StatusUnauthorized, err)
 			return
@@ -168,53 +181,40 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 
 		if req.Action == "accept" {
 			err = handler.acceptTransfer(req.Journal)
-			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 			if err != nil {
+				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 				api.Respond(w, r, http.StatusInternalServerError, err)
 				return
 			}
 		}
 		if req.Action == "reject" {
 			err = handler.rejectTransfer(req.Journal, req.Reason)
-			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 			if err != nil {
+				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 				api.Respond(w, r, http.StatusInternalServerError, err)
 				return
 			}
 		}
 		if req.Action == "cancel" {
 			err = handler.cancelTransfer(req.Journal, req.Reason)
-			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 			if err != nil {
+				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 				api.Respond(w, r, http.StatusInternalServerError, err)
 				return
 			}
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{})
+		api.Respond(w, r, http.StatusOK, respond{generateRespond(req)})
 	}
 }
 
-func (handler *transferHandler) checkPermissions(r *http.Request, req *types.UpdateTransferReqBody) error {
-	initiateEntity, err := logic.Entity.FindByAccountNumber(req.Journal.InitiatedBy)
-	if err != nil {
-		return err
-	}
-	fromEntity, err := logic.Entity.FindByAccountNumber(req.Journal.FromAccountNumber)
-	if err != nil {
-		return err
-	}
-	toEntity, err := logic.Entity.FindByAccountNumber(req.Journal.ToAccountNumber)
-	if err != nil {
-		return err
-	}
-
-	if !util.ContainID(fromEntity.Users, r.Header.Get("userID")) && !util.ContainID(toEntity.Users, r.Header.Get("userID")) {
+func (handler *transferHandler) checkPermissions(req *types.UpdateTransferReqBody) error {
+	if !util.ContainID(req.FromEntity.Users, req.LoggedInUserID) && !util.ContainID(req.ToEntity.Users, req.LoggedInUserID) {
 		return errors.New("You don't have permission to perform this action.")
 	}
 
 	// If the logged in user is the owner of the initiate entity, then the user can only "cancel" the transfer.
-	if util.ContainID(initiateEntity.Users, r.Header.Get("userID")) {
+	if util.ContainID(req.InitiateEntity.Users, req.LoggedInUserID) {
 		if req.Action != "cancel" {
 			return errors.New("You don't have permission to perform this action.")
 		}
@@ -232,7 +232,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReqBody) 
 	if err != nil {
 		return err
 	}
-	toAccount, err := logic.Account.FindByAccountNumber(req.Journal.ToEntityName)
+	toAccount, err := logic.Account.FindByAccountNumber(req.Journal.ToAccountNumber)
 	if err != nil {
 		return err
 	}
@@ -301,7 +301,7 @@ func (handler *transferHandler) rejectTransfer(j *types.Journal, reason string) 
 		return err
 	}
 	go func() {
-		err := email.Transfer.Reject(j)
+		err := email.Transfer.Reject(j, reason)
 		if err != nil {
 			l.Logger.Error("email.Transfer.Reject failed", zap.Error(err))
 		}
