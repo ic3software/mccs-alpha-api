@@ -2,6 +2,8 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -135,6 +137,9 @@ func NewUpdateTransferReqBody(r *http.Request) (*types.UpdateTransferReqBody, []
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&body)
 	if err != nil {
+		if err == io.EOF {
+			return nil, []error{errors.New("Please provide valid inputs.")}
+		}
 		return nil, []error{err}
 	}
 

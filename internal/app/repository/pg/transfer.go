@@ -141,20 +141,30 @@ func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
 	return &result, nil
 }
 
-func (t *transfer) Cancel(transferID string, reason string) error {
+func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, error) {
 	err := db.Exec(`
 		UPDATE journals
 		SET status = ?, cancellation_reason = ?, updated_at = ?
 		WHERE transfer_id = ?
 	`, constant.Transfer.Cancelled, reason, time.Now(), transferID).Error
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	var updated types.Journal
+	err = db.Raw(`
+		SELECT *
+		FROM journals
+		WHERE transfer_id=?
+	`, transferID).Scan(&updated).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &updated, nil
 }
 
-func (t *transfer) Accept(j *types.Journal) error {
+func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
 	tx := db.Begin()
 
 	// Create postings.
@@ -165,7 +175,7 @@ func (t *transfer) Accept(j *types.Journal) error {
 	}).Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	err = tx.Create(&types.Posting{
 		AccountNumber: j.ToAccountNumber,
@@ -174,19 +184,19 @@ func (t *transfer) Accept(j *types.Journal) error {
 	}).Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
 	// Update accounts' balance.
 	err = tx.Model(&types.Account{}).Where("account_number = ?", j.FromAccountNumber).Update("balance", gorm.Expr("balance - ?", j.Amount)).Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	err = tx.Model(&types.Account{}).Where("account_number = ?", j.ToAccountNumber).Update("balance", gorm.Expr("balance + ?", j.Amount)).Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
 	// Update the transaction status.
@@ -194,13 +204,25 @@ func (t *transfer) Accept(j *types.Journal) error {
 		UPDATE journals
 		SET status = ?, completed_at = ?, updated_at = ?
 		WHERE transfer_id=?
+		RETURNING *
 	`, constant.Transfer.Completed, time.Now(), time.Now(), j.TransferID).Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
-	return tx.Commit().Error
+	var updated types.Journal
+	err = tx.Raw(`
+		SELECT *
+		FROM journals
+		WHERE transfer_id=?
+	`, j.TransferID).Scan(&updated).Error
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	return &updated, tx.Commit().Error
 }
 
 // TO BE REMOVED

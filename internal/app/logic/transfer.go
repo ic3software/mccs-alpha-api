@@ -96,20 +96,20 @@ func (t *transfer) maxNegativeBalanceCanBeTransferred(a *types.Account) (float64
 	return maxNegBal - math.Abs(a.Balance), nil
 }
 
-func (t *transfer) Cancel(transferID string, reason string) error {
-	err := pg.Transfer.Cancel(transferID, reason)
+func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, error) {
+	j, err := pg.Transfer.Cancel(transferID, reason)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return j, nil
 }
 
-func (t *transfer) Accept(j *types.Journal) error {
-	err := pg.Transfer.Accept(j)
+func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
+	updated, err := pg.Transfer.Accept(j)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return updated, nil
 }
 
 // TO BE REMOVED

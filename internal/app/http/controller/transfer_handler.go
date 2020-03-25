@@ -4,10 +4,8 @@ import (
 	"errors"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -131,12 +129,14 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 	type respond struct {
 		Data *types.Transfer `json:"data"`
 	}
-	var generateRespond = func(req *types.UpdateTransferReqBody) *types.Transfer {
+	var generateRespond = func(req *types.UpdateTransferReqBody, updated *types.Journal) *types.Transfer {
 		t := &types.Transfer{
 			TransferID:  req.TransferID,
 			Description: req.Journal.Description,
 			Amount:      req.Journal.Amount,
 			CreatedAt:   req.Journal.CreatedAt,
+			Status:      updated.Status,
+			CompletedAt: updated.CompletedAt,
 		}
 
 		if util.ContainID(req.InitiateEntity.Users, req.LoggedInUserID) {
@@ -150,13 +150,6 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 			t.Transfer = "in"
 			t.AccountNumber = req.Journal.FromAccountNumber
 			t.EntityName = req.Journal.FromEntityName
-		}
-
-		if req.Action == "reject" || req.Action == "cancel" {
-			t.Status = constant.Transfer.Cancelled
-		} else {
-			t.Status = constant.Transfer.Completed
-			t.CompletedAt = time.Now()
 		}
 
 		return t
@@ -179,8 +172,9 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 			return
 		}
 
+		var updated *types.Journal
 		if req.Action == "accept" {
-			err = handler.acceptTransfer(req.Journal)
+			updated, err = handler.acceptTransfer(req.Journal)
 			if err != nil {
 				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 				api.Respond(w, r, http.StatusInternalServerError, err)
@@ -188,7 +182,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 			}
 		}
 		if req.Action == "reject" {
-			err = handler.rejectTransfer(req.Journal, req.Reason)
+			updated, err = handler.rejectTransfer(req.Journal, req.Reason)
 			if err != nil {
 				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 				api.Respond(w, r, http.StatusInternalServerError, err)
@@ -196,7 +190,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 			}
 		}
 		if req.Action == "cancel" {
-			err = handler.cancelTransfer(req.Journal, req.Reason)
+			updated, err = handler.cancelTransfer(req.Journal, req.Reason)
 			if err != nil {
 				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 				api.Respond(w, r, http.StatusInternalServerError, err)
@@ -204,7 +198,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 			}
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{generateRespond(req)})
+		api.Respond(w, r, http.StatusOK, respond{generateRespond(req, updated)})
 	}
 }
 
@@ -243,7 +237,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReqBody) 
 	}
 	if exceed {
 		reason := "The sender will exceed its credit limit so this tansfer has been cancelled."
-		err = logic.Transfer.Cancel(req.Journal.TransferID, reason)
+		_, err = logic.Transfer.Cancel(req.Journal.TransferID, reason)
 		if err != nil {
 			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 			return err
@@ -263,7 +257,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReqBody) 
 	}
 	if exceed {
 		reason := "The recipient will exceed its maximum positive balance threshold so this tansfer has been cancelled."
-		err = logic.Transfer.Cancel(req.Journal.TransferID, reason)
+		_, err = logic.Transfer.Cancel(req.Journal.TransferID, reason)
 		if err != nil {
 			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 			return err
@@ -280,10 +274,10 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReqBody) 
 	return nil
 }
 
-func (handler *transferHandler) acceptTransfer(j *types.Journal) error {
-	err := logic.Transfer.Accept(j)
+func (handler *transferHandler) acceptTransfer(j *types.Journal) (*types.Journal, error) {
+	updated, err := logic.Transfer.Accept(j)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	go func() {
 		err := email.Transfer.Accept(j)
@@ -292,13 +286,13 @@ func (handler *transferHandler) acceptTransfer(j *types.Journal) error {
 		}
 	}()
 
-	return nil
+	return updated, nil
 }
 
-func (handler *transferHandler) rejectTransfer(j *types.Journal, reason string) error {
-	err := logic.Transfer.Cancel(j.TransferID, reason)
+func (handler *transferHandler) rejectTransfer(j *types.Journal, reason string) (*types.Journal, error) {
+	updated, err := logic.Transfer.Cancel(j.TransferID, reason)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	go func() {
 		err := email.Transfer.Reject(j, reason)
@@ -307,13 +301,13 @@ func (handler *transferHandler) rejectTransfer(j *types.Journal, reason string) 
 		}
 	}()
 
-	return nil
+	return updated, nil
 }
 
-func (handler *transferHandler) cancelTransfer(j *types.Journal, reason string) error {
-	err := logic.Transfer.Cancel(j.TransferID, reason)
+func (handler *transferHandler) cancelTransfer(j *types.Journal, reason string) (*types.Journal, error) {
+	updated, err := logic.Transfer.Cancel(j.TransferID, reason)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	go func() {
 		err := email.Transfer.Cancel(j, reason)
@@ -322,5 +316,5 @@ func (handler *transferHandler) cancelTransfer(j *types.Journal, reason string) 
 		}
 	}()
 
-	return nil
+	return updated, nil
 }
