@@ -201,14 +201,14 @@ func (req *AddToFavoriteReqBody) Validate() []error {
 
 	_, err := primitive.ObjectIDFromHex(req.AddToEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("add_to_entity_id is wrong"))
+		errs = append(errs, errors.New("add_to_entity_id is incorrect."))
 	}
 	_, err = primitive.ObjectIDFromHex(req.FavoriteEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("favorite_entity_id is wrong"))
+		errs = append(errs, errors.New("favorite_entity_id is incorrect."))
 	}
 	if req.Favorite == nil {
-		errs = append(errs, errors.New("favorite is nil"))
+		errs = append(errs, errors.New("Favorite must be specified."))
 	}
 
 	return errs
@@ -275,14 +275,14 @@ func (req *EmailReqBody) Validate() []error {
 
 	_, err := primitive.ObjectIDFromHex(req.SenderEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("sender_entity_id is wrong"))
+		errs = append(errs, errors.New("sender_entity_id is incorrect."))
 	}
 	_, err = primitive.ObjectIDFromHex(req.ReceiverEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("receiver_entity_id is wrong"))
+		errs = append(errs, errors.New("receiver_entity_id is incorrect."))
 	}
 	if len(req.Body) == 0 {
-		errs = append(errs, errors.New("body is empty"))
+		errs = append(errs, errors.New("Email body is empty."))
 	}
 
 	return errs
@@ -320,24 +320,24 @@ func (req *TransferReqBody) Validate() []error {
 	errs := []error{}
 
 	if req.TransferType != constant.TransferType.In && req.TransferType != constant.TransferType.Out {
-		errs = append(errs, errors.New("transfer can be only 'in' or 'out'"))
+		errs = append(errs, errors.New("Transfer can be only 'in' or 'out'."))
 	}
 
 	if req.InitiatorAccountNumber == "" {
-		errs = append(errs, errors.New("initiator is empty"))
+		errs = append(errs, errors.New("Initiator is empty."))
 	} else {
 		err := goluhn.Validate(req.InitiatorAccountNumber)
 		if err != nil {
-			errs = append(errs, errors.New("initiator account number is wrong"))
+			errs = append(errs, errors.New("Initiator account number is invalid."))
 		}
 	}
 
 	if req.ReceiverAccountNumber == "" {
-		errs = append(errs, errors.New("receiver is empty"))
+		errs = append(errs, errors.New("Receiver is empty."))
 	} else {
 		err := goluhn.Validate(req.ReceiverAccountNumber)
 		if err != nil {
-			errs = append(errs, errors.New("receiver account number is wrong"))
+			errs = append(errs, errors.New("Receiver account number is wrong."))
 		}
 	}
 
@@ -378,7 +378,7 @@ func (req *UpdateTransferReqBody) Validate() []error {
 	errs := []error{}
 
 	if req.Action != "accept" && req.Action != "reject" && req.Action != "cancel" {
-		errs = append(errs, errors.New("Please enter a valid action"))
+		errs = append(errs, errors.New("Please enter a valid action."))
 	}
 	if req.Journal.Status == constant.Transfer.Completed {
 		errs = append(errs, errors.New("The transaction has already been completed by the counterparty."))
