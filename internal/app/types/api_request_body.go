@@ -201,14 +201,14 @@ func (req *AddToFavoriteReqBody) Validate() []error {
 
 	_, err := primitive.ObjectIDFromHex(req.AddToEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("add_to_entity_id is wrong"))
+		errs = append(errs, errors.New("add_to_entity_id is incorrect."))
 	}
 	_, err = primitive.ObjectIDFromHex(req.FavoriteEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("favorite_entity_id is wrong"))
+		errs = append(errs, errors.New("favorite_entity_id is incorrect."))
 	}
 	if req.Favorite == nil {
-		errs = append(errs, errors.New("favorite is nil"))
+		errs = append(errs, errors.New("Favorite must be specified."))
 	}
 
 	return errs
@@ -275,55 +275,115 @@ func (req *EmailReqBody) Validate() []error {
 
 	_, err := primitive.ObjectIDFromHex(req.SenderEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("sender_entity_id is wrong"))
+		errs = append(errs, errors.New("sender_entity_id is incorrect."))
 	}
 	_, err = primitive.ObjectIDFromHex(req.ReceiverEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("receiver_entity_id is wrong"))
+		errs = append(errs, errors.New("receiver_entity_id is incorrect."))
 	}
 	if len(req.Body) == 0 {
-		errs = append(errs, errors.New("body is empty"))
+		errs = append(errs, errors.New("Email body is empty."))
 	}
 
 	return errs
 }
 
 type TransferReqBody struct {
-	Transfer               string  `json:"transfer"`
-	InitiatorAccountNumber string  `json:"initiator"`
-	ReceiverAccountNumber  string  `json:"receiver"`
-	Amount                 float64 `json:"amount"`
-	Description            string  `json:"description"`
+	// User Inputs
+	TransferType           string
+	InitiatorAccountNumber string
+	ReceiverAccountNumber  string
+	Amount                 float64
+	Description            string
+
+	InitiatorEmail      string
+	InitiatorEntityName string
+
+	ReceiverEmail      string
+	ReceiverEntityName string
+
+	FromAccountNumber string
+	FromEmail         string
+	FromEntityName    string
+	FromStatus        string
+
+	ToAccountNumber string
+	ToEmail         string
+	ToEntityName    string
+	ToStatus        string
+
+	InitiatorEntity *Entity
+	ReceiverEntity  *Entity
 }
 
 func (req *TransferReqBody) Validate() []error {
 	errs := []error{}
 
-	if req.Transfer != constant.TransferType.In && req.Transfer != constant.TransferType.Out {
-		errs = append(errs, errors.New("transfer can be only 'in' or 'out'"))
+	if req.TransferType != constant.TransferType.In && req.TransferType != constant.TransferType.Out {
+		errs = append(errs, errors.New("Transfer can be only 'in' or 'out'."))
 	}
 
 	if req.InitiatorAccountNumber == "" {
-		errs = append(errs, errors.New("initiator is empty"))
+		errs = append(errs, errors.New("Initiator is empty."))
 	} else {
 		err := goluhn.Validate(req.InitiatorAccountNumber)
 		if err != nil {
-			errs = append(errs, errors.New("initiator account number is wrong"))
+			errs = append(errs, errors.New("Initiator account number is invalid."))
 		}
 	}
 
 	if req.ReceiverAccountNumber == "" {
-		errs = append(errs, errors.New("receiver is empty"))
+		errs = append(errs, errors.New("Receiver is empty."))
 	} else {
 		err := goluhn.Validate(req.ReceiverAccountNumber)
 		if err != nil {
-			errs = append(errs, errors.New("receiver account number is wrong"))
+			errs = append(errs, errors.New("Receiver account number is wrong."))
 		}
 	}
 
 	// Amount should be positive value and with up to two decimal places.
 	if req.Amount <= 0 || !util.IsDecimalValid(req.Amount) {
 		errs = append(errs, errors.New("Please enter a valid numeric amount to send with up to two decimal places."))
+	}
+
+	// Only allow transfers with accounts that also have "trading-accepted" status
+	if req.FromStatus != constant.Trading.Accepted {
+		errs = append(errs, errors.New("Sender is not a trading member. Transfers can only be made when both entities have trading member status."))
+	} else if req.ToStatus != constant.Trading.Accepted {
+		errs = append(errs, errors.New("Recipient is not a trading member. Transfers can only be made when both entities have trading member status."))
+	}
+
+	// Check if the user is doing the transaction to himself.
+	if req.FromAccountNumber == req.ToAccountNumber {
+		errs = append(errs, errors.New("You cannot create a transaction with yourself."))
+	}
+
+	return errs
+}
+
+type UpdateTransferReqBody struct {
+	TransferID string
+	Action     string
+	Reason     string
+
+	LoggedInUserID string
+
+	Journal        *Journal
+	InitiateEntity *Entity
+	FromEntity     *Entity
+	ToEntity       *Entity
+}
+
+func (req *UpdateTransferReqBody) Validate() []error {
+	errs := []error{}
+
+	if req.Action != "accept" && req.Action != "reject" && req.Action != "cancel" {
+		errs = append(errs, errors.New("Please enter a valid action."))
+	}
+	if req.Journal.Status == constant.Transfer.Completed {
+		errs = append(errs, errors.New("The transaction has already been completed by the counterparty."))
+	} else if req.Journal.Status == constant.Transfer.Cancelled {
+		errs = append(errs, errors.New("The transaction has already been cancelled by the counterparty."))
 	}
 
 	return errs

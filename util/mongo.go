@@ -10,11 +10,16 @@ func ToIDStrings(ids []primitive.ObjectID) []string {
 	return idStrings
 }
 
-func ContainID(list []primitive.ObjectID, str primitive.ObjectID) bool {
+func ContainID(list []primitive.ObjectID, str string) bool {
 	for _, item := range list {
-		if item == str {
+		if item == toObjectID(str) {
 			return true
 		}
 	}
 	return false
+}
+
+func toObjectID(id string) primitive.ObjectID {
+	objectID, _ := primitive.ObjectIDFromHex(id)
+	return objectID
 }

@@ -26,6 +26,15 @@ func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 	return user, nil
 }
 
+func (u *user) FindByStringID(id string) (*types.User, error) {
+	objectID, _ := primitive.ObjectIDFromHex(id)
+	user, err := mongo.User.FindByID(objectID)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
 	_, err := mongo.User.FindByEmail(user.Email)
 	if err == nil {

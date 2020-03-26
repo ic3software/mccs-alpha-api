@@ -89,7 +89,7 @@ func NewSearchEntityRespond(entity *types.Entity, queryingEntityStatus string, f
 		Status:             entity.Status,
 		Offers:             types.TagFieldToNames(entity.Offers),
 		Wants:              types.TagFieldToNames(entity.Wants),
-		IsFavorite:         util.ContainID(favoriteEntities, entity.ID),
+		IsFavorite:         util.ContainID(favoriteEntities, entity.ID.Hex()),
 	}
 }
 

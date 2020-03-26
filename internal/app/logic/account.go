@@ -17,6 +17,16 @@ func (a *account) Create() (*types.Account, error) {
 	return account, nil
 }
 
+func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, error) {
+	account, err := pg.Account.FindByAccountNumber(accountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return account, nil
+}
+
+// TO BE REMOVED
+
 func (a *account) FindByID(accountID uint) (*types.Account, error) {
 	account, err := pg.Account.FindByID(accountID)
 	if err != nil {

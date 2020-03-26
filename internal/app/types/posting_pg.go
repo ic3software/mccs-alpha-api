@@ -6,7 +6,7 @@ import (
 
 type Posting struct {
 	gorm.Model
-	AccountNumber uint    `gorm:"not null"`
+	AccountNumber string  `gorm:"varchar(16);not null;default:''"`
 	JournalID     uint    `gorm:"not null"`
 	Amount        float64 `gorm:"not null"`
 }

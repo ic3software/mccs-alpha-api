@@ -5,11 +5,9 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/jinzhu/gorm"
 	"github.com/segmentio/ksuid"
-	"github.com/spf13/viper"
 )
 
 type transfer struct{}
@@ -28,7 +26,7 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 	`
 	searchSQL := `
 		SELECT
-			transfer_id, amount, description, status, created_at,
+			transfer_id, amount, description, status, created_at, completed_at,
 			CASE
 				WHEN from_account_number = ? THEN
 					'out'
@@ -104,18 +102,18 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 	return found, nil
 }
 
-func (t *transfer) Propose(proposal *types.TransferProposal) (*types.Journal, error) {
+func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
 	journalRecord := &types.Journal{
 		TransferID:        ksuid.New().String(),
-		InitiatedBy:       proposal.InitiatorAccountNumber,
-		FromAccountNumber: proposal.FromAccountNumber,
-		FromEmail:         proposal.FromEmail,
-		FromEntityName:    proposal.FromEntityName,
-		ToAccountNumber:   proposal.ToAccountNumber,
-		ToEmail:           proposal.ToEmail,
-		ToEntityName:      proposal.ToEntityName,
-		Amount:            proposal.Amount,
-		Description:       proposal.Description,
+		InitiatedBy:       req.InitiatorAccountNumber,
+		FromAccountNumber: req.FromAccountNumber,
+		FromEmail:         req.FromEmail,
+		FromEntityName:    req.FromEntityName,
+		ToAccountNumber:   req.ToAccountNumber,
+		ToEmail:           req.ToEmail,
+		ToEntityName:      req.ToEntityName,
+		Amount:            req.Amount,
+		Description:       req.Description,
 		Type:              constant.Journal.Transfer,
 		Status:            constant.Transfer.Initiated,
 	}
@@ -127,226 +125,239 @@ func (t *transfer) Propose(proposal *types.TransferProposal) (*types.Journal, er
 	return journalRecord, nil
 }
 
-// TO BE REMOVED
+func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
+	var result types.Journal
 
-// Create makes a transaction directly.
-func (t *transfer) Create(
-	fromID uint,
-	fromEmail string,
-	fromEntityName string,
-
-	toID uint,
-	toEmail string,
-	toEntityName string,
-
-	amount float64,
-	desc string,
-) error {
-	tx := db.Begin()
-
-	journalRecord := &types.Journal{
-		TransferID:        ksuid.New().String(),
-		FromAccountNumber: "TODO",
-		FromEmail:         fromEmail,
-		FromEntityName:    fromEntityName,
-		ToAccountNumber:   "TODO",
-		ToEmail:           toEmail,
-		ToEntityName:      toEntityName,
-		Amount:            amount,
-		Description:       desc,
-		Type:              constant.Journal.Transfer,
-		Status:            constant.Transfer.Completed,
-	}
-	err := tx.Create(journalRecord).Error
-	if err != nil {
-		tx.Rollback()
-		return e.Wrap(err, "pg.Transaction.Create")
-	}
-
-	journalID := journalRecord.ID
-
-	// Create postings.
-	err = tx.Create(&types.Posting{AccountNumber: fromID, JournalID: journalID, Amount: -amount}).Error
-	if err != nil {
-		tx.Rollback()
-		return e.Wrap(err, "pg.Transaction.Create")
-	}
-	err = tx.Create(&types.Posting{AccountNumber: toID, JournalID: journalID, Amount: amount}).Error
-	if err != nil {
-		tx.Rollback()
-		return e.Wrap(err, "pg.Transaction.Create")
-	}
-
-	// Update accounts' balance.
-	err = tx.Model(&types.Account{}).Where("id = ?", fromID).Update("balance", gorm.Expr("balance - ?", amount)).Error
-	if err != nil {
-		tx.Rollback()
-		return e.Wrap(err, "pg.Transaction.Create")
-	}
-	err = tx.Model(&types.Account{}).Where("id = ?", toID).Update("balance", gorm.Expr("balance + ?", amount)).Error
-	if err != nil {
-		tx.Rollback()
-		return e.Wrap(err, "pg.Transaction.Create")
-	}
-
-	return tx.Commit().Error
-}
-
-// Find finds a transaction.
-func (t *transfer) Find(transactionID uint) (*types.SearchTransferRespond, error) {
-	var result types.SearchTransferRespond
 	err := db.Raw(`
-	SELECT
-		J.id, J.transaction_id, J.initiated_by, J.from_id, J.from_email, J.from_entity_name,
-		J.to_id, J.to_email, J.to_entity_name, J.amount, J.status
-	FROM journals AS J
-	WHERE J.id = ?
-	LIMIT 1
-	`, transactionID).Scan(&result).Error
-
+		SELECT *
+		FROM journals
+		WHERE transfer_id = ?
+		LIMIT 1
+	`, transferID).Scan(&result).Error
 	if err != nil {
-		return nil, e.Wrap(err, "pg.Transaction.Find failed")
+		return nil, err
 	}
+
 	return &result, nil
 }
 
-// Cancel cancels a transaction.
-func (t *transfer) Cancel(transactionID uint, reason string) error {
+func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, error) {
 	err := db.Exec(`
-	UPDATE journals
-	SET status=?, cancellation_reason = ?, updated_at=?
-	WHERE id=?
-	`, constant.Transfer.Cancelled, reason, time.Now(), transactionID).Error
-
+		UPDATE journals
+		SET status = ?, cancellation_reason = ?, updated_at = ?
+		WHERE transfer_id = ?
+	`, constant.Transfer.Cancelled, reason, time.Now(), transferID).Error
 	if err != nil {
-		return e.Wrap(err, "pg.Transaction.Cancel failed")
+		return nil, err
 	}
-	return nil
+
+	var updated types.Journal
+	err = db.Raw(`
+		SELECT *
+		FROM journals
+		WHERE transfer_id=?
+	`, transferID).Scan(&updated).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &updated, nil
 }
 
-// Accept accepts a transaction.
-func (t *transfer) Accept(
-	transactionID uint,
-	fromID uint,
-	toID uint,
-	amount float64,
-) error {
+func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
 	tx := db.Begin()
 
 	// Create postings.
 	err := tx.Create(&types.Posting{
-		AccountNumber: fromID,
-		JournalID:     transactionID,
-		Amount:        -amount,
+		AccountNumber: j.FromAccountNumber,
+		JournalID:     j.ID,
+		Amount:        -j.Amount,
 	}).Error
 	if err != nil {
 		tx.Rollback()
-		return e.Wrap(err, "pg.Transaction.Accept")
+		return nil, err
 	}
 	err = tx.Create(&types.Posting{
-		AccountNumber: toID,
-		JournalID:     transactionID,
-		Amount:        amount,
+		AccountNumber: j.ToAccountNumber,
+		JournalID:     j.ID,
+		Amount:        j.Amount,
 	}).Error
 	if err != nil {
 		tx.Rollback()
-		return e.Wrap(err, "pg.Transaction.Accept")
+		return nil, err
 	}
 
 	// Update accounts' balance.
-	err = tx.Model(&types.Account{}).Where("id = ?", fromID).Update("balance", gorm.Expr("balance - ?", amount)).Error
+	err = tx.Model(&types.Account{}).Where("account_number = ?", j.FromAccountNumber).Update("balance", gorm.Expr("balance - ?", j.Amount)).Error
 	if err != nil {
 		tx.Rollback()
-		return e.Wrap(err, "pg.Transaction.Accept")
+		return nil, err
 	}
-	err = tx.Model(&types.Account{}).Where("id = ?", toID).Update("balance", gorm.Expr("balance + ?", amount)).Error
+	err = tx.Model(&types.Account{}).Where("account_number = ?", j.ToAccountNumber).Update("balance", gorm.Expr("balance + ?", j.Amount)).Error
 	if err != nil {
 		tx.Rollback()
-		return e.Wrap(err, "pg.Transaction.Accept")
+		return nil, err
 	}
 
 	// Update the transaction status.
 	err = tx.Exec(`
-	UPDATE journals
-	SET status=?, updated_at=?
-	WHERE id=?
-	`, constant.Transfer.Completed, time.Now(), transactionID).Error
+		UPDATE journals
+		SET status = ?, completed_at = ?, updated_at = ?
+		WHERE transfer_id=?
+		RETURNING *
+	`, constant.Transfer.Completed, time.Now(), time.Now(), j.TransferID).Error
 	if err != nil {
 		tx.Rollback()
-		return e.Wrap(err, "pg.Transaction.Accept")
+		return nil, err
 	}
 
-	return tx.Commit().Error
-}
-
-// FindPendings finds the pending transactions.
-func (t *transfer) FindPendings(id uint) ([]*types.SearchTransferRespond, error) {
-	var result []*types.SearchTransferRespond
-	err := db.Raw(`
-	SELECT
-		J.id, J.transaction_id, CAST((CASE WHEN J.initiated_by = ? THEN 1 ELSE 0 END) AS BIT) AS "is_initiator",
-		J.id, J.initiated_by, J.from_id, J.from_email, J.to_id, J.from_entity_name, J.to_entity_name,
-		J.to_email, J.amount, J.description, J.created_at
-	FROM journals AS J
-	WHERE (J.from_id = ? OR J.to_id = ?) AND J.status = ?
-	ORDER BY J.created_at DESC
-	`, id, id, id, constant.Transfer.Initiated).Scan(&result).Error
-
+	var updated types.Journal
+	err = tx.Raw(`
+		SELECT *
+		FROM journals
+		WHERE transfer_id=?
+	`, j.TransferID).Scan(&updated).Error
 	if err != nil {
-		return nil, e.Wrap(err, "pg.Transaction.FindPendingTransactions failed")
+		tx.Rollback()
+		return nil, err
 	}
-	return result, nil
+
+	return &updated, tx.Commit().Error
 }
 
-// FindRecent finds the recent 3 completed transactions.
-func (t *transfer) FindRecent(id uint) ([]*types.SearchTransferRespond, error) {
-	var result []*types.SearchTransferRespond
-	err := db.Raw(`
-	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
-	FROM postings AS P
-	INNER JOIN journals AS J ON J."id" = P."journal_id"
-	WHERE P.account_id = ?
-	ORDER BY P.created_at DESC
-	LIMIT ?
-	`, id, 3).Scan(&result).Error
+// TO BE REMOVED
 
-	if err != nil {
-		return nil, e.Wrap(err, "pg.Transaction.FindRecent failed")
-	}
-	return result, nil
-}
+// Create makes a transaction directly.
+// func (t *transfer) Create(
+// 	fromID uint,
+// 	fromEmail string,
+// 	fromEntityName string,
 
-// FindInRange finds the completed transactions in specific time range.
-func (t *transfer) FindInRange(id uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.SearchTransferRespond, int, error) {
-	limit := viper.GetInt("page_size")
-	offset := viper.GetInt("page_size") * (page - 1)
+// 	toID uint,
+// 	toEmail string,
+// 	toEntityName string,
 
-	if dateFrom.IsZero() {
-		dateFrom = constant.Date.DefaultFrom
-	}
-	if dateTo.IsZero() {
-		dateTo = constant.Date.DefaultTo
-	}
+// 	amount float64,
+// 	desc string,
+// ) error {
+// 	tx := db.Begin()
 
-	// Add 24 hours to include the end date.
-	dateTo = dateTo.Add(24 * time.Hour)
+// 	journalRecord := &types.Journal{
+// 		TransferID:        ksuid.New().String(),
+// 		FromAccountNumber: "TODO",
+// 		FromEmail:         fromEmail,
+// 		FromEntityName:    fromEntityName,
+// 		ToAccountNumber:   "TODO",
+// 		ToEmail:           toEmail,
+// 		ToEntityName:      toEntityName,
+// 		Amount:            amount,
+// 		Description:       desc,
+// 		Type:              constant.Journal.Transfer,
+// 		Status:            constant.Transfer.Completed,
+// 	}
+// 	err := tx.Create(journalRecord).Error
+// 	if err != nil {
+// 		tx.Rollback()
+// 		return e.Wrap(err, "pg.Transaction.Create")
+// 	}
 
-	var result []*types.SearchTransferRespond
-	err := db.Raw(`
-	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
-	FROM postings AS P
-	INNER JOIN journals AS J ON J."id" = P."journal_id"
-	WHERE P.account_id = ? AND (P.created_at BETWEEN ? AND ?)
-	ORDER BY P.created_at DESC
-	LIMIT ? OFFSET ?
-	`, id, dateFrom, dateTo, limit, offset).Scan(&result).Error
+// 	journalID := journalRecord.ID
 
-	var numberOfResults int64
-	db.Model(&types.Posting{}).Where("account_id = ? AND (created_at BETWEEN ? AND ?)", id, dateFrom, dateTo).Count(&numberOfResults)
-	totalPages := util.GetNumberOfPages(int(numberOfResults), viper.GetInt("page_size"))
+// 	// Create postings.
+// 	err = tx.Create(&types.Posting{AccountNumber: fromID, JournalID: journalID, Amount: -amount}).Error
+// 	if err != nil {
+// 		tx.Rollback()
+// 		return e.Wrap(err, "pg.Transaction.Create")
+// 	}
+// 	err = tx.Create(&types.Posting{AccountNumber: toID, JournalID: journalID, Amount: amount}).Error
+// 	if err != nil {
+// 		tx.Rollback()
+// 		return e.Wrap(err, "pg.Transaction.Create")
+// 	}
 
-	if err != nil {
-		return nil, 0, e.Wrap(err, "pg.Transaction.Find failed")
-	}
-	return result, totalPages, nil
-}
+// 	// Update accounts' balance.
+// 	err = tx.Model(&types.Account{}).Where("id = ?", fromID).Update("balance", gorm.Expr("balance - ?", amount)).Error
+// 	if err != nil {
+// 		tx.Rollback()
+// 		return e.Wrap(err, "pg.Transaction.Create")
+// 	}
+// 	err = tx.Model(&types.Account{}).Where("id = ?", toID).Update("balance", gorm.Expr("balance + ?", amount)).Error
+// 	if err != nil {
+// 		tx.Rollback()
+// 		return e.Wrap(err, "pg.Transaction.Create")
+// 	}
+
+// 	return tx.Commit().Error
+// }
+
+// // FindPendings finds the pending transactions.
+// func (t *transfer) FindPendings(id uint) ([]*types.SearchTransferRespond, error) {
+// 	var result []*types.SearchTransferRespond
+// 	err := db.Raw(`
+// 	SELECT
+// 		J.id, J.transaction_id, CAST((CASE WHEN J.initiated_by = ? THEN 1 ELSE 0 END) AS BIT) AS "is_initiator",
+// 		J.id, J.initiated_by, J.from_id, J.from_email, J.to_id, J.from_entity_name, J.to_entity_name,
+// 		J.to_email, J.amount, J.description, J.created_at
+// 	FROM journals AS J
+// 	WHERE (J.from_id = ? OR J.to_id = ?) AND J.status = ?
+// 	ORDER BY J.created_at DESC
+// 	`, id, id, id, constant.Transfer.Initiated).Scan(&result).Error
+
+// 	if err != nil {
+// 		return nil, e.Wrap(err, "pg.Transaction.FindPendingTransactions failed")
+// 	}
+// 	return result, nil
+// }
+
+// // FindRecent finds the recent 3 completed transactions.
+// func (t *transfer) FindRecent(id uint) ([]*types.SearchTransferRespond, error) {
+// 	var result []*types.SearchTransferRespond
+// 	err := db.Raw(`
+// 	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
+// 	FROM postings AS P
+// 	INNER JOIN journals AS J ON J."id" = P."journal_id"
+// 	WHERE P.account_id = ?
+// 	ORDER BY P.created_at DESC
+// 	LIMIT ?
+// 	`, id, 3).Scan(&result).Error
+
+// 	if err != nil {
+// 		return nil, e.Wrap(err, "pg.Transaction.FindRecent failed")
+// 	}
+// 	return result, nil
+// }
+
+// // FindInRange finds the completed transactions in specific time range.
+// func (t *transfer) FindInRange(id uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.SearchTransferRespond, int, error) {
+// 	limit := viper.GetInt("page_size")
+// 	offset := viper.GetInt("page_size") * (page - 1)
+
+// 	if dateFrom.IsZero() {
+// 		dateFrom = constant.Date.DefaultFrom
+// 	}
+// 	if dateTo.IsZero() {
+// 		dateTo = constant.Date.DefaultTo
+// 	}
+
+// 	// Add 24 hours to include the end date.
+// 	dateTo = dateTo.Add(24 * time.Hour)
+
+// 	var result []*types.SearchTransferRespond
+// 	err := db.Raw(`
+// 	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
+// 	FROM postings AS P
+// 	INNER JOIN journals AS J ON J."id" = P."journal_id"
+// 	WHERE P.account_id = ? AND (P.created_at BETWEEN ? AND ?)
+// 	ORDER BY P.created_at DESC
+// 	LIMIT ? OFFSET ?
+// 	`, id, dateFrom, dateTo, limit, offset).Scan(&result).Error
+
+// 	var numberOfResults int64
+// 	db.Model(&types.Posting{}).Where("account_id = ? AND (created_at BETWEEN ? AND ?)", id, dateFrom, dateTo).Count(&numberOfResults)
+// 	totalPages := util.GetNumberOfPages(int(numberOfResults), viper.GetInt("page_size"))
+
+// 	if err != nil {
+// 		return nil, 0, e.Wrap(err, "pg.Transaction.Find failed")
+// 	}
+// 	return result, totalPages, nil
+// }

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 	"sync"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
+	"github.com/ic3network/mccs-alpha-api/util"
 
 	"go.uber.org/zap"
 )
@@ -35,14 +37,7 @@ func (handler *transferHandler) RegisterRoutes(
 	handler.once.Do(func() {
 		private.Path("/transfers").HandlerFunc(handler.proposeTransfer()).Methods("POST")
 		private.Path("/transfers").HandlerFunc(handler.searchTransfers()).Methods("GET")
-
-		// private.Path("/transaction/cancelPropose").HandlerFunc(handler.cancelPropose()).Methods("GET")
-		// private.Path("/pending_transactions").HandlerFunc(handler.pendingTransactionsPage()).Methods("GET")
-		// private.Path("/api/accountBalance").HandlerFunc(handler.getBalance()).Methods("GET")
-		// private.Path("/api/pendingTransactions").HandlerFunc(handler.pendingTransactions()).Methods("GET")
-		// private.Path("/api/acceptTransaction").HandlerFunc(handler.acceptTransaction()).Methods("POST")
-		// private.Path("/api/cancelTransaction").HandlerFunc(handler.cancelTransaction()).Methods("POST")
-		// private.Path("/api/rejectTransaction").HandlerFunc(handler.rejectTransaction()).Methods("POST")
+		private.Path("/transfers/{transferID}").HandlerFunc(handler.updateTransfer()).Methods("PATCH")
 	})
 }
 
@@ -57,37 +52,18 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 			return
 		}
 
-		initiatorEntity, err := logic.Entity.FindByAccountNumber(req.InitiatorAccountNumber)
-		if err != nil {
-			l.Logger.Error("[Error] TransferHandler.proposeTransfer failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusInternalServerError, err)
-			return
-		}
-		receiverEntity, err := logic.Entity.FindByAccountNumber(req.ReceiverAccountNumber)
-		if err != nil {
-			l.Logger.Error("[Error] TransferHandler.proposeTransfer failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		if !UserHandler.IsEntityBelongsToUser(initiatorEntity.ID.Hex(), r.Header.Get("userID")) {
+		if !UserHandler.IsEntityBelongsToUser(req.InitiatorEntity.ID.Hex(), r.Header.Get("userID")) {
 			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
 			return
 		}
 
-		proposal, errs := types.NewTransferProposal(req, initiatorEntity, receiverEntity)
-		if len(errs) > 0 {
-			api.Respond(w, r, http.StatusBadRequest, errs)
-			return
-		}
-
-		err = logic.Transfer.CheckBalance(proposal)
+		err := logic.Transfer.CheckBalance(req)
 		if err != nil {
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		journal, err := logic.Transfer.Propose(proposal)
+		journal, err := logic.Transfer.Propose(req)
 		if err != nil {
 			l.Logger.Error("[Error] TransferHandler.proposeTransfer failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
@@ -97,9 +73,9 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 		api.Respond(w, r, http.StatusOK, respond{Data: api.NewProposeTransferRespond(journal)})
 
 		go func() {
-			err := email.Transaction.Initiate(proposal)
+			err := email.Transfer.Initiate(req)
 			if err != nil {
-				l.Logger.Error("email.Transaction.Initiate failed", zap.Error(err))
+				l.Logger.Error("email.Transfer.Initiate failed", zap.Error(err))
 			}
 		}()
 	}
@@ -149,318 +125,196 @@ func (handler *transferHandler) searchTransfers() func(http.ResponseWriter, *htt
 	}
 }
 
-// TO BE REMOVED
+func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.Transfer `json:"data"`
+	}
+	var generateRespond = func(req *types.UpdateTransferReqBody, updated *types.Journal) *types.Transfer {
+		t := &types.Transfer{
+			TransferID:  req.TransferID,
+			Description: req.Journal.Description,
+			Amount:      req.Journal.Amount,
+			CreatedAt:   req.Journal.CreatedAt,
+			Status:      updated.Status,
+			CompletedAt: updated.CompletedAt,
+		}
 
-// type formData struct {
-// 	Type        string // "send" or "receive"
-// 	Email       string
-// 	Amount      float64
-// 	Description string
-// }
-// type response struct {
-// 	FormData      formData
-// 	CurBalance    float64
-// 	MaxNegBalance float64
-// }
+		if util.ContainID(req.InitiateEntity.Users, req.LoggedInUserID) {
+			t.IsInitiator = true
+		}
+		if util.ContainID(req.FromEntity.Users, req.LoggedInUserID) {
+			t.Transfer = "out"
+			t.AccountNumber = req.Journal.ToAccountNumber
+			t.EntityName = req.Journal.ToEntityName
+		} else {
+			t.Transfer = "in"
+			t.AccountNumber = req.Journal.FromAccountNumber
+			t.EntityName = req.Journal.FromEntityName
+		}
 
-// func (handler *transferHandler) cancelPropose() func(http.ResponseWriter, *http.Request) {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		flash.Info(w, "No transfer has been initiated from your account.")
-// 		http.Redirect(w, r, "/", http.StatusFound)
-// 	}
-// }
+		return t
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req, errs := api.NewUpdateTransferReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
 
-// func (handler *transferHandler) getBalance() func(http.ResponseWriter, *http.Request) {
-// 	type response struct {
-// 		Balance float64
-// 	}
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		account, err := AccountHandler.FindByUserID(r.Header.Get("userID"))
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.getBalance failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		res := response{Balance: account.Balance}
-// 		js, err := json.Marshal(res)
-// 		w.Header().Set("Content-Type", "application/json")
-// 		w.Write(js)
-// 	}
-// }
+		err := handler.checkPermissions(req)
+		if err != nil {
+			api.Respond(w, r, http.StatusUnauthorized, err)
+			return
+		}
+		err = handler.checkBalances(req)
+		if err != nil {
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
 
-// func (handler *transferHandler) pendingTransactions() func(http.ResponseWriter, *http.Request) {
-// 	type response struct {
-// 		Transactions []*types.Transfer
-// 	}
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		account, err := AccountHandler.FindByUserID(r.Header.Get("userID"))
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.pendingTransactions failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		transactions, err := logic.Transfer.FindPendings(account.ID)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.pendingTransactions failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		res := response{Transactions: transactions}
-// 		js, err := json.Marshal(res)
-// 		w.Header().Set("Content-Type", "application/json")
-// 		w.Write(js)
-// 	}
-// }
+		var updated *types.Journal
+		if req.Action == "accept" {
+			updated, err = handler.acceptTransfer(req.Journal)
+			if err != nil {
+				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
+				api.Respond(w, r, http.StatusInternalServerError, err)
+				return
+			}
+		}
+		if req.Action == "reject" {
+			updated, err = handler.rejectTransfer(req.Journal, req.Reason)
+			if err != nil {
+				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
+				api.Respond(w, r, http.StatusInternalServerError, err)
+				return
+			}
+		}
+		if req.Action == "cancel" {
+			updated, err = handler.cancelTransfer(req.Journal, req.Reason)
+			if err != nil {
+				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
+				api.Respond(w, r, http.StatusInternalServerError, err)
+				return
+			}
+		}
 
-// func (handler *transferHandler) isInitiatedStatus(w http.ResponseWriter, t *types.Transfer) (bool, error) {
-// 	type response struct {
-// 		Error string `json:"error"`
-// 	}
+		api.Respond(w, r, http.StatusOK, respond{generateRespond(req, updated)})
+	}
+}
 
-// 	if t.Status == constant.Transfer.Completed {
-// 		js, err := json.Marshal(response{Error: "The transaction has already been completed by the counterparty."})
-// 		if err != nil {
-// 			return false, err
-// 		}
-// 		w.Header().Set("Content-Type", "application/json")
-// 		w.Write(js)
-// 		return false, nil
-// 	} else if t.Status == constant.Transfer.Cancelled {
-// 		js, err := json.Marshal(response{Error: "The transaction has already been cancelled by the counterparty."})
-// 		if err != nil {
-// 			return false, err
-// 		}
-// 		w.Header().Set("Content-Type", "application/json")
-// 		w.Write(js)
-// 		return false, nil
-// 	}
+func (handler *transferHandler) checkPermissions(req *types.UpdateTransferReqBody) error {
+	if !util.ContainID(req.FromEntity.Users, req.LoggedInUserID) && !util.ContainID(req.ToEntity.Users, req.LoggedInUserID) {
+		return errors.New("You don't have permission to perform this action.")
+	}
 
-// 	return true, nil
-// }
+	// If the logged in user is the owner of the initiate entity, then the user can only "cancel" the transfer.
+	if util.ContainID(req.InitiateEntity.Users, req.LoggedInUserID) {
+		if req.Action != "cancel" {
+			return errors.New("You don't have permission to perform this action.")
+		}
+	} else {
+		if req.Action != "accept" && req.Action != "reject" {
+			return errors.New("You don't have permission to perform this action.")
+		}
+	}
 
-// func (handler *transferHandler) cancelTransaction() func(http.ResponseWriter, *http.Request) {
-// 	type request struct {
-// 		TransactionID uint   `json:"id"`
-// 		Reason        string `json:"reason"`
-// 	}
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		var req request
-// 		decoder := json.NewDecoder(r.Body)
-// 		err := decoder.Decode(&req)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
+	return nil
+}
 
-// 		account, err := AccountHandler.FindByUserID(r.Header.Get("userID"))
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		transaction, err := logic.Transfer.Find(req.TransactionID)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
+func (handler *transferHandler) checkBalances(req *types.UpdateTransferReqBody) error {
+	fromAccount, err := logic.Account.FindByAccountNumber(req.Journal.FromAccountNumber)
+	if err != nil {
+		return err
+	}
+	toAccount, err := logic.Account.FindByAccountNumber(req.Journal.ToAccountNumber)
+	if err != nil {
+		return err
+	}
 
-// 		shouldContinue, err := handler.isInitiatedStatus(w, transaction)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		if !shouldContinue {
-// 			return
-// 		}
+	exceed, err := logic.BalanceLimit.IsExceedLimit(fromAccount.ID, fromAccount.Balance-req.Journal.Amount)
+	if err != nil {
+		return err
+	}
+	if exceed {
+		reason := "The sender will exceed its credit limit so this tansfer has been cancelled."
+		_, err = logic.Transfer.Cancel(req.Journal.TransferID, reason)
+		if err != nil {
+			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
+			return err
+		}
+		go func() {
+			err := email.Transfer.CancelBySystem(req.Journal, reason)
+			if err != nil {
+				l.Logger.Error("[Error] email.Transfer.CancelBySystem failed:", zap.Error(err))
+			}
+		}()
+		return errors.New(reason)
+	}
 
-// 		if account.ID != transaction.InitiatedBy {
-// 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		err = logic.Transfer.Cancel(req.TransactionID, req.Reason)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		w.WriteHeader(http.StatusOK)
+	exceed, err = logic.BalanceLimit.IsExceedLimit(toAccount.ID, toAccount.Balance+req.Journal.Amount)
+	if err != nil {
+		return err
+	}
+	if exceed {
+		reason := "The recipient will exceed its maximum positive balance threshold so this tansfer has been cancelled."
+		_, err = logic.Transfer.Cancel(req.Journal.TransferID, reason)
+		if err != nil {
+			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
+			return err
+		}
+		go func() {
+			err := email.Transfer.CancelBySystem(req.Journal, reason)
+			if err != nil {
+				l.Logger.Error("[Error] email.Transfer.CancelBySystem failed:", zap.Error(err))
+			}
+		}()
+		return errors.New(reason)
+	}
 
-// 		go func() {
-// 			err := email.Transaction.Cancel(transaction, req.Reason)
-// 			if err != nil {
-// 				l.Logger.Error("email.Transaction.Cancel failed", zap.Error(err))
-// 			}
-// 		}()
-// 	}
-// }
+	return nil
+}
 
-// func (handler *transferHandler) rejectTransaction() func(http.ResponseWriter, *http.Request) {
-// 	type request struct {
-// 		TransactionID uint   `json:"id"`
-// 		Reason        string `json:"reason"`
-// 	}
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		var req request
-// 		decoder := json.NewDecoder(r.Body)
-// 		err := decoder.Decode(&req)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.rejectTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
+func (handler *transferHandler) acceptTransfer(j *types.Journal) (*types.Journal, error) {
+	updated, err := logic.Transfer.Accept(j)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		err := email.Transfer.Accept(j)
+		if err != nil {
+			l.Logger.Error("email.Transfer.Accept failed", zap.Error(err))
+		}
+	}()
 
-// 		transaction, err := logic.Transfer.Find(req.TransactionID)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
+	return updated, nil
+}
 
-// 		shouldContinue, err := handler.isInitiatedStatus(w, transaction)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		if !shouldContinue {
-// 			return
-// 		}
+func (handler *transferHandler) rejectTransfer(j *types.Journal, reason string) (*types.Journal, error) {
+	updated, err := logic.Transfer.Cancel(j.TransferID, reason)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		err := email.Transfer.Reject(j, reason)
+		if err != nil {
+			l.Logger.Error("email.Transfer.Reject failed", zap.Error(err))
+		}
+	}()
 
-// 		err = logic.Transfer.Cancel(req.TransactionID, req.Reason)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.rejectTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		w.WriteHeader(http.StatusOK)
+	return updated, nil
+}
 
-// 		go func() {
-// 			err := email.Transaction.Reject(transaction)
-// 			if err != nil {
-// 				l.Logger.Error("email.Transaction.Reject failed", zap.Error(err))
-// 			}
-// 		}()
-// 	}
-// }
+func (handler *transferHandler) cancelTransfer(j *types.Journal, reason string) (*types.Journal, error) {
+	updated, err := logic.Transfer.Cancel(j.TransferID, reason)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		err := email.Transfer.Cancel(j, reason)
+		if err != nil {
+			l.Logger.Error("email.Transfer.Cancel failed", zap.Error(err))
+		}
+	}()
 
-// func (handler *transferHandler) acceptTransaction() func(http.ResponseWriter, *http.Request) {
-// 	type request struct {
-// 		TransactionID uint `json:"id"`
-// 	}
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		var req request
-// 		decoder := json.NewDecoder(r.Body)
-// 		err := decoder.Decode(&req)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-
-// 		transaction, err := logic.Transfer.Find(req.TransactionID)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-
-// 		shouldContinue, err := handler.isInitiatedStatus(w, transaction)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.cancelTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		if !shouldContinue {
-// 			return
-// 		}
-
-// 		from, err := logic.Account.FindByID(transaction.FromID)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		to, err := logic.Account.FindByID(transaction.ToID)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-
-// 		// Check the account balance.
-// 		exceed, err := logic.BalanceLimit.IsExceedLimit(from.ID, from.Balance-transaction.Amount)
-// 		if err != nil {
-// 			l.Logger.Info("TransferHandler.acceptTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		if exceed {
-// 			reason := "The sender will exceed its credit limit so this transaction has been cancelled."
-// 			err = logic.Transfer.Cancel(req.TransactionID, reason)
-// 			if err != nil {
-// 				l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
-// 				w.WriteHeader(http.StatusInternalServerError)
-// 				return
-// 			}
-// 			err := jsonerror.New("1", reason)
-// 			render.New().JSON(w, http.StatusInternalServerError, err.Render())
-// 			go func() {
-// 				err := email.Transaction.CancelBySystem(transaction, reason)
-// 				if err != nil {
-// 					l.Logger.Error("email.Transaction.Cancel failed", zap.Error(err))
-// 				}
-// 			}()
-// 			return
-// 		}
-// 		exceed, err = logic.BalanceLimit.IsExceedLimit(to.ID, to.Balance+transaction.Amount)
-// 		if err != nil {
-// 			l.Logger.Info("TransferHandler.acceptTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		if exceed {
-// 			reason := "The recipient will exceed its maximum positive balance threshold so this transaction has been cancelled."
-// 			err = logic.Transfer.Cancel(req.TransactionID, reason)
-// 			if err != nil {
-// 				l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
-// 				w.WriteHeader(http.StatusInternalServerError)
-// 				return
-// 			}
-// 			err := jsonerror.New("2", reason)
-// 			render.New().JSON(w, http.StatusInternalServerError, err.Render())
-// 			go func() {
-// 				err := email.Transaction.CancelBySystem(transaction, reason)
-// 				if err != nil {
-// 					l.Logger.Error("email.Transaction.Cancel failed", zap.Error(err))
-// 				}
-// 			}()
-// 			return
-// 		}
-
-// 		err = logic.Transfer.Accept(transaction.ID, from.ID, to.ID, transaction.Amount)
-// 		if err != nil {
-// 			l.Logger.Error("TransferHandler.acceptTransaction failed", zap.Error(err))
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			return
-// 		}
-// 		w.WriteHeader(http.StatusOK)
-
-// 		go func() {
-// 			err := email.Transaction.Accept(transaction)
-// 			if err != nil {
-// 				l.Logger.Error("email.Transaction.Accept failed", zap.Error(err))
-// 			}
-// 		}()
-// 	}
-// }
-
-// // pendingTransactionsPage redirects the user to the dashboard (/) page after the user login.
-// func (handler *transferHandler) pendingTransactionsPage() func(http.ResponseWriter, *http.Request) {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		http.Redirect(w, r, "/#transactions", http.StatusFound)
-// 	}
-// }
+	return updated, nil
+}
