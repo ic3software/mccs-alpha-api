@@ -1,6 +1,7 @@
 package api
 
 import (
+	"net/http"
 	"net/url"
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
@@ -94,4 +95,11 @@ func NewSearchTransferQuery(q url.Values) (*types.SearchTransferQuery, []error) 
 	}
 
 	return query, query.Validate()
+}
+
+func NewBalanceQuery(r *http.Request) (*types.BalanceQuery, []error) {
+	query := types.BalanceQuery{
+		QueryingEntityID: r.URL.Query().Get("querying_entity_id"),
+	}
+	return &query, query.Validate()
 }

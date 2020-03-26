@@ -83,3 +83,17 @@ func (query *SearchTransferQuery) Validate() []error {
 
 	return errs
 }
+
+type BalanceQuery struct {
+	QueryingEntityID string
+}
+
+func (query *BalanceQuery) Validate() []error {
+	errs := []error{}
+
+	if query.QueryingEntityID == "" {
+		errs = append(errs, errors.New("Please specify the querying_entity_id."))
+	}
+
+	return errs
+}

@@ -25,20 +25,16 @@ func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, err
 	return account, nil
 }
 
-// TO BE REMOVED
-
-func (a *account) FindByID(accountID uint) (*types.Account, error) {
-	account, err := pg.Account.FindByID(accountID)
-	if err != nil {
-		return nil, err
-	}
-	return account, nil
-}
-
 func (a *account) FindByEntityID(entityID string) (*types.Account, error) {
-	account, err := pg.Account.FindByEntityID(entityID)
+	entity, err := Entity.FindByStringID(entityID)
 	if err != nil {
 		return nil, err
 	}
+
+	account, err := a.FindByAccountNumber(entity.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+
 	return account, nil
 }
