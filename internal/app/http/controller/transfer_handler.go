@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -134,9 +135,8 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 			TransferID:  req.TransferID,
 			Description: req.Journal.Description,
 			Amount:      req.Journal.Amount,
-			CreatedAt:   req.Journal.CreatedAt,
+			CreatedAt:   &req.Journal.CreatedAt,
 			Status:      updated.Status,
-			CompletedAt: updated.CompletedAt,
 		}
 
 		if util.ContainID(req.InitiateEntity.Users, req.LoggedInUserID) {
@@ -150,6 +150,9 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 			t.Transfer = "in"
 			t.AccountNumber = req.Journal.FromAccountNumber
 			t.EntityName = req.Journal.FromEntityName
+		}
+		if updated.Status == constant.Transfer.Completed {
+			t.CompletedAt = &updated.UpdatedAt
 		}
 
 		return t
