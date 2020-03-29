@@ -15,7 +15,7 @@ type transfer struct{}
 var Transfer = &transfer{}
 
 func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRespond, error) {
-	var transfers []*types.Transfer
+	var journals []*types.Journal
 	var numberOfResults int
 	var err error
 
@@ -25,39 +25,7 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 		WHERE (from_account_number = ? OR to_account_number = ?)
 	`
 	searchSQL := `
-		SELECT
-			transfer_id, amount, description, status, created_at, completed_at,
-			CASE
-				WHEN from_account_number = ? THEN
-					'out'
-				ELSE
-					'in'
-				END
-			AS transfer,
-			CASE
-				WHEN from_account_number = ? THEN
-					to_account_number
-				ELSE
-					from_account_number
-				END
-			AS account_number,
-			CASE
-				WHEN from_account_number = ? THEN
-					to_entity_name
-				ELSE
-					from_entity_name
-				END
-			AS entity_name,
-			CAST(
-					CASE
-						WHEN initiated_by = ? THEN
-							1
-						ELSE
-							0
-						END
-					AS BIT
-				)
-			AS is_initiator
+		SELECT *
 		FROM journals
 		WHERE (from_account_number = ? OR to_account_number = ?)
 	`
@@ -67,39 +35,64 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 		err = db.Raw(searchSQL+"ORDER BY created_at DESC LIMIT ? OFFSET ?",
 			q.QueryingAccountNumber,
 			q.QueryingAccountNumber,
-			q.QueryingAccountNumber,
-			q.QueryingAccountNumber,
-			q.QueryingAccountNumber,
-			q.QueryingAccountNumber,
 			q.PageSize,
 			q.Offset).
-			Scan(&transfers).Error
+			Scan(&journals).Error
 	} else {
 		err = db.Raw(countSQL+"AND status = ?", q.QueryingAccountNumber, q.QueryingAccountNumber, constant.MapTransferType(q.Status)).
 			Count(&numberOfResults).Error
 		err = db.Raw(searchSQL+"AND status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
 			q.QueryingAccountNumber,
 			q.QueryingAccountNumber,
-			q.QueryingAccountNumber,
-			q.QueryingAccountNumber,
-			q.QueryingAccountNumber,
-			q.QueryingAccountNumber,
 			constant.MapTransferType(q.Status),
 			q.PageSize,
 			q.Offset).
-			Scan(&transfers).Error
+			Scan(&journals).Error
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	found := &types.SearchTransferRespond{
-		Transfers:       transfers,
+		Transfers:       t.journalsToTransfers(journals, q.QueryingAccountNumber),
 		NumberOfResults: numberOfResults,
 		TotalPages:      util.GetNumberOfPages(numberOfResults, q.PageSize),
 	}
 
 	return found, nil
+}
+
+func (t *transfer) journalsToTransfers(journals []*types.Journal, queryingAccountNumber string) []*types.Transfer {
+	transfers := []*types.Transfer{}
+
+	for _, j := range journals {
+		t := &types.Transfer{
+			TransferID:  j.TransferID,
+			Description: j.Description,
+			Amount:      j.Amount,
+			CreatedAt:   &j.CreatedAt,
+			Status:      j.Status,
+		}
+		if j.InitiatedBy == queryingAccountNumber {
+			t.IsInitiator = true
+		}
+		if j.FromAccountNumber == queryingAccountNumber {
+			t.Transfer = "out"
+			t.AccountNumber = j.ToAccountNumber
+			t.EntityName = j.ToEntityName
+		} else {
+			t.Transfer = "in"
+			t.AccountNumber = j.FromAccountNumber
+			t.EntityName = j.FromEntityName
+		}
+		if j.Status == constant.Transfer.Completed {
+			t.CompletedAt = &j.UpdatedAt
+		}
+
+		transfers = append(transfers, t)
+	}
+
+	return transfers
 }
 
 func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
