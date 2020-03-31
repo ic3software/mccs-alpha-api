@@ -52,13 +52,13 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 	type respond struct {
 		Data data `json:"data"`
 	}
-	respondData := func(user *types.AdminUser, token string) data {
+	respondData := func(info *types.LoginInfo, token string) data {
 		d := data{Token: token}
-		if user.LastLoginIP != "" {
-			d.LastLoginIP = user.LastLoginIP
+		if info.LastLoginIP != "" {
+			d.LastLoginIP = info.LastLoginIP
 		}
-		if !user.LastLoginDate.IsZero() {
-			d.LastLoginDate = &user.LastLoginDate
+		if !info.LastLoginDate.IsZero() {
+			d.LastLoginDate = &info.LastLoginDate
 		}
 		return d
 	}
@@ -82,17 +82,14 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
+		loginInfo, err := logic.AdminUser.UpdateLoginInfo(user.ID, util.IPAddress(r))
+		if err != nil {
+			l.Logger.Error("[Error] AdminUser.UpdateLoginInfo failed:", zap.Error(err))
+		}
 
 		token, err := jwt.GenerateToken(user.ID.Hex(), true)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: respondData(user, token)})
-
-		go func() {
-			err := logic.AdminUser.UpdateLoginInfo(user.ID, util.IPAddress(r))
-			if err != nil {
-				l.Logger.Error("[Error] AdminUser.UpdateLoginInfo failed:", zap.Error(err))
-			}
-		}()
+		api.Respond(w, r, http.StatusOK, respond{Data: respondData(loginInfo, token)})
 	}
 }
 

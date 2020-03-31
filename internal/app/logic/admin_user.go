@@ -28,23 +28,12 @@ func (a *adminUser) Login(email string, password string) (*types.AdminUser, erro
 	return user, nil
 }
 
-func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, ip string) error {
-	loginInfo, err := mongo.AdminUser.GetLoginInfo(id)
+func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, ip string) (*types.LoginInfo, error) {
+	info, err := mongo.AdminUser.UpdateLoginInfo(id, ip)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	newLoginInfo := &types.LoginInfo{
-		CurrentLoginIP: ip,
-		LastLoginIP:    loginInfo.CurrentLoginIP,
-		LastLoginDate:  loginInfo.CurrentLoginDate,
-	}
-
-	err = mongo.AdminUser.UpdateLoginInfo(id, newLoginInfo)
-	if err != nil {
-		return err
-	}
-	return nil
+	return info, nil
 }
 
 // TO BE REMOVED

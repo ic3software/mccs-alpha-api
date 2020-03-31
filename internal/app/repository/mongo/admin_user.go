@@ -23,46 +23,6 @@ func (a *adminUser) Register(db *mongo.Database) {
 	a.c = db.Collection("adminUsers")
 }
 
-func (a *adminUser) GetLoginInfo(id primitive.ObjectID) (*types.LoginInfo, error) {
-	loginInfo := &types.LoginInfo{}
-	filter := bson.M{"_id": id}
-	projection := bson.M{
-		"currentLoginIP":   1,
-		"currentLoginDate": 1,
-		"lastLoginIP":      1,
-		"lastLoginDate":    1,
-	}
-	findOneOptions := options.FindOne()
-	findOneOptions.SetProjection(projection)
-	err := a.c.FindOne(context.Background(), filter, findOneOptions).Decode(&loginInfo)
-	if err != nil {
-		return nil, err
-	}
-	return loginInfo, nil
-}
-
-func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, i *types.LoginInfo) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"currentLoginIP":   i.CurrentLoginIP,
-		"currentLoginDate": time.Now(),
-		"lastLoginIP":      i.LastLoginIP,
-		"lastLoginDate":    i.LastLoginDate,
-		"updatedAt":        time.Now(),
-	}}
-	_, err := a.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// TO BE REMOVED
-
 func (a *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 	email = strings.ToLower(email)
 
@@ -80,6 +40,51 @@ func (a *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 	}
 	return &user, nil
 }
+
+func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types.LoginInfo, error) {
+	old := &types.LoginInfo{}
+	filter := bson.M{"_id": id}
+	projection := bson.M{
+		"currentLoginIP":   1,
+		"currentLoginDate": 1,
+		"lastLoginIP":      1,
+		"lastLoginDate":    1,
+	}
+	findOneOptions := options.FindOne()
+	findOneOptions.SetProjection(projection)
+	err := a.c.FindOne(context.Background(), filter, findOneOptions).Decode(&old)
+	if err != nil {
+		return nil, err
+	}
+
+	new := &types.LoginInfo{
+		CurrentLoginDate: time.Now(),
+		CurrentLoginIP:   newLoginIP,
+		LastLoginIP:      old.CurrentLoginIP,
+		LastLoginDate:    old.CurrentLoginDate,
+	}
+
+	filter = bson.M{"_id": id}
+	update := bson.M{"$set": bson.M{
+		"currentLoginIP":   new.CurrentLoginIP,
+		"currentLoginDate": new.CurrentLoginDate,
+		"lastLoginIP":      new.LastLoginIP,
+		"lastLoginDate":    new.LastLoginDate,
+		"updatedAt":        time.Now(),
+	}}
+	_, err = a.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return new, nil
+}
+
+// TO BE REMOVED
 
 func (a *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
 	adminUser := types.AdminUser{}
