@@ -28,6 +28,25 @@ func (a *adminUser) Login(email string, password string) (*types.AdminUser, erro
 	return user, nil
 }
 
+func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, ip string) error {
+	loginInfo, err := mongo.AdminUser.GetLoginInfo(id)
+	if err != nil {
+		return err
+	}
+
+	newLoginInfo := &types.LoginInfo{
+		CurrentLoginIP: ip,
+		LastLoginIP:    loginInfo.CurrentLoginIP,
+		LastLoginDate:  loginInfo.CurrentLoginDate,
+	}
+
+	err = mongo.AdminUser.UpdateLoginInfo(id, newLoginInfo)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (a *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
@@ -44,23 +63,4 @@ func (a *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 		return nil, e.Wrap(err, "service.AdminUser.FindByEmail failed")
 	}
 	return adminUser, nil
-}
-
-func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, ip string) error {
-	loginInfo, err := mongo.AdminUser.GetLoginInfo(id)
-	if err != nil {
-		return e.Wrap(err, "service.AdminUser.UpdateLoginInfo failed")
-	}
-
-	newLoginInfo := &types.LoginInfo{
-		CurrentLoginIP: ip,
-		LastLoginIP:    loginInfo.CurrentLoginIP,
-		LastLoginDate:  loginInfo.CurrentLoginDate,
-	}
-
-	err = mongo.AdminUser.UpdateLoginInfo(id, newLoginInfo)
-	if err != nil {
-		return e.Wrap(err, "AdminUserService UpdateLoginInfo failed")
-	}
-	return nil
 }

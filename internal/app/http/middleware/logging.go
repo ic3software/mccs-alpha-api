@@ -8,8 +8,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gorilla/mux"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/ip"
+
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
+	"github.com/ic3network/mccs-alpha-api/util"
 )
 
 // Logging middleware logs messages.
@@ -26,7 +27,7 @@ func Logging() mux.MiddlewareFunc {
 				}
 				elapse := time.Now().Sub(startTime)
 				l.Logger.Info("request",
-					zap.String("ip", ip.FromRequest(r)),
+					zap.String("ip", util.IPAddress(r)),
 					zap.String("method", r.Method),
 					zap.String("uri", uri),
 					zap.String("userAgent", r.UserAgent()),
