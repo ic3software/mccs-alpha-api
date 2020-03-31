@@ -1,15 +1,12 @@
-[{
-	"email": "admin1@dev.null",
-    "name": "admin1",
-    "password": "password",
-    "roles": [],
-	"createdAt": "2019-02-12T04:46:10Z",
-	"updatedAt": "2019-05-15T01:41:33Z"
-  }, {
-	"email": "admin2@dev.null",
-    "name": "admin2",
-    "password": "password",
-    "roles": [],
-	"createdAt": "2019-01-05T06:33:03Z",
-	"updatedAt": "2019-04-20T20:40:01Z"
-  }]
+[
+    {
+        "email": "api-test-admin1@ic3.dev",
+        "name": "admin1",
+        "password": "password1!"
+    },
+    {
+        "email": "api-test-admin2@ic3.dev",
+        "name": "admin2",
+        "password": "password1!"
+    }
+]

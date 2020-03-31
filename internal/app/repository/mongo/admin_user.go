@@ -27,7 +27,7 @@ func (u *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 	email = strings.ToLower(email)
 
 	if email == "" {
-		return &types.AdminUser{}, e.New(e.UserNotFound, "admin user not found")
+		return &types.AdminUser{}, e.New(e.UserNotFound, "Please specify an email address.")
 	}
 	user := types.AdminUser{}
 	filter := bson.M{
@@ -36,7 +36,7 @@ func (u *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 	}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
-		return nil, e.New(e.UserNotFound, "admin user not found")
+		return nil, e.New(e.UserNotFound, "The specified admin could not be found.")
 	}
 	return &user, nil
 }
@@ -114,7 +114,7 @@ func (u *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
 	}
 	err := u.c.FindOne(context.Background(), filter).Decode(&adminUser)
 	if err != nil {
-		return nil, e.New(e.UserNotFound, "admin user not found")
+		return nil, e.New(e.UserNotFound, "The specified admin could not be found.")
 	}
 	return &adminUser, nil
 }
