@@ -1,4 +1,4 @@
-package ip
+package util
 
 import (
 	"net"
@@ -10,7 +10,7 @@ const (
 	XRealIP       = "X-Real-IP"
 )
 
-func FromRequest(r *http.Request) string {
+func IPAddress(r *http.Request) string {
 	remoteAddr := r.RemoteAddr
 
 	if ip := r.Header.Get(XRealIP); ip != "" {

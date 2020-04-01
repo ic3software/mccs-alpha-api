@@ -93,6 +93,11 @@ func (u *user) Login(email string, password string) (*types.User, error) {
 		return nil, errors.New("Invalid password.")
 	}
 
+	err = mongo.User.UpdateLoginAttempts(email, 0, false)
+	if err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
 

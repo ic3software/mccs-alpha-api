@@ -23,12 +23,9 @@ func RegisterRoutes(r *mux.Router) {
 	public.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 
 	controller.ServiceDiscovery.RegisterRoutes(public, private, adminPublic, adminPrivate)
-	controller.DashBoardHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.EntityHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.UserHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.TransferHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
-	controller.HistoryHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
-	controller.TradingHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 
 	controller.AdminEntityHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.AdminUserHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)

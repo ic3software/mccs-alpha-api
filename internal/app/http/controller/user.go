@@ -107,14 +107,7 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := api.NewLoginReqBody(r)
-		if err != nil {
-			l.Logger.Info("[INFO] UserHandler.login failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		errs := req.Validate()
+		req, errs := api.NewLoginReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
