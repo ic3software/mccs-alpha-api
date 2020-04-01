@@ -7,7 +7,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -15,6 +14,22 @@ import (
 type adminUser struct{}
 
 var AdminUser = &adminUser{}
+
+func (a *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
+	adminUser, err := mongo.AdminUser.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return adminUser, nil
+}
+
+func (a *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
+	adminUser, err := mongo.AdminUser.FindByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	return adminUser, nil
+}
 
 func (a *adminUser) Login(email string, password string) (*types.AdminUser, error) {
 	user, err := mongo.AdminUser.FindByEmail(email)
@@ -85,20 +100,22 @@ func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, ip string) (*types.Lo
 	return info, nil
 }
 
-// TO BE REMOVED
-
-func (a *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
-	adminUser, err := mongo.AdminUser.FindByID(id)
+func (a *adminUser) ResetPassword(email string, newPassword string) error {
+	user, err := mongo.AdminUser.FindByEmail(email)
 	if err != nil {
-		return nil, e.Wrap(err, "service.AdminUser.FindByID failed")
+		return err
 	}
-	return adminUser, nil
-}
 
-func (a *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
-	adminUser, err := mongo.AdminUser.FindByEmail(email)
+	hashedPassword, err := bcrypt.Hash(newPassword)
 	if err != nil {
-		return nil, e.Wrap(err, "service.AdminUser.FindByEmail failed")
+		return err
 	}
-	return adminUser, nil
+
+	user.Password = hashedPassword
+	err = mongo.AdminUser.UpdatePassword(user)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

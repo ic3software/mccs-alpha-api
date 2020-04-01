@@ -104,6 +104,20 @@ func (u *adminUser) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*
 	return new, nil
 }
 
+func (u *adminUser) UpdatePassword(user *types.AdminUser) error {
+	filter := bson.M{"_id": user.ID}
+	update := bson.M{"$set": bson.M{"password": user.Password, "updatedAt": time.Now()}}
+	_, err := u.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (u *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
