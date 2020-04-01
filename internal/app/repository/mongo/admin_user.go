@@ -19,11 +19,11 @@ type adminUser struct {
 
 var AdminUser = &adminUser{}
 
-func (a *adminUser) Register(db *mongo.Database) {
-	a.c = db.Collection("adminUsers")
+func (u *adminUser) Register(db *mongo.Database) {
+	u.c = db.Collection("adminUsers")
 }
 
-func (a *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
+func (u *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 	email = strings.ToLower(email)
 
 	if email == "" {
@@ -34,14 +34,34 @@ func (a *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 		"email":     email,
 		"deletedAt": bson.M{"$exists": false},
 	}
-	err := a.c.FindOne(context.Background(), filter).Decode(&user)
+	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
 		return nil, e.New(e.UserNotFound, "admin user not found")
 	}
 	return &user, nil
 }
 
-func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types.LoginInfo, error) {
+func (u *adminUser) UpdateLoginAttempts(email string, attempts int, lockUser bool) error {
+	filter := bson.M{"email": email}
+	set := bson.M{
+		"loginAttempts": attempts,
+	}
+	if lockUser {
+		set["lastLoginFailDate"] = time.Now()
+	}
+	update := bson.M{"$set": set}
+	_, err := u.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *adminUser) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types.LoginInfo, error) {
 	old := &types.LoginInfo{}
 	filter := bson.M{"_id": id}
 	projection := bson.M{
@@ -52,7 +72,7 @@ func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*
 	}
 	findOneOptions := options.FindOne()
 	findOneOptions.SetProjection(projection)
-	err := a.c.FindOne(context.Background(), filter, findOneOptions).Decode(&old)
+	err := u.c.FindOne(context.Background(), filter, findOneOptions).Decode(&old)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +92,7 @@ func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*
 		"lastLoginDate":    new.LastLoginDate,
 		"updatedAt":        time.Now(),
 	}}
-	_, err = a.c.UpdateOne(
+	_, err = u.c.UpdateOne(
 		context.Background(),
 		filter,
 		update,
@@ -86,13 +106,13 @@ func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*
 
 // TO BE REMOVED
 
-func (a *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
+func (u *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
 	adminUser := types.AdminUser{}
 	filter := bson.M{
 		"_id":       id,
 		"deletedAt": bson.M{"$exists": false},
 	}
-	err := a.c.FindOne(context.Background(), filter).Decode(&adminUser)
+	err := u.c.FindOne(context.Background(), filter).Decode(&adminUser)
 	if err != nil {
 		return nil, e.New(e.UserNotFound, "admin user not found")
 	}

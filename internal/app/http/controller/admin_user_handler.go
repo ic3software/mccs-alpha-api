@@ -43,6 +43,13 @@ func (handler *adminUserHandler) RegisterRoutes(
 	})
 }
 
+func (handler *adminUserHandler) updateLoginAttempts(email string) {
+	err := logic.AdminUser.UpdateLoginAttempts(email)
+	if err != nil {
+		l.Logger.Error("[Error] AdminUserHandler.updateLoginAttempts failed:", zap.Error(err))
+	}
+}
+
 func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request) {
 	type data struct {
 		Token         string     `json:"token"`
@@ -63,14 +70,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 		return d
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := api.NewLoginReqBody(r)
-		if err != nil {
-			l.Logger.Info("[INFO] AdminUserHandler.login failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		errs := req.Validate()
+		req, errs := api.NewLoginReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -80,6 +80,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 		if err != nil {
 			l.Logger.Error("[Error] AdminUserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
+			go handler.updateLoginAttempts(req.Email)
 			return
 		}
 		loginInfo, err := logic.AdminUser.UpdateLoginInfo(user.ID, util.IPAddress(r))

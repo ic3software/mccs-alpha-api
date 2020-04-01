@@ -24,14 +24,14 @@ func NewSignupReqBody(r *http.Request) (*types.SignupReqBody, error) {
 	return &req, nil
 }
 
-func NewLoginReqBody(r *http.Request) (*types.LoginReqBody, error) {
+func NewLoginReqBody(r *http.Request) (*types.LoginReqBody, []error) {
 	var req types.LoginReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
-	return &req, nil
+	return &req, req.Validate()
 }
 
 func NewUpdateUserEntityReqBody(r *http.Request) (*types.UpdateUserEntityReqBody, error) {

@@ -22,4 +22,7 @@ type AdminUser struct {
 	CurrentLoginDate time.Time `json:"currentLoginDate,omitempty" bson:"currentLoginDate,omitempty"`
 	LastLoginIP      string    `json:"lastLoginIP,omitempty" bson:"lastLoginIP,omitempty"`
 	LastLoginDate    time.Time `json:"lastLoginDate,omitempty" bson:"lastLoginDate,omitempty"`
+
+	LoginAttempts     int       `json:"loginAttempts,omitempty" bson:"loginAttempts,omitempty"`
+	LastLoginFailDate time.Time `json:"lastLoginFailDate,omitempty" bson:"lastLoginFailDate,omitempty"`
 }

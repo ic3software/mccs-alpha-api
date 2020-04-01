@@ -81,6 +81,9 @@ type LoginReqBody struct {
 
 func (req *LoginReqBody) Validate() []error {
 	errs := []error{}
+	if req.Email == "" {
+		errs = append(errs, errors.New("Please specify an email address."))
+	}
 	if req.Password == "" {
 		errs = append(errs, errors.New("Password is missing."))
 	}
