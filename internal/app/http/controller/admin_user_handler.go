@@ -78,7 +78,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 
 		user, err := logic.AdminUser.Login(req.Email, req.Password)
 		if err != nil {
-			l.Logger.Error("[Error] AdminUserHandler.login failed:", zap.Error(err))
+			l.Logger.Info("[Info] AdminUserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			go handler.updateLoginAttempts(req.Email)
 			return

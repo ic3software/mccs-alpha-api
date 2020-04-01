@@ -28,6 +28,9 @@ func (a *adminUser) Login(email string, password string) (*types.AdminUser, erro
 
 	err = bcrypt.CompareHash(user.Password, password)
 	if err != nil {
+		if user.LoginAttempts+1 >= viper.GetInt("login_attempts_limit") {
+			return nil, ErrLoginLocked
+		}
 		return nil, errors.New("Invalid password.")
 	}
 
@@ -42,7 +45,7 @@ func (u *adminUser) isUserLockForLogin(lastLoginFailDate time.Time) bool {
 }
 
 func (u *adminUser) UpdateLoginAttempts(email string) error {
-	user, err := mongo.User.FindByEmail(email)
+	user, err := mongo.AdminUser.FindByEmail(email)
 	if err != nil {
 		return err
 	}
