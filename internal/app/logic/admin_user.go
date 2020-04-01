@@ -34,6 +34,11 @@ func (a *adminUser) Login(email string, password string) (*types.AdminUser, erro
 		return nil, errors.New("Invalid password.")
 	}
 
+	err = mongo.AdminUser.UpdateLoginAttempts(email, 0, false)
+	if err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
 
