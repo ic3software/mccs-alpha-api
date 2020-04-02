@@ -239,7 +239,7 @@ func (u *user) UpdatePassword(user *types.User) error {
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "UpdatePassword failed")
+		return err
 	}
 	return nil
 }
@@ -262,7 +262,7 @@ func (u *user) UpdateUserInfo(user *types.User) error {
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "UserMongo UpdateUserInfo failed")
+		return err
 	}
 	return nil
 }
