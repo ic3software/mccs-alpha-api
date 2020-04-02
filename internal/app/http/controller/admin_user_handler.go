@@ -148,7 +148,7 @@ func (handler *adminUserHandler) requestPasswordReset() func(http.ResponseWriter
 			return
 		}
 
-		email.SendResetEmail(user.Name, req.Email, uid.String())
+		email.AdminResetPassword(user.Name, req.Email, uid.String())
 
 		if viper.GetString("env") == "development" {
 			type data struct {

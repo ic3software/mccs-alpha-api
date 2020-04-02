@@ -181,6 +181,25 @@ func (e *Email) sendResetEmail(receiver string, email string, token string) erro
 	return nil
 }
 
+func AdminResetPassword(receiver string, email string, token string) error {
+	return e.adminResetPassword(receiver, email, token)
+}
+func (e *Email) adminResetPassword(receiver string, email string, token string) error {
+	text := "Your password reset link is: " + e.serverAddr + "/admin/password-reset/" + token
+	d := emailData{
+		receiver:      receiver,
+		receiverEmail: email,
+		subject:       "Password Reset",
+		text:          text,
+		html:          text,
+	}
+	err := e.send(d)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // SendDailyEmailList sends the matching tags for a user.
 func SendDailyEmailList(user *types.User, matchedTags *types.MatchedTags) error {
 	return e.sendDailyEmailList(user, matchedTags)
