@@ -41,7 +41,7 @@ func (handler *categoryHandler) RegisterRoutes(
 		adminPrivate.Path("/categories/{id}").HandlerFunc(handler.updateCategory()).Methods("PATCH")
 		adminPrivate.Path("/categories/{id}").HandlerFunc(handler.deleteCategory()).Methods("DELETE")
 
-		adminPrivate.Path("​/categories").HandlerFunc(handler.searchAdminTags()).Methods("GET")
+		adminPrivate.Path("/categories").HandlerFunc(handler.SearchCategories()).Methods("GET")
 	})
 }
 
@@ -65,7 +65,7 @@ func (handler *categoryHandler) createCategory() func(http.ResponseWriter, *http
 
 		_, err := logic.Category.FindByName(req.Name)
 		if err == nil {
-			api.Respond(w, r, http.StatusBadRequest, errors.New("Admin tag already exists."))
+			api.Respond(w, r, http.StatusBadRequest, errors.New("Category already exists."))
 			return
 		}
 
@@ -136,7 +136,7 @@ func (handler *categoryHandler) updateCategory() func(http.ResponseWriter, *http
 
 		_, err := logic.Category.FindByName(req.Name)
 		if err == nil {
-			api.Respond(w, r, http.StatusBadRequest, errors.New("Admin tag already exists."))
+			api.Respond(w, r, http.StatusBadRequest, errors.New("Category already exists."))
 			return
 		}
 
@@ -197,9 +197,9 @@ func (handler *categoryHandler) deleteCategory() func(http.ResponseWriter, *http
 
 // TO BE REMOVED
 
-func (handler *categoryHandler) SaveAdminTags(adminTags []string) error {
-	for _, adminTag := range adminTags {
-		err := logic.Category.Create(adminTag)
+func (handler *categoryHandler) SaveCategories(categories []string) error {
+	for _, category := range categories {
+		err := logic.Category.Create(category)
 		if err != nil {
 			return err
 		}
@@ -207,7 +207,7 @@ func (handler *categoryHandler) SaveAdminTags(adminTags []string) error {
 	return nil
 }
 
-func (handler *categoryHandler) searchAdminTags() func(http.ResponseWriter, *http.Request) {
+func (handler *categoryHandler) SearchCategories() func(http.ResponseWriter, *http.Request) {
 	t := template.NewView("admin/admin-tags")
 	type formData struct {
 		Name string
@@ -220,7 +220,7 @@ func (handler *categoryHandler) searchAdminTags() func(http.ResponseWriter, *htt
 	return func(w http.ResponseWriter, r *http.Request) {
 		page, err := strconv.Atoi(r.URL.Query().Get("page"))
 		if err != nil {
-			l.Logger.Error("SearchAdminTags failed", zap.Error(err))
+			l.Logger.Error("SearchCategories failed", zap.Error(err))
 			t.Error(w, r, nil, err)
 			return
 		}
@@ -232,13 +232,13 @@ func (handler *categoryHandler) searchAdminTags() func(http.ResponseWriter, *htt
 		res := response{FormData: f}
 
 		if f.Name == "" {
-			t.Render(w, r, res, []string{"Please enter the admin tag name"})
+			t.Render(w, r, res, []string{"Please enter the category name"})
 			return
 		}
 
 		findResult, err := logic.Category.FindTags(f.Name, int64(f.Page))
 		if err != nil {
-			l.Logger.Error("SearchAdminTags failed", zap.Error(err))
+			l.Logger.Error("SearchCategories failed", zap.Error(err))
 			t.Error(w, r, res, err)
 			return
 		}

@@ -462,7 +462,7 @@ func NewAdminUpdateCategoryReqBody(r *http.Request) (*AdminUpdateCategoryReqBody
 	if err != nil {
 		return nil, []error{err}
 	}
-	req.Name = util.FormatAdminTag(req.Name)
+	req.Name = util.FormatCategory(req.Name)
 	req.ID = mux.Vars(r)["id"]
 	return &req, req.validate()
 }
@@ -486,7 +486,7 @@ func NewAdminCreateCategoryReqBody(r *http.Request) (*AdminCreateCategoryReqBody
 	if err != nil {
 		return nil, []error{err}
 	}
-	req.Name = util.FormatAdminTag(req.Name)
+	req.Name = util.FormatCategory(req.Name)
 	return &req, req.validate()
 }
 

@@ -246,11 +246,11 @@ func (a *adminEntityHandler) updateEntityOld() func(http.ResponseWriter, *http.R
 			return
 		}
 
-		// Update the admin tags collection.
+		// Update the categories collection.
 		go func() {
-			err := CategoryHandler.SaveAdminTags(d.Entity.Categories)
+			err := CategoryHandler.SaveCategories(d.Entity.Categories)
 			if err != nil {
-				l.Logger.Error("saveAdminTags failed", zap.Error(err))
+				l.Logger.Error("saveCategories failed", zap.Error(err))
 			}
 		}()
 		go func() {

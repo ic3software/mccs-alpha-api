@@ -65,7 +65,7 @@ func LoadData() {
 	json.Unmarshal(data, &tags)
 	tagData = tags
 
-	// Load admin tag data.
+	// Load category data.
 	data, err = ioutil.ReadFile("internal/seed/data/category.json")
 	if err != nil {
 		log.Fatal(err)

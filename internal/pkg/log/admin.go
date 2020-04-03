@@ -123,34 +123,34 @@ func (a admin) DeleteTag(admin *types.AdminUser, tagName string) *types.UserActi
 	}
 }
 
-func (a admin) CreateAdminTag(admin *types.AdminUser, tagName string) *types.UserAction {
+func (a admin) CreateCategory(admin *types.AdminUser, tagName string) *types.UserAction {
 	admin.Email = strings.ToLower(admin.Email)
 	return &types.UserAction{
 		UserID:        admin.ID,
 		Email:         admin.Email,
-		Action:        "admin created new admin tag",
+		Action:        "admin created new category",
 		ActionDetails: admin.Email + " - " + tagName,
 		Category:      "admin",
 	}
 }
 
-func (a admin) ModifyAdminTag(admin *types.AdminUser, old string, new string) *types.UserAction {
+func (a admin) ModifyCategory(admin *types.AdminUser, old string, new string) *types.UserAction {
 	admin.Email = strings.ToLower(admin.Email)
 	return &types.UserAction{
 		UserID:        admin.ID,
 		Email:         admin.Email,
-		Action:        "admin modified an admin tag",
+		Action:        "admin modified a category",
 		ActionDetails: admin.Email + " - " + old + " -> " + new,
 		Category:      "admin",
 	}
 }
 
-func (a admin) DeleteAdminTag(admin *types.AdminUser, tagName string) *types.UserAction {
+func (a admin) DeleteCategory(admin *types.AdminUser, tagName string) *types.UserAction {
 	admin.Email = strings.ToLower(admin.Email)
 	return &types.UserAction{
 		UserID:        admin.ID,
 		Email:         admin.Email,
-		Action:        "admin deleted an admin tag",
+		Action:        "admin deleted a category",
 		ActionDetails: admin.Email + " - " + tagName,
 		Category:      "admin",
 	}
