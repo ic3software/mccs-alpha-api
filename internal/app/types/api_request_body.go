@@ -1,12 +1,15 @@
 package types
 
 import (
+	"encoding/json"
 	"errors"
+	"net/http"
 	"strconv"
 
 	"unicode"
 
 	"github.com/ShiraazMoollatjie/goluhn"
+	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
@@ -445,4 +448,70 @@ func (req *AdminUpdateEntityReqBody) Validate() []error {
 	errs = append(errs, validateTags(req.Wants)...)
 
 	return errs
+}
+
+type AdminUpdateCategoryReqBody struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func NewAdminUpdateCategoryReqBody(r *http.Request) (*AdminUpdateCategoryReqBody, []error) {
+	var req AdminUpdateCategoryReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, []error{err}
+	}
+	req.Name = util.FormatCategory(req.Name)
+	req.ID = mux.Vars(r)["id"]
+	return &req, req.validate()
+}
+
+func (req *AdminUpdateCategoryReqBody) validate() []error {
+	errs := []error{}
+	if req.Name == "" {
+		errs = append(errs, errors.New("Please enter the tag name."))
+	}
+	return errs
+}
+
+type AdminCreateCategoryReqBody struct {
+	Name string `json:"name"`
+}
+
+func NewAdminCreateCategoryReqBody(r *http.Request) (*AdminCreateCategoryReqBody, []error) {
+	var req AdminCreateCategoryReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, []error{err}
+	}
+	req.Name = util.FormatCategory(req.Name)
+	return &req, req.validate()
+}
+
+func (req *AdminCreateCategoryReqBody) validate() []error {
+	errs := []error{}
+	if req.Name == "" {
+		errs = append(errs, errors.New("Please enter the tag name."))
+	}
+	return errs
+}
+
+type AdminDeleteCategoryReqBody struct {
+	ID primitive.ObjectID `json:"name"`
+}
+
+func NewAdminDeleteCategoryReqBody(r *http.Request) (*AdminDeleteCategoryReqBody, []error) {
+	id := mux.Vars(r)["id"]
+	if id == "" {
+		return nil, []error{errors.New("Please enter category id.")}
+	}
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, []error{errors.New("Please enter valid category id.")}
+	}
+	return &AdminDeleteCategoryReqBody{
+		ID: objectID,
+	}, nil
 }

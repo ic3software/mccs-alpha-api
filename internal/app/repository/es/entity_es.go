@@ -270,6 +270,45 @@ func (es *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) err
 	return nil
 }
 
+func (es *entity) RenameCategory(old string, new string) error {
+	query := elastic.NewMatchQuery("categories", old)
+	script := elastic.
+		NewScript(`
+			if (ctx._source.categories.contains(params.old)) {
+				ctx._source.categories.remove(ctx._source.categories.indexOf(params.old));
+				ctx._source.categories.add(params.new);
+			}
+		`).
+		Params(map[string]interface{}{"new": new, "old": old})
+	_, err := es.c.UpdateByQuery(es.index).
+		Query(query).
+		Script(script).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (es *entity) DeleteCategory(name string) error {
+	query := elastic.NewMatchQuery("categories", name)
+	script := elastic.
+		NewScript(`
+			if (ctx._source.categories.contains(params.name)) {
+				ctx._source.categories.remove(ctx._source.categories.indexOf(params.name));
+			}
+		`).
+		Params(map[string]interface{}{"name": name})
+	_, err := es.c.UpdateByQuery(es.index).
+		Query(query).
+		Script(script).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
@@ -318,26 +357,6 @@ func (es *entity) RenameTag(old string, new string) error {
 	return nil
 }
 
-func (es *entity) RenameAdminTag(old string, new string) error {
-	query := elastic.NewMatchQuery("categories", old)
-	script := elastic.
-		NewScript(`
-			if (ctx._source.categories.contains(params.old)) {
-				ctx._source.categories.remove(ctx._source.categories.indexOf(params.old));
-				ctx._source.categories.add(params.new);
-			}
-		`).
-		Params(map[string]interface{}{"new": new, "old": old})
-	_, err := es.c.UpdateByQuery(es.index).
-		Query(query).
-		Script(script).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (es *entity) Delete(id string) error {
 	_, err := es.c.Delete().
 		Index(es.index).
@@ -366,25 +385,6 @@ func (es *entity) DeleteTag(name string) error {
 					ctx._source.wants.remove(i);
 					break;
 				}
-			}
-		`).
-		Params(map[string]interface{}{"name": name})
-	_, err := es.c.UpdateByQuery(es.index).
-		Query(query).
-		Script(script).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (es *entity) DeleteAdminTags(name string) error {
-	query := elastic.NewMatchQuery("categories", name)
-	script := elastic.
-		NewScript(`
-			if (ctx._source.categories.contains(params.name)) {
-				ctx._source.categories.remove(ctx._source.categories.indexOf(params.name));
 			}
 		`).
 		Params(map[string]interface{}{"name": name})

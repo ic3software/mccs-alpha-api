@@ -12,14 +12,14 @@ var (
 	specialCharRe *regexp.Regexp
 	multiDashRe   *regexp.Regexp
 	ltDashRe      *regexp.Regexp
-	adminTagRe    *regexp.Regexp
+	categoryRe    *regexp.Regexp
 )
 
 func init() {
 	specialCharRe = regexp.MustCompile("(&quot;)|([^a-zA-Z-]+)")
 	multiDashRe = regexp.MustCompile("-+")
 	ltDashRe = regexp.MustCompile("(^-+)|(-+$)")
-	adminTagRe = regexp.MustCompile("[0-9]|(&quot;)|([^a-zA-Z ]+)")
+	categoryRe = regexp.MustCompile("[0-9]|(&quot;)|([^a-zA-Z ]+)")
 }
 
 // GetTags transforms tags from the user inputs into a standard format.
@@ -89,7 +89,7 @@ func getCategories(words string) []string {
 	tags := make([]string, 0, 8)
 	encountered := map[string]bool{}
 	for _, tag := range strings.FieldsFunc(words, splitFn) {
-		tag = adminTagRe.ReplaceAllString(tag, "")
+		tag = categoryRe.ReplaceAllString(tag, "")
 		// remove duplicates
 		if !encountered[tag] {
 			tags = append(tags, tag)
@@ -97,10 +97,6 @@ func getCategories(words string) []string {
 		}
 	}
 	return tags
-}
-
-func FormatAdminTag(tag string) string {
-	return adminTagRe.ReplaceAllString(tag, "")
 }
 
 // TagDifference finds out the new added tags.
@@ -157,8 +153,8 @@ func GetTagNames(tags []*types.TagField) []string {
 	return names
 }
 
-// GetAdminTagNames gets admin tag name from AdminTagField.
-func GetAdminTagNames(tags []*types.Category) []string {
+// GetCategoryNames gets category name from CategoryField.
+func GetCategoryNames(tags []*types.Category) []string {
 	names := make([]string, 0, len(tags))
 	for _, t := range tags {
 		names = append(names, t.Name)

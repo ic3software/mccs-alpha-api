@@ -9,14 +9,14 @@ var (
 	specialCharRe *regexp.Regexp
 	multiDashRe   *regexp.Regexp
 	ltDashRe      *regexp.Regexp
-	adminTagRe    *regexp.Regexp
+	categoryRe    *regexp.Regexp
 )
 
 func init() {
 	specialCharRe = regexp.MustCompile("(&quot;)|([^a-zA-Z-]+)")
 	multiDashRe = regexp.MustCompile("-+")
 	ltDashRe = regexp.MustCompile("(^-+)|(-+$)")
-	adminTagRe = regexp.MustCompile("[0-9]|(&quot;)|([^a-zA-Z ]+)")
+	categoryRe = regexp.MustCompile("[0-9]|(&quot;)|([^a-zA-Z ]+)")
 }
 
 // GetTags transforms tags from the user inputs into a standard format.
@@ -76,4 +76,8 @@ func TagDifference(new, old []string) ([]string, []string) {
 		}
 	}
 	return added, removed
+}
+
+func FormatCategory(tag string) string {
+	return categoryRe.ReplaceAllString(tag, "")
 }
