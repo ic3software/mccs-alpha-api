@@ -273,6 +273,31 @@ func (e *entity) RenameCategory(old string, new string) error {
 	return nil
 }
 
+func (e *entity) DeleteCategory(name string) error {
+	filter := bson.M{
+		"$or": []interface{}{
+			bson.M{"categories": name},
+		},
+	}
+	update := bson.M{
+		"$pull": bson.M{
+			"categories": name,
+		},
+		"$set": bson.M{
+			"updatedAt": time.Now(),
+		},
+	}
+	_, err := e.c.UpdateMany(
+		context.Background(),
+		filter,
+		update,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (e *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
@@ -371,31 +396,6 @@ func (e *entity) DeleteTag(name string) error {
 		"$pull": bson.M{
 			"offers": bson.M{"name": name},
 			"wants":  bson.M{"name": name},
-		},
-		"$set": bson.M{
-			"updatedAt": time.Now(),
-		},
-	}
-	_, err := e.c.UpdateMany(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (e *entity) DeleteAdminTags(name string) error {
-	filter := bson.M{
-		"$or": []interface{}{
-			bson.M{"categories": name},
-		},
-	}
-	update := bson.M{
-		"$pull": bson.M{
-			"categories": name,
 		},
 		"$set": bson.M{
 			"updatedAt": time.Now(),

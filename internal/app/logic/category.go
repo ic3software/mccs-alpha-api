@@ -55,12 +55,24 @@ func (c *category) Create(categories ...string) error {
 	return nil
 }
 
-func (c *category) Update(id primitive.ObjectID, update *types.Category) (*types.Category, error) {
-	updated, err := mongo.Category.Update(id, update)
+func (c *category) FindOneAndUpdate(id primitive.ObjectID, update *types.Category) (*types.Category, error) {
+	updated, err := mongo.Category.FindOneAndUpdate(id, update)
 	if err != nil {
 		return nil, err
 	}
 	return updated, nil
+}
+
+func (c *category) FindOneAndDelete(id string) (*types.Category, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	deleted, err := mongo.Category.FindOneAndDelete(objectID)
+	if err != nil {
+		return nil, err
+	}
+	return deleted, nil
 }
 
 // TO BE REMOVED
@@ -79,12 +91,4 @@ func (c *category) GetAll() ([]*types.Category, error) {
 		return nil, err
 	}
 	return categories, nil
-}
-
-func (c *category) DeleteByID(id primitive.ObjectID) error {
-	err := mongo.Category.DeleteByID(id)
-	if err != nil {
-		return err
-	}
-	return nil
 }

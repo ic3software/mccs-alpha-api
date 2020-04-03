@@ -157,6 +157,18 @@ func (b *entity) RenameCategory(old string, new string) error {
 	return nil
 }
 
+func (b *entity) DeleteCategory(name string) error {
+	err := es.Entity.DeleteCategory(name)
+	if err != nil {
+		return err
+	}
+	err = mongo.Entity.DeleteCategory(name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (b *entity) UpdateEntity(id primitive.ObjectID, difference *types.EntityData, isAdmin bool) error {
@@ -195,18 +207,6 @@ func (b *entity) DeleteTag(name string) error {
 	err = mongo.Entity.DeleteTag(name)
 	if err != nil {
 		return e.Wrap(err, "EntityMongo DeleteTag failed")
-	}
-	return nil
-}
-
-func (b *entity) DeleteAdminTags(name string) error {
-	err := es.Entity.DeleteAdminTags(name)
-	if err != nil {
-		return e.Wrap(err, "EntityMongo DeleteAdminTags failed")
-	}
-	err = mongo.Entity.DeleteAdminTags(name)
-	if err != nil {
-		return e.Wrap(err, "EntityMongo DeleteAdminTags failed")
 	}
 	return nil
 }

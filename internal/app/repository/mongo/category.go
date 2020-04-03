@@ -95,7 +95,7 @@ func (c *category) FindByName(name string) (*types.Category, error) {
 	return &category, nil
 }
 
-func (c *category) Update(id primitive.ObjectID, update *types.Category) (*types.Category, error) {
+func (c *category) FindOneAndUpdate(id primitive.ObjectID, update *types.Category) (*types.Category, error) {
 	filter := bson.M{"_id": id}
 	result := c.c.FindOneAndUpdate(
 		context.Background(),
@@ -115,7 +115,30 @@ func (c *category) Update(id primitive.ObjectID, update *types.Category) (*types
 	category := types.Category{}
 	err := result.Decode(&category)
 	if err != nil {
+		return nil, err
+	}
+
+	return &category, nil
+}
+
+func (c *category) FindOneAndDelete(id primitive.ObjectID) (*types.Category, error) {
+	result := c.c.FindOneAndUpdate(
+		context.Background(),
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{
+			"deletedAt": time.Now(),
+			"updatedAt": time.Now(),
+		}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
 		return nil, result.Err()
+	}
+
+	category := types.Category{}
+	err := result.Decode(&category)
+	if err != nil {
+		return nil, err
 	}
 
 	return &category, nil
@@ -210,21 +233,4 @@ func (c *category) GetAll() ([]*types.Category, error) {
 	cur.Close(context.TODO())
 
 	return results, nil
-}
-
-func (c *category) DeleteByID(id primitive.ObjectID) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"deletedAt": time.Now(),
-		"updatedAt": time.Now(),
-	}}
-	_, err := c.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return e.Wrap(err, "AdminTagMongo DeleteByID failed")
-	}
-	return nil
 }

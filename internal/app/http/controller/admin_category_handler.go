@@ -42,10 +42,10 @@ func (handler *categoryHandler) RegisterRoutes(
 	handler.once.Do(func() {
 		public.Path("/categories").HandlerFunc(handler.searchCategory()).Methods("GET")
 		adminPrivate.Path("/categories/{id}").HandlerFunc(handler.updateCategory()).Methods("PATCH")
+		adminPrivate.Path("/categories/{id}").HandlerFunc(handler.deleteCategory()).Methods("DELETE")
 
 		adminPrivate.Path("​/categories").HandlerFunc(handler.searchAdminTags()).Methods("GET")
 		adminPrivate.Path("/api/admin-tags").HandlerFunc(handler.createAdminTag()).Methods("POST")
-		adminPrivate.Path("/api/admin-tags/{id}").HandlerFunc(handler.deleteAdminTag()).Methods("DELETE")
 	})
 }
 
@@ -120,24 +120,50 @@ func (handler *categoryHandler) updateCategory() func(http.ResponseWriter, *http
 			return
 		}
 
-		go func() {
-			err := logic.Entity.RenameCategory(old.Name, req.Name)
-			if err != nil {
-				l.Logger.Error("[Error] CategoryHandler.RenameAdminTag failed:", zap.Error(err))
-				return
-			}
-		}()
-
-		updated, err := logic.Category.Update(old.ID, &types.Category{Name: req.Name})
+		updated, err := logic.Category.FindOneAndUpdate(old.ID, &types.Category{Name: req.Name})
 		if err != nil {
 			l.Logger.Error("[Error] CategoryHandler.RenameAdminTag failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
+		go func() {
+			err := logic.Entity.RenameCategory(old.Name, updated.Name)
+			if err != nil {
+				l.Logger.Error("[Error] CategoryHandler.RenameAdminTag failed:", zap.Error(err))
+				return
+			}
+		}()
+
 		api.Respond(w, r, http.StatusOK, respond{Data: &types.CategoryRespond{
 			ID:   updated.ID.Hex(),
 			Name: updated.Name,
+		}})
+	}
+}
+
+func (handler *categoryHandler) deleteCategory() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.CategoryRespond `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		deleted, err := logic.Category.FindOneAndDelete(mux.Vars(r)["id"])
+		if err != nil {
+			l.Logger.Error("[Error] CategoryHandler.deleteCategory failed:", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		go func() {
+			err := logic.Entity.DeleteCategory(deleted.Name)
+			if err != nil {
+				l.Logger.Error("[Error] logic.Entity.DeleteCategory failed:", zap.Error(err))
+			}
+		}()
+
+		api.Respond(w, r, http.StatusOK, respond{Data: &types.CategoryRespond{
+			ID:   deleted.ID.Hex(),
+			Name: deleted.Name,
 		}})
 	}
 }
@@ -248,53 +274,5 @@ func (handler *categoryHandler) searchAdminTags() func(http.ResponseWriter, *htt
 		res.Result = findResult
 
 		t.Render(w, r, res, nil)
-	}
-}
-
-func (handler *categoryHandler) deleteAdminTag() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		id := vars["id"]
-		adminTagID, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			l.Logger.Error("DeleteAdminTag failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		adminTag, err := logic.Category.FindByIDString(adminTagID.Hex())
-		if err != nil {
-			l.Logger.Error("DeleteAdminTag failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		err = logic.Category.DeleteByID(adminTagID)
-		if err != nil {
-			l.Logger.Error("DeleteAdminTag failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		go func() {
-			err := logic.Entity.DeleteAdminTags(adminTag.Name)
-			if err != nil {
-				l.Logger.Error("DeleteAdminTags failed", zap.Error(err))
-			}
-		}()
-		go func() {
-			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-			adminUser, err := logic.AdminUser.FindByID(objID)
-			if err != nil {
-				l.Logger.Error("log.Admin.DeleteAdminTag failed", zap.Error(err))
-				return
-			}
-			err = logic.UserAction.Log(log.Admin.DeleteAdminTag(adminUser, adminTag.Name))
-			if err != nil {
-				l.Logger.Error("log.Admin.DeleteAdminTag failed", zap.Error(err))
-			}
-		}()
-
-		w.WriteHeader(http.StatusOK)
 	}
 }
