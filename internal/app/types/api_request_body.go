@@ -497,3 +497,21 @@ func (req *AdminCreateCategoryReqBody) validate() []error {
 	}
 	return errs
 }
+
+type AdminDeleteCategoryReqBody struct {
+	ID primitive.ObjectID `json:"name"`
+}
+
+func NewAdminDeleteCategoryReqBody(r *http.Request) (*AdminDeleteCategoryReqBody, []error) {
+	id := mux.Vars(r)["id"]
+	if id == "" {
+		return nil, []error{errors.New("Please enter category id.")}
+	}
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, []error{errors.New("Please enter valid category id.")}
+	}
+	return &AdminDeleteCategoryReqBody{
+		ID: objectID,
+	}, nil
+}

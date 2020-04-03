@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -125,16 +126,14 @@ func (c *category) FindOneAndUpdate(id primitive.ObjectID, update *types.Categor
 }
 
 func (c *category) FindOneAndDelete(id primitive.ObjectID) (*types.Category, error) {
-	result := c.c.FindOneAndUpdate(
+	result := c.c.FindOneAndDelete(
 		context.Background(),
 		bson.M{"_id": id},
-		bson.M{"$set": bson.M{
-			"deletedAt": time.Now(),
-			"updatedAt": time.Now(),
-		}},
-		options.FindOneAndUpdate().SetReturnDocument(options.After),
 	)
 	if result.Err() != nil {
+		if result.Err() == mongo.ErrNoDocuments {
+			return nil, errors.New("Category does not exists.")
+		}
 		return nil, result.Err()
 	}
 

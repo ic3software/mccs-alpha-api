@@ -71,12 +71,8 @@ func (c *category) FindOneAndUpdate(id primitive.ObjectID, update *types.Categor
 	return updated, nil
 }
 
-func (c *category) FindOneAndDelete(id string) (*types.Category, error) {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
-	deleted, err := mongo.Category.FindOneAndDelete(objectID)
+func (c *category) FindOneAndDelete(id primitive.ObjectID) (*types.Category, error) {
+	deleted, err := mongo.Category.FindOneAndDelete(id)
 	if err != nil {
 		return nil, err
 	}

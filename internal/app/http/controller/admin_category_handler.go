@@ -174,10 +174,16 @@ func (handler *categoryHandler) deleteCategory() func(http.ResponseWriter, *http
 		Data *types.CategoryRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		deleted, err := logic.Category.FindOneAndDelete(mux.Vars(r)["id"])
+		req, errs := types.NewAdminDeleteCategoryReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		deleted, err := logic.Category.FindOneAndDelete(req.ID)
 		if err != nil {
 			l.Logger.Error("[Error] CategoryHandler.deleteCategory failed:", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
