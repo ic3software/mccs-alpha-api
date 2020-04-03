@@ -6,7 +6,6 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,22 +22,22 @@ func (en *entity) Register(db *mongo.Database) {
 	en.c = db.Collection("entities")
 }
 
-func (b *entity) Create(data *types.Entity) (primitive.ObjectID, error) {
+func (e *entity) Create(data *types.Entity) (primitive.ObjectID, error) {
 	data.Status = constant.Entity.Pending
 	data.CreatedAt = time.Now()
-	res, err := b.c.InsertOne(context.Background(), data)
+	res, err := e.c.InsertOne(context.Background(), data)
 	if err != nil {
 		return primitive.ObjectID{}, err
 	}
 	entityID := res.InsertedID.(primitive.ObjectID)
 
 	// Make sure "offers" and "wants" fields exist so it's much easier to update later on.
-	err = b.setDefaultOffersAndWants(entityID, data.Offers, data.Wants)
+	err = e.setDefaultOffersAndWants(entityID, data.Offers, data.Wants)
 
 	return entityID, nil
 }
 
-func (b *entity) setDefaultOffersAndWants(entityID primitive.ObjectID, offers []*types.TagField, wants []*types.TagField) error {
+func (e *entity) setDefaultOffersAndWants(entityID primitive.ObjectID, offers []*types.TagField, wants []*types.TagField) error {
 	if len(offers) == 0 || len(wants) == 0 {
 		filter := bson.M{"_id": entityID}
 		update := bson.M{}
@@ -48,7 +47,7 @@ func (b *entity) setDefaultOffersAndWants(entityID primitive.ObjectID, offers []
 		if len(wants) == 0 {
 			update["wants"] = []*types.TagField{}
 		}
-		_, err := b.c.UpdateOne(
+		_, err := e.c.UpdateOne(
 			context.Background(),
 			filter,
 			bson.M{"$set": update},
@@ -77,35 +76,35 @@ func (en *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
 	return nil
 }
 
-func (b *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
+func (e *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
 	ctx := context.Background()
 	entity := types.Entity{}
 	filter := bson.M{
 		"_id":       id,
 		"deletedAt": bson.M{"$exists": false},
 	}
-	err := b.c.FindOne(ctx, filter).Decode(&entity)
+	err := e.c.FindOne(ctx, filter).Decode(&entity)
 	if err != nil {
 		return nil, err
 	}
 	return &entity, nil
 }
 
-func (b *entity) FindByAccountNumber(accountNumber string) (*types.Entity, error) {
+func (e *entity) FindByAccountNumber(accountNumber string) (*types.Entity, error) {
 	ctx := context.Background()
 	entity := types.Entity{}
 	filter := bson.M{
 		"accountNumber": accountNumber,
 		"deletedAt":     bson.M{"$exists": false},
 	}
-	err := b.c.FindOne(ctx, filter).Decode(&entity)
+	err := e.c.FindOne(ctx, filter).Decode(&entity)
 	if err != nil {
 		return nil, err
 	}
 	return &entity, nil
 }
 
-func (b *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
+func (e *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 	filter := bson.M{"_id": update.ID}
 	update.UpdatedAt = time.Now()
 
@@ -114,7 +113,7 @@ func (b *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 		return nil, err
 	}
 
-	result := b.c.FindOneAndUpdate(
+	result := e.c.FindOneAndUpdate(
 		context.Background(),
 		filter,
 		bson.M{"$set": doc},
@@ -133,7 +132,7 @@ func (b *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 	return &entity, nil
 }
 
-func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
+func (e *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
 	updates := []bson.M{
 		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
 	}
@@ -166,14 +165,14 @@ func (b *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 		writes = append(writes, model)
 	}
 
-	_, err := b.c.BulkWrite(context.Background(), writes)
+	_, err := e.c.BulkWrite(context.Background(), writes)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
+func (e *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
 	addToEntityID, _ := primitive.ObjectIDFromHex(req.AddToEntityID)
 	favoriteEntityID, _ := primitive.ObjectIDFromHex(req.FavoriteEntityID)
 
@@ -184,14 +183,14 @@ func (b *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
 	} else {
 		update["$pull"] = bson.M{"favoriteEntities": favoriteEntityID}
 	}
-	_, err := b.c.UpdateOne(context.Background(), filter, update)
+	_, err := e.c.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
+func (e *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 	var results []*types.Entity
 
 	objectIDs, err := toObjectIDs(ids)
@@ -200,7 +199,7 @@ func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 	}
 
 	pipeline := newFindByIDsPipeline(objectIDs)
-	cur, err := b.c.Aggregate(context.TODO(), pipeline)
+	cur, err := e.c.Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return nil, err
 	}
@@ -221,25 +220,25 @@ func (b *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 	return results, nil
 }
 
-func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
+func (e *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{
 		"offers.$[].createdAt": t,
 		"wants.$[].createdAt":  t,
 	}}
-	_, err := b.c.UpdateMany(context.Background(), filter, update)
+	_, err := e.c.UpdateMany(context.Background(), filter, update)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *entity) SetMemberStartedAt(id primitive.ObjectID) error {
+func (e *entity) SetMemberStartedAt(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{
 		"memberStartedAt": time.Now(),
 	}}
-	_, err := b.c.UpdateOne(
+	_, err := e.c.UpdateOne(
 		context.Background(),
 		filter,
 		update,
@@ -250,9 +249,33 @@ func (b *entity) SetMemberStartedAt(id primitive.ObjectID) error {
 	return nil
 }
 
+func (e *entity) RenameCategory(old string, new string) error {
+	// Push the new tag tag name.
+	filter := bson.M{"categories": old}
+	update := bson.M{
+		"$push": bson.M{"categories": new},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+	_, err := e.c.UpdateMany(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+	// Delete the old tag name.
+	filter = bson.M{"categories": old}
+	update = bson.M{
+		"$pull": bson.M{"categories": old},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+	_, err = e.c.UpdateMany(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
-func (b *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
+func (e *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{
 		"entityName":         data.EntityName,
@@ -270,44 +293,44 @@ func (b *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingReg
 		"status":             constant.Trading.Pending,
 		"updatedAt":          time.Now(),
 	}}
-	_, err := b.c.UpdateOne(
+	_, err := e.c.UpdateOne(
 		context.Background(),
 		filter,
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "EntityMongo UpdateTradingInfo failed")
+		return err
 	}
 	return nil
 }
 
-func (b *entity) DeleteByID(id primitive.ObjectID) error {
+func (e *entity) DeleteByID(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{"deletedAt": time.Now()}}
-	_, err := b.c.UpdateOne(
+	_, err := e.c.UpdateOne(
 		context.Background(),
 		filter,
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "delete entity failed")
-	}
-	return nil
-}
-
-func (b *entity) RenameTag(old string, new string) error {
-	err := b.updateOffers(old, new)
-	if err != nil {
-		return err
-	}
-	err = b.updateWants(old, new)
-	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (b *entity) updateOffers(old string, new string) error {
+func (e *entity) RenameTag(old string, new string) error {
+	err := e.updateOffers(old, new)
+	if err != nil {
+		return err
+	}
+	err = e.updateWants(old, new)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *entity) updateOffers(old string, new string) error {
 	filter := bson.M{"offers.name": old}
 	update := bson.M{
 		"$set": bson.M{
@@ -315,14 +338,14 @@ func (b *entity) updateOffers(old string, new string) error {
 			"updatedAt":     time.Now(),
 		},
 	}
-	_, err := b.c.UpdateMany(context.Background(), filter, update)
+	_, err := e.c.UpdateMany(context.Background(), filter, update)
 	if err != nil {
-		return e.Wrap(err, "updateOffers failed")
+		return err
 	}
 	return nil
 }
 
-func (b *entity) updateWants(old string, new string) error {
+func (e *entity) updateWants(old string, new string) error {
 	filter := bson.M{"wants.name": old}
 	update := bson.M{
 		"$set": bson.M{
@@ -330,38 +353,14 @@ func (b *entity) updateWants(old string, new string) error {
 			"updatedAt":    time.Now(),
 		},
 	}
-	_, err := b.c.UpdateMany(context.Background(), filter, update)
+	_, err := e.c.UpdateMany(context.Background(), filter, update)
 	if err != nil {
-		return e.Wrap(err, "updateWants failed")
+		return err
 	}
 	return nil
 }
 
-func (b *entity) RenameAdminTag(old string, new string) error {
-	// Push the new tag tag name.
-	filter := bson.M{"categories": old}
-	update := bson.M{
-		"$push": bson.M{"categories": new},
-		"$set":  bson.M{"updatedAt": time.Now()},
-	}
-	_, err := b.c.UpdateMany(context.Background(), filter, update)
-	if err != nil {
-		return e.Wrap(err, "RenameAdminTag failed")
-	}
-	// Delete the old tag name.
-	filter = bson.M{"categories": old}
-	update = bson.M{
-		"$pull": bson.M{"categories": old},
-		"$set":  bson.M{"updatedAt": time.Now()},
-	}
-	_, err = b.c.UpdateMany(context.Background(), filter, update)
-	if err != nil {
-		return e.Wrap(err, "RenameAdminTag failed")
-	}
-	return nil
-}
-
-func (b *entity) DeleteTag(name string) error {
+func (e *entity) DeleteTag(name string) error {
 	filter := bson.M{
 		"$or": []interface{}{
 			bson.M{"offers.name": name},
@@ -377,18 +376,18 @@ func (b *entity) DeleteTag(name string) error {
 			"updatedAt": time.Now(),
 		},
 	}
-	_, err := b.c.UpdateMany(
+	_, err := e.c.UpdateMany(
 		context.Background(),
 		filter,
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "DeleteTag failed")
+		return err
 	}
 	return nil
 }
 
-func (b *entity) DeleteAdminTags(name string) error {
+func (e *entity) DeleteAdminTags(name string) error {
 	filter := bson.M{
 		"$or": []interface{}{
 			bson.M{"categories": name},
@@ -402,13 +401,13 @@ func (b *entity) DeleteAdminTags(name string) error {
 			"updatedAt": time.Now(),
 		},
 	}
-	_, err := b.c.UpdateMany(
+	_, err := e.c.UpdateMany(
 		context.Background(),
 		filter,
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "DeleteAdminTags failed")
+		return err
 	}
 	return nil
 }

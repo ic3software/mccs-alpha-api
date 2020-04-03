@@ -99,10 +99,6 @@ func getCategories(words string) []string {
 	return tags
 }
 
-func FormatAdminTag(tag string) string {
-	return adminTagRe.ReplaceAllString(tag, "")
-}
-
 // TagDifference finds out the new added tags.
 func TagDifference(tags, oldTags []*types.TagField) ([]string, []string) {
 	encountered := map[string]int{}

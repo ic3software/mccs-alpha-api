@@ -21,8 +21,8 @@ type category struct {
 
 var Category = &category{}
 
-func (a *category) Register(db *mongo.Database) {
-	a.c = db.Collection("categories")
+func (c *category) Register(db *mongo.Database) {
+	c.c = db.Collection("categories")
 }
 
 func (c *category) Create(name string) error {
@@ -41,7 +41,7 @@ func (c *category) Create(name string) error {
 	return err
 }
 
-func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryResult, error) {
+func (c *category) Search(query *types.SearchCategoryQuery) (*types.FindCategoryResult, error) {
 	var results []*types.Category
 
 	findOptions := options.Find()
@@ -52,7 +52,7 @@ func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryRe
 		"name":      primitive.Regex{Pattern: "^" + query.Prefix + ".*" + query.Fragment + ".*", Options: "i"},
 		"deletedAt": bson.M{"$exists": false},
 	}
-	cur, err := a.c.Find(context.TODO(), filter, findOptions)
+	cur, err := c.c.Find(context.TODO(), filter, findOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryRe
 	}
 	cur.Close(context.TODO())
 
-	totalCount, err := a.c.CountDocuments(context.TODO(), filter)
+	totalCount, err := c.c.CountDocuments(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -82,35 +82,61 @@ func (a *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryRe
 	}, nil
 }
 
-// TO BE REMOVED
-
-func (a *category) FindByName(name string) (*types.Category, error) {
-	adminTag := types.Category{}
+func (c *category) FindByName(name string) (*types.Category, error) {
+	category := types.Category{}
 	filter := bson.M{
 		"name":      name,
 		"deletedAt": bson.M{"$exists": false},
 	}
-	err := a.c.FindOne(context.Background(), filter).Decode(&adminTag)
+	err := c.c.FindOne(context.Background(), filter).Decode(&category)
 	if err != nil {
-		return nil, e.New(e.EntityNotFound, "Admin tag not found")
+		return nil, err
 	}
-	return &adminTag, nil
+	return &category, nil
 }
 
-func (a *category) FindByID(id primitive.ObjectID) (*types.Category, error) {
+func (c *category) Update(id primitive.ObjectID, update *types.Category) (*types.Category, error) {
+	filter := bson.M{"_id": id}
+	result := c.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{
+			"$set": bson.M{
+				"name":      update.Name,
+				"updatedAt": time.Now(),
+			},
+		},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	category := types.Category{}
+	err := result.Decode(&category)
+	if err != nil {
+		return nil, result.Err()
+	}
+
+	return &category, nil
+}
+
+// TO BE REMOVED
+
+func (c *category) FindByID(id primitive.ObjectID) (*types.Category, error) {
 	adminTag := types.Category{}
 	filter := bson.M{
 		"_id":       id,
 		"deletedAt": bson.M{"$exists": false},
 	}
-	err := a.c.FindOne(context.Background(), filter).Decode(&adminTag)
+	err := c.c.FindOne(context.Background(), filter).Decode(&adminTag)
 	if err != nil {
 		return nil, e.New(e.EntityNotFound, "Admin tag not found")
 	}
 	return &adminTag, nil
 }
 
-func (a *category) FindTags(name string, page int64) (*types.FindCategoryResult, error) {
+func (c *category) FindTags(name string, page int64) (*types.FindCategoryResult, error) {
 	if page < 0 || page == 0 {
 		return nil, e.New(e.InvalidPageNumber, "AdminTagMongo FindTags failed")
 	}
@@ -126,7 +152,7 @@ func (a *category) FindTags(name string, page int64) (*types.FindCategoryResult,
 		"deletedAt": bson.M{"$exists": false},
 	}
 
-	cur, err := a.c.Find(context.TODO(), filter, findOptions)
+	cur, err := c.c.Find(context.TODO(), filter, findOptions)
 	if err != nil {
 		return nil, e.Wrap(err, "AdminTagMongo FindTags failed")
 	}
@@ -145,7 +171,7 @@ func (a *category) FindTags(name string, page int64) (*types.FindCategoryResult,
 	cur.Close(context.TODO())
 
 	// Calculate the total page.
-	totalCount, err := a.c.CountDocuments(context.TODO(), filter)
+	totalCount, err := c.c.CountDocuments(context.TODO(), filter)
 	if err != nil {
 		return nil, e.Wrap(err, "AdminTagMongo FindTags failed")
 	}
@@ -158,14 +184,14 @@ func (a *category) FindTags(name string, page int64) (*types.FindCategoryResult,
 	}, nil
 }
 
-func (a *category) GetAll() ([]*types.Category, error) {
+func (c *category) GetAll() ([]*types.Category, error) {
 	var results []*types.Category
 
 	filter := bson.M{
 		"deletedAt": bson.M{"$exists": false},
 	}
 
-	cur, err := a.c.Find(context.TODO(), filter)
+	cur, err := c.c.Find(context.TODO(), filter)
 	if err != nil {
 		return nil, e.Wrap(err, "AdminTagMongo GetAll failed")
 	}
@@ -186,30 +212,13 @@ func (a *category) GetAll() ([]*types.Category, error) {
 	return results, nil
 }
 
-func (a *category) Update(t *types.Category) error {
-	filter := bson.M{"_id": t.ID}
-	update := bson.M{"$set": bson.M{
-		"name":      t.Name,
-		"updatedAt": time.Now(),
-	}}
-	_, err := a.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return e.Wrap(err, "AdminTagMongo Update failed")
-	}
-	return nil
-}
-
-func (a *category) DeleteByID(id primitive.ObjectID) error {
+func (c *category) DeleteByID(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{
 		"deletedAt": time.Now(),
 		"updatedAt": time.Now(),
 	}}
-	_, err := a.c.UpdateOne(
+	_, err := c.c.UpdateOne(
 		context.Background(),
 		filter,
 		update,

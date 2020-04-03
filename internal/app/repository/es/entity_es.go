@@ -270,6 +270,26 @@ func (es *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) err
 	return nil
 }
 
+func (es *entity) RenameCategory(old string, new string) error {
+	query := elastic.NewMatchQuery("categories", old)
+	script := elastic.
+		NewScript(`
+			if (ctx._source.categories.contains(params.old)) {
+				ctx._source.categories.remove(ctx._source.categories.indexOf(params.old));
+				ctx._source.categories.add(params.new);
+			}
+		`).
+		Params(map[string]interface{}{"new": new, "old": old})
+	_, err := es.c.UpdateByQuery(es.index).
+		Query(query).
+		Script(script).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
@@ -305,26 +325,6 @@ func (es *entity) RenameTag(old string, new string) error {
 				if (ctx._source.wants[i].name == params.old) {
 					ctx._source.wants[i].name = params.new
 				}
-			}
-		`).
-		Params(map[string]interface{}{"new": new, "old": old})
-	_, err := es.c.UpdateByQuery(es.index).
-		Query(query).
-		Script(script).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (es *entity) RenameAdminTag(old string, new string) error {
-	query := elastic.NewMatchQuery("categories", old)
-	script := elastic.
-		NewScript(`
-			if (ctx._source.categories.contains(params.old)) {
-				ctx._source.categories.remove(ctx._source.categories.indexOf(params.old));
-				ctx._source.categories.add(params.new);
 			}
 		`).
 		Params(map[string]interface{}{"new": new, "old": old})

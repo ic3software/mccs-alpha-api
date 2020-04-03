@@ -10,6 +10,34 @@ type category struct{}
 
 var Category = &category{}
 
+func (c *category) Search(query *types.SearchCategoryQuery) (*types.FindCategoryResult, error) {
+	result, err := mongo.Category.Search(query)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (c *category) FindByIDString(id string) (*types.Category, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	category, err := mongo.Category.FindByID(objectID)
+	if err != nil {
+		return nil, err
+	}
+	return category, nil
+}
+
+func (c *category) FindByName(name string) (*types.Category, error) {
+	category, err := mongo.Category.FindByName(name)
+	if err != nil {
+		return nil, err
+	}
+	return category, nil
+}
+
 func (c *category) Create(categories ...string) error {
 	if len(categories) == 1 {
 		err := mongo.Category.Create(categories[0])
@@ -27,31 +55,15 @@ func (c *category) Create(categories ...string) error {
 	return nil
 }
 
-func (c *category) Find(query *types.SearchCategoryQuery) (*types.FindCategoryResult, error) {
-	result, err := mongo.Category.Find(query)
+func (c *category) Update(id primitive.ObjectID, update *types.Category) (*types.Category, error) {
+	updated, err := mongo.Category.Update(id, update)
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
+	return updated, nil
 }
 
 // TO BE REMOVED
-
-func (c *category) FindByName(name string) (*types.Category, error) {
-	adminTag, err := mongo.Category.FindByName(name)
-	if err != nil {
-		return nil, err
-	}
-	return adminTag, nil
-}
-
-func (c *category) FindByID(id primitive.ObjectID) (*types.Category, error) {
-	adminTag, err := mongo.Category.FindByID(id)
-	if err != nil {
-		return nil, err
-	}
-	return adminTag, nil
-}
 
 func (c *category) FindTags(name string, page int64) (*types.FindCategoryResult, error) {
 	result, err := mongo.Category.FindTags(name, page)
@@ -67,14 +79,6 @@ func (c *category) GetAll() ([]*types.Category, error) {
 		return nil, err
 	}
 	return categories, nil
-}
-
-func (c *category) Update(tag *types.Category) error {
-	err := mongo.Category.Update(tag)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (c *category) DeleteByID(id primitive.ObjectID) error {

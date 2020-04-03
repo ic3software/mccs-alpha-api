@@ -145,6 +145,18 @@ func (b *entity) SetMemberStartedAt(id primitive.ObjectID) error {
 	return nil
 }
 
+func (b *entity) RenameCategory(old string, new string) error {
+	err := es.Entity.RenameCategory(old, new)
+	if err != nil {
+		return err
+	}
+	err = mongo.Entity.RenameCategory(old, new)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (b *entity) UpdateEntity(id primitive.ObjectID, difference *types.EntityData, isAdmin bool) error {
@@ -171,18 +183,6 @@ func (b *entity) RenameTag(old string, new string) error {
 	err = mongo.Entity.RenameTag(old, new)
 	if err != nil {
 		return e.Wrap(err, "EntityMongo RenameTag failed")
-	}
-	return nil
-}
-
-func (b *entity) RenameAdminTag(old string, new string) error {
-	err := es.Entity.RenameAdminTag(old, new)
-	if err != nil {
-		return e.Wrap(err, "EntityMongo RenameAdminTag failed")
-	}
-	err = mongo.Entity.RenameAdminTag(old, new)
-	if err != nil {
-		return e.Wrap(err, "EntityMongo RenameAdminTag failed")
 	}
 	return nil
 }

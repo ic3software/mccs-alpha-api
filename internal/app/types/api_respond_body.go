@@ -111,3 +111,8 @@ type AdminEntityRespond struct {
 	Wants              []string `json:"wants,omitempty"`
 	Categories         []string `json:"categories,omitempty"`
 }
+
+type CategoryRespond struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}

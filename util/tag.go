@@ -77,3 +77,7 @@ func TagDifference(new, old []string) ([]string, []string) {
 	}
 	return added, removed
 }
+
+func FormatAdminTag(tag string) string {
+	return adminTagRe.ReplaceAllString(tag, "")
+}
