@@ -474,3 +474,26 @@ func (req *AdminUpdateCategoryReqBody) validate() []error {
 	}
 	return errs
 }
+
+type AdminCreateCategoryReqBody struct {
+	Name string `json:"name"`
+}
+
+func NewAdminCreateCategoryReqBody(r *http.Request) (*AdminCreateCategoryReqBody, []error) {
+	var req AdminCreateCategoryReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, []error{err}
+	}
+	req.Name = util.FormatAdminTag(req.Name)
+	return &req, req.validate()
+}
+
+func (req *AdminCreateCategoryReqBody) validate() []error {
+	errs := []error{}
+	if req.Name == "" {
+		errs = append(errs, errors.New("Please enter the tag name."))
+	}
+	return errs
+}

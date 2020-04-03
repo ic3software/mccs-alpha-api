@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -25,20 +24,24 @@ func (c *category) Register(db *mongo.Database) {
 	c.c = db.Collection("categories")
 }
 
-func (c *category) Create(name string) error {
-	if name == "" || len(strings.TrimSpace(name)) == 0 {
-		return nil
+func (c *category) Create(name string) (*types.Category, error) {
+	result := c.c.FindOneAndUpdate(
+		context.Background(),
+		bson.M{"name": name},
+		bson.M{"$setOnInsert": bson.M{"name": name, "createdAt": time.Now()}},
+		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
 	}
 
-	filter := bson.M{"name": name}
-	update := bson.M{"$setOnInsert": bson.M{"name": name, "createdAt": time.Now()}}
-	_, err := c.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-		options.Update().SetUpsert(true),
-	)
-	return err
+	category := types.Category{}
+	err := result.Decode(&category)
+	if err != nil {
+		return nil, err
+	}
+
+	return &category, nil
 }
 
 func (c *category) Search(query *types.SearchCategoryQuery) (*types.FindCategoryResult, error) {

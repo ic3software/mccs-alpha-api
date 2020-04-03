@@ -38,16 +38,24 @@ func (c *category) FindByName(name string) (*types.Category, error) {
 	return category, nil
 }
 
+func (c *category) CreateOne(categoryName string) (*types.Category, error) {
+	created, err := mongo.Category.Create(categoryName)
+	if err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
 func (c *category) Create(categories ...string) error {
 	if len(categories) == 1 {
-		err := mongo.Category.Create(categories[0])
+		_, err := mongo.Category.Create(categories[0])
 		if err != nil {
 			return err
 		}
 		return nil
 	}
 	for _, category := range categories {
-		err := mongo.Category.Create(category)
+		_, err := mongo.Category.Create(category)
 		if err != nil {
 			return err
 		}
