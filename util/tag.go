@@ -19,6 +19,21 @@ func init() {
 	categoryRe = regexp.MustCompile("[0-9]|(&quot;)|([^a-zA-Z ]+)")
 }
 
+func InputToTag(input string) string {
+	splitFn := func(c rune) bool {
+		return c == ','
+	}
+	tagArray := strings.FieldsFunc(strings.ToLower(input), splitFn)
+
+	tag := tagArray[0]
+	tag = strings.Replace(tag, " ", "-", -1)
+	tag = specialCharRe.ReplaceAllString(tag, "")
+	tag = multiDashRe.ReplaceAllString(tag, "-")
+	tag = ltDashRe.ReplaceAllString(tag, "")
+
+	return tag
+}
+
 // GetTags transforms tags from the user inputs into a standard format.
 // dog walking -> dog-walking (one word)
 func FormatTags(tags []string) []string {

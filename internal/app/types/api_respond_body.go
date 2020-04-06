@@ -116,3 +116,8 @@ type CategoryRespond struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
+
+type TagRespond struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}

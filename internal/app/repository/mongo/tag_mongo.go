@@ -23,7 +23,27 @@ func (t *tag) Register(db *mongo.Database) {
 	t.c = db.Collection("tags")
 }
 
-func (t *tag) Find(query *types.SearchTagQuery) (*types.FindTagResult, error) {
+func (t *tag) Create(name string) (*types.Tag, error) {
+	result := t.c.FindOneAndUpdate(
+		context.Background(),
+		bson.M{"name": name},
+		bson.M{"$setOnInsert": bson.M{"name": name, "createdAt": time.Now()}},
+		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	tag := types.Tag{}
+	err := result.Decode(&tag)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tag, nil
+}
+
+func (t *tag) Search(query *types.SearchTagQuery) (*types.FindTagResult, error) {
 	var results []*types.Tag
 
 	findOptions := options.Find()
@@ -62,6 +82,19 @@ func (t *tag) Find(query *types.SearchTagQuery) (*types.FindTagResult, error) {
 		NumberOfResults: int(totalCount),
 		TotalPages:      util.GetNumberOfPages(int(totalCount), int(query.PageSize)),
 	}, nil
+}
+
+func (t *tag) FindByName(name string) (*types.Tag, error) {
+	tag := types.Tag{}
+	filter := bson.M{
+		"name":      name,
+		"deletedAt": bson.M{"$exists": false},
+	}
+	err := t.c.FindOne(context.Background(), filter).Decode(&tag)
+	if err != nil {
+		return nil, err
+	}
+	return &tag, nil
 }
 
 func (t *tag) UpdateOffer(name string) (primitive.ObjectID, error) {
@@ -125,38 +158,6 @@ func (t *tag) UpdateWant(name string) (primitive.ObjectID, error) {
 }
 
 // TO BE REMOVED
-
-// Create creates a tag record in the table
-func (t *tag) Create(name string) (primitive.ObjectID, error) {
-	filter := bson.M{"name": name}
-	update := bson.M{"$setOnInsert": bson.M{
-		"name":      name,
-		"createdAt": time.Now(),
-	}}
-	res, err := t.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-		options.Update().SetUpsert(true),
-	)
-	if err != nil {
-		return primitive.ObjectID{}, err
-	}
-	return res.UpsertedID.(primitive.ObjectID), nil
-}
-
-func (t *tag) FindByName(name string) (*types.Tag, error) {
-	tag := types.Tag{}
-	filter := bson.M{
-		"name":      name,
-		"deletedAt": bson.M{"$exists": false},
-	}
-	err := t.c.FindOne(context.Background(), filter).Decode(&tag)
-	if err != nil {
-		return nil, e.New(e.EntityNotFound, "Tag not found")
-	}
-	return &tag, nil
-}
 
 func (t *tag) FindByID(id primitive.ObjectID) (*types.Tag, error) {
 	tag := types.Tag{}

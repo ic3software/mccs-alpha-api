@@ -14,12 +14,32 @@ type tag struct{}
 
 var Tag = &tag{}
 
-func (t *tag) Find(query *types.SearchTagQuery) (*types.FindTagResult, error) {
-	found, err := mongo.Tag.Find(query)
+func (t *tag) Create(name string) (*types.Tag, error) {
+	created, err := mongo.Tag.Create(name)
+	if err != nil {
+		return nil, err
+	}
+	err = es.Tag.Create(created.ID, name)
+	if err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
+func (t *tag) Search(query *types.SearchTagQuery) (*types.FindTagResult, error) {
+	found, err := mongo.Tag.Search(query)
 	if err != nil {
 		return nil, err
 	}
 	return found, nil
+}
+
+func (t *tag) FindByName(name string) (*types.Tag, error) {
+	tag, err := mongo.Tag.FindByName(name)
+	if err != nil {
+		return nil, err
+	}
+	return tag, nil
 }
 
 // UpdateOffer will add/modify the offer tag.
@@ -49,26 +69,6 @@ func (t *tag) UpdateWant(name string) error {
 }
 
 // TO BE REMOVED
-
-func (t *tag) Create(name string) error {
-	id, err := mongo.Tag.Create(name)
-	if err != nil {
-		return e.Wrap(err, "TagService Create failed")
-	}
-	err = es.Tag.Create(id, name)
-	if err != nil {
-		return e.Wrap(err, "TagService Create failed")
-	}
-	return nil
-}
-
-func (t *tag) FindByName(name string) (*types.Tag, error) {
-	tag, err := mongo.Tag.FindByName(name)
-	if err != nil {
-		return nil, e.Wrap(err, "TagService FindTag failed")
-	}
-	return tag, nil
-}
 
 func (t *tag) FindByID(id primitive.ObjectID) (*types.Tag, error) {
 	tag, err := mongo.Tag.FindByID(id)
