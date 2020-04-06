@@ -470,7 +470,7 @@ func NewAdminUpdateCategoryReqBody(r *http.Request) (*AdminUpdateCategoryReqBody
 func (req *AdminUpdateCategoryReqBody) validate() []error {
 	errs := []error{}
 	if req.Name == "" {
-		errs = append(errs, errors.New("Please enter the tag name."))
+		errs = append(errs, errors.New("Please enter the category name."))
 	}
 	return errs
 }
@@ -493,7 +493,7 @@ func NewAdminCreateCategoryReqBody(r *http.Request) (*AdminCreateCategoryReqBody
 func (req *AdminCreateCategoryReqBody) validate() []error {
 	errs := []error{}
 	if req.Name == "" {
-		errs = append(errs, errors.New("Please enter the tag name."))
+		errs = append(errs, errors.New("Please enter the category name."))
 	}
 	return errs
 }

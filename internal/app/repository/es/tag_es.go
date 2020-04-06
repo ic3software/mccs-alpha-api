@@ -152,7 +152,7 @@ func (es *tag) DeleteByID(id string) error {
 		Do(context.Background())
 	if err != nil {
 		if elastic.IsNotFound(err) {
-			return errors.New("tag not found.")
+			return errors.New("Tag does not exist.")
 		}
 		return err
 	}
