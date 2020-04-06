@@ -2,10 +2,10 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -84,6 +84,19 @@ func (t *tag) Search(query *types.SearchTagQuery) (*types.FindTagResult, error) 
 	}, nil
 }
 
+func (t *tag) FindByID(id primitive.ObjectID) (*types.Tag, error) {
+	tag := types.Tag{}
+	filter := bson.M{
+		"_id":       id,
+		"deletedAt": bson.M{"$exists": false},
+	}
+	err := t.c.FindOne(context.Background(), filter).Decode(&tag)
+	if err != nil {
+		return nil, err
+	}
+	return &tag, nil
+}
+
 func (t *tag) FindByName(name string) (*types.Tag, error) {
 	tag := types.Tag{}
 	filter := bson.M{
@@ -157,51 +170,48 @@ func (t *tag) UpdateWant(name string) (primitive.ObjectID, error) {
 	return tag.ID, nil
 }
 
-// TO BE REMOVED
+func (t *tag) FindOneAndUpdate(id primitive.ObjectID, update *types.Tag) (*types.Tag, error) {
+	result := t.c.FindOneAndUpdate(
+		context.Background(),
+		bson.M{"_id": id},
+		bson.M{
+			"$set": bson.M{
+				"name":      update.Name,
+				"updatedAt": time.Now(),
+			},
+		},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
 
-func (t *tag) FindByID(id primitive.ObjectID) (*types.Tag, error) {
 	tag := types.Tag{}
-	filter := bson.M{
-		"_id":       id,
-		"deletedAt": bson.M{"$exists": false},
-	}
-	err := t.c.FindOne(context.Background(), filter).Decode(&tag)
+	err := result.Decode(&tag)
 	if err != nil {
-		return nil, e.New(e.EntityNotFound, "Tag not found")
+		return nil, err
 	}
+
 	return &tag, nil
 }
 
-func (t *tag) Rename(tag *types.Tag) error {
-	filter := bson.M{"_id": tag.ID}
-	update := bson.M{"$set": bson.M{
-		"name":      tag.Name,
-		"updatedAt": time.Now(),
-	}}
-	_, err := t.c.UpdateOne(
+func (t *tag) FindOneAndDelete(id primitive.ObjectID) (*types.Tag, error) {
+	result := t.c.FindOneAndDelete(
 		context.Background(),
-		filter,
-		update,
+		bson.M{"_id": id},
 	)
-	if err != nil {
-		return e.Wrap(err, "TagMongo Update failed")
+	if result.Err() != nil {
+		if result.Err() == mongo.ErrNoDocuments {
+			return nil, errors.New("Tag does not exists.")
+		}
+		return nil, result.Err()
 	}
-	return nil
-}
 
-func (t *tag) DeleteByID(id primitive.ObjectID) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"deletedAt": time.Now(),
-		"updatedAt": time.Now(),
-	}}
-	_, err := t.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
+	tag := types.Tag{}
+	err := result.Decode(&tag)
 	if err != nil {
-		return e.Wrap(err, "TagMongo DeleteByID failed")
+		return nil, err
 	}
-	return nil
+
+	return &tag, nil
 }

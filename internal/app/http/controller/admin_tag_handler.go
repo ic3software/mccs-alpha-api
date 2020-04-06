@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"sync"
@@ -12,8 +11,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
 
@@ -35,7 +32,7 @@ func (handler *adminTagHandler) RegisterRoutes(
 ) {
 	handler.once.Do(func() {
 		adminPrivate.Path("/tags").HandlerFunc(handler.create()).Methods("POST")
-		adminPrivate.Path("/tags/{id}").HandlerFunc(handler.renameTag()).Methods("PATCH")
+		adminPrivate.Path("/tags/{id}").HandlerFunc(handler.update()).Methods("PATCH")
 		adminPrivate.Path("/tags/{id}").HandlerFunc(handler.deleteTag()).Methods("DELETE")
 	})
 }
@@ -71,134 +68,80 @@ func (h *adminTagHandler) create() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (h *adminTagHandler) renameTag() func(http.ResponseWriter, *http.Request) {
-	type request struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
+func (h *adminTagHandler) update() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.TagRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
-
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
-		if err != nil {
-			l.Logger.Error("RenameTag failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
+		req, errs := types.NewAdminUpdateTagReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		if req.Name == "" {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Please enter the tag name"))
-			return
-		}
-
-		_, err = logic.Tag.FindByName(req.Name)
+		_, err := logic.Tag.FindByName(req.Name)
 		if err == nil {
-			l.Logger.Info("[RenameTag] failed: Tag already exists")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Tag already exists!"))
+			api.Respond(w, r, http.StatusBadRequest, errors.New("Tag already exists."))
 			return
 		}
 
-		tagID, err := primitive.ObjectIDFromHex(req.ID)
+		old, err := logic.Tag.FindByIDString(req.ID)
 		if err != nil {
-			l.Logger.Error("RenameTag failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
+			l.Logger.Error("[Error] AdminTagHandler.update failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		tag, err := logic.Tag.FindByID(tagID)
+		updated, err := logic.Tag.FindOneAndUpdate(old.ID, &types.Tag{Name: req.Name})
 		if err != nil {
-			l.Logger.Error("RenameTag failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Tag not found."))
-			return
-		}
-		oldName := tag.Name
-
-		go func() {
-			err := logic.Entity.RenameTag(oldName, req.Name)
-			if err != nil {
-				l.Logger.Error("RenameTag failed", zap.Error(err))
-			}
-		}()
-
-		tag = &types.Tag{
-			ID:   tagID,
-			Name: req.Name,
-		}
-		err = logic.Tag.Rename(tag)
-		if err != nil {
-			l.Logger.Error("RenameTag failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong. Please try again later."))
+			l.Logger.Error("[Error] AdminTagHandler.update failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
 		go func() {
-			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-			adminUser, err := logic.AdminUser.FindByID(objID)
+			err := logic.Entity.RenameTag(old.Name, updated.Name)
 			if err != nil {
-				l.Logger.Error("log.Admin.ModifyTag failed", zap.Error(err))
+				l.Logger.Error("[Error] AdminTagHandler.update failed:", zap.Error(err))
 				return
 			}
-			err = logic.UserAction.Log(log.Admin.ModifyTag(adminUser, oldName, req.Name))
-			if err != nil {
-				l.Logger.Error("log.Admin.ModifyTag failed", zap.Error(err))
-			}
 		}()
 
-		w.WriteHeader(http.StatusCreated)
+		api.Respond(w, r, http.StatusOK, respond{Data: &types.TagRespond{
+			ID:   updated.ID.Hex(),
+			Name: updated.Name,
+		}})
 	}
 }
 
 func (h *adminTagHandler) deleteTag() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.TagRespond `json:"data"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		id := vars["id"]
-		tagID, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			l.Logger.Error("DeleteTag failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+		req, errs := types.NewAdminDeleteTagReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		tag, err := logic.Tag.FindByID(tagID)
+		deleted, err := logic.Tag.FindOneAndDelete(req.ID)
 		if err != nil {
-			l.Logger.Error("DeleteTag failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		err = logic.Tag.DeleteByID(tagID)
-		if err != nil {
-			l.Logger.Error("DeleteTag failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+			l.Logger.Error("[Error] CategoryHandler.delete failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
 		go func() {
-			err := logic.Entity.DeleteTag(tag.Name)
+			err := logic.Entity.DeleteTag(deleted.Name)
 			if err != nil {
-				l.Logger.Error("DeleteTag failed", zap.Error(err))
-			}
-		}()
-		go func() {
-			objID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-			adminUser, err := logic.AdminUser.FindByID(objID)
-			if err != nil {
-				l.Logger.Error("log.Admin.DeleteTag failed", zap.Error(err))
-				return
-			}
-			err = logic.UserAction.Log(log.Admin.DeleteTag(adminUser, tag.Name))
-			if err != nil {
-				l.Logger.Error("log.Admin.DeleteTag failed", zap.Error(err))
+				l.Logger.Error("[Error] logic.Entity.DeleteTag failed:", zap.Error(err))
 			}
 		}()
 
-		w.WriteHeader(http.StatusOK)
+		api.Respond(w, r, http.StatusOK, respond{Data: &types.TagRespond{
+			ID:   deleted.ID.Hex(),
+			Name: deleted.Name,
+		}})
 	}
 }
