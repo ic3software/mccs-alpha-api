@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
@@ -16,6 +17,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -101,10 +103,22 @@ func (u *userHandler) updateLoginAttempts(email string) {
 
 func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 	type data struct {
-		Token string `json:"token"`
+		Token         string     `json:"token"`
+		LastLoginIP   string     `json:"lastLoginIP,omitempty"`
+		LastLoginDate *time.Time `json:"lastLoginDate,omitempty"`
 	}
 	type respond struct {
 		Data data `json:"data"`
+	}
+	respondData := func(info *types.LoginInfo, token string) data {
+		d := data{Token: token}
+		if info.LastLoginIP != "" {
+			d.LastLoginIP = info.LastLoginIP
+		}
+		if !info.LastLoginDate.IsZero() {
+			d.LastLoginDate = &info.LastLoginDate
+		}
+		return d
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := api.NewLoginReqBody(r)
@@ -120,10 +134,14 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 			go handler.updateLoginAttempts(req.Email)
 			return
 		}
+		loginInfo, err := logic.User.UpdateLoginInfo(user.ID, util.IPAddress(r))
+		if err != nil {
+			l.Logger.Error("[Error] AdminUser.UpdateLoginInfo failed:", zap.Error(err))
+		}
 
 		token, err := jwt.GenerateToken(user.ID.Hex(), false)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: data{Token: token}})
+		api.Respond(w, r, http.StatusOK, respond{Data: respondData(loginInfo, token)})
 	}
 }
 
