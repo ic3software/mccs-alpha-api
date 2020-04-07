@@ -32,8 +32,6 @@ func newTransferHandler() *transferHandler {
 func (handler *transferHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
-	adminPublic *mux.Router,
-	adminPrivate *mux.Router,
 ) {
 	handler.once.Do(func() {
 		private.Path("/transfers").HandlerFunc(handler.proposeTransfer()).Methods("POST")

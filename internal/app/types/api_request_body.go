@@ -462,7 +462,7 @@ func NewAdminUpdateCategoryReqBody(r *http.Request) (*AdminUpdateCategoryReqBody
 	if err != nil {
 		return nil, []error{err}
 	}
-	req.Name = util.FormatCategory(req.Name)
+	req.Name = util.InputToTag(req.Name)
 	req.ID = mux.Vars(r)["id"]
 	return &req, req.validate()
 }
@@ -470,7 +470,7 @@ func NewAdminUpdateCategoryReqBody(r *http.Request) (*AdminUpdateCategoryReqBody
 func (req *AdminUpdateCategoryReqBody) validate() []error {
 	errs := []error{}
 	if req.Name == "" {
-		errs = append(errs, errors.New("Please enter the tag name."))
+		errs = append(errs, errors.New("Please enter the category name."))
 	}
 	return errs
 }
@@ -486,14 +486,14 @@ func NewAdminCreateCategoryReqBody(r *http.Request) (*AdminCreateCategoryReqBody
 	if err != nil {
 		return nil, []error{err}
 	}
-	req.Name = util.FormatCategory(req.Name)
+	req.Name = util.InputToTag(req.Name)
 	return &req, req.validate()
 }
 
 func (req *AdminCreateCategoryReqBody) validate() []error {
 	errs := []error{}
 	if req.Name == "" {
-		errs = append(errs, errors.New("Please enter the tag name."))
+		errs = append(errs, errors.New("Please enter the category name."))
 	}
 	return errs
 }
@@ -512,6 +512,72 @@ func NewAdminDeleteCategoryReqBody(r *http.Request) (*AdminDeleteCategoryReqBody
 		return nil, []error{errors.New("Please enter valid category id.")}
 	}
 	return &AdminDeleteCategoryReqBody{
+		ID: objectID,
+	}, nil
+}
+
+type AdminCreateTagReqBody struct {
+	Name string `json:"name"`
+}
+
+func NewAdminCreateTagReqBody(r *http.Request) (*AdminCreateTagReqBody, []error) {
+	var req AdminCreateTagReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, []error{err}
+	}
+	req.Name = util.InputToTag(req.Name)
+	return &req, req.validate()
+}
+
+func (req *AdminCreateTagReqBody) validate() []error {
+	errs := []error{}
+	if req.Name == "" {
+		errs = append(errs, errors.New("Please enter the tag name."))
+	}
+	return errs
+}
+
+type AdminUpdateTagReqBody struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func NewAdminUpdateTagReqBody(r *http.Request) (*AdminUpdateTagReqBody, []error) {
+	var req AdminUpdateTagReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, []error{err}
+	}
+	req.Name = util.InputToTag(req.Name)
+	req.ID = mux.Vars(r)["id"]
+	return &req, req.validate()
+}
+
+func (req *AdminUpdateTagReqBody) validate() []error {
+	errs := []error{}
+	if req.Name == "" {
+		errs = append(errs, errors.New("Please enter the tag name."))
+	}
+	return errs
+}
+
+type AdminDeleteTagReqBody struct {
+	ID primitive.ObjectID `json:"name"`
+}
+
+func NewAdminDeleteTagReqBody(r *http.Request) (*AdminDeleteTagReqBody, []error) {
+	id := mux.Vars(r)["id"]
+	if id == "" {
+		return nil, []error{errors.New("Please enter tag id.")}
+	}
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, []error{errors.New("Please enter valid tag id.")}
+	}
+	return &AdminDeleteTagReqBody{
 		ID: objectID,
 	}, nil
 }

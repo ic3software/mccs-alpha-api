@@ -309,26 +309,6 @@ func (es *entity) DeleteCategory(name string) error {
 	return nil
 }
 
-// TO BE REMOVED
-
-func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
-	doc := map[string]interface{}{
-		"entityName":      data.EntityName,
-		"locationCity":    data.LocationCity,
-		"locationCountry": data.LocationCountry,
-		"status":          constant.Trading.Pending,
-	}
-	_, err := es.c.Update().
-		Index(es.index).
-		Id(id.Hex()).
-		Doc(doc).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (es *entity) RenameTag(old string, new string) error {
 	query := elastic.NewBoolQuery()
 	query.Should(elastic.NewMatchQuery("offers.name", old))
@@ -350,17 +330,6 @@ func (es *entity) RenameTag(old string, new string) error {
 	_, err := es.c.UpdateByQuery(es.index).
 		Query(query).
 		Script(script).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (es *entity) Delete(id string) error {
-	_, err := es.c.Delete().
-		Index(es.index).
-		Id(id).
 		Do(context.Background())
 	if err != nil {
 		return err
@@ -391,6 +360,37 @@ func (es *entity) DeleteTag(name string) error {
 	_, err := es.c.UpdateByQuery(es.index).
 		Query(query).
 		Script(script).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// TO BE REMOVED
+
+func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
+	doc := map[string]interface{}{
+		"entityName":      data.EntityName,
+		"locationCity":    data.LocationCity,
+		"locationCountry": data.LocationCountry,
+		"status":          constant.Trading.Pending,
+	}
+	_, err := es.c.Update().
+		Index(es.index).
+		Id(id.Hex()).
+		Doc(doc).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (es *entity) Delete(id string) error {
+	_, err := es.c.Delete().
+		Index(es.index).
+		Id(id).
 		Do(context.Background())
 	if err != nil {
 		return err

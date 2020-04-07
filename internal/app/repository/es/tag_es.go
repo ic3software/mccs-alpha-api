@@ -3,6 +3,7 @@ package es
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -123,11 +124,9 @@ func (es *tag) UpdateWant(id string, name string) error {
 	return nil
 }
 
-// TO BE REMOVED
-
-func (es *tag) Rename(t *types.Tag) error {
+func (es *tag) Update(id primitive.ObjectID, update *types.Tag) error {
 	params := map[string]interface{}{
-		"name": t.Name,
+		"name": update.Name,
 	}
 	script := elastic.
 		NewScript(`
@@ -137,7 +136,7 @@ func (es *tag) Rename(t *types.Tag) error {
 
 	_, err := es.c.Update().
 		Index(es.index).
-		Id(t.ID.Hex()).
+		Id(id.Hex()).
 		Script(script).
 		Do(context.Background())
 	if err != nil {
@@ -152,10 +151,15 @@ func (es *tag) DeleteByID(id string) error {
 		Id(id).
 		Do(context.Background())
 	if err != nil {
+		if elastic.IsNotFound(err) {
+			return errors.New("Tag does not exist.")
+		}
 		return err
 	}
 	return nil
 }
+
+// TO BE REMOVED
 
 // MatchOffer matches wants for the given offer.
 func (es *tag) MatchOffer(offer string, lastLoginDate time.Time) ([]string, error) {

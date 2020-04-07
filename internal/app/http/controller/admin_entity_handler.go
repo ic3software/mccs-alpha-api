@@ -36,8 +36,6 @@ func newAdminEntityHandler() *adminEntityHandler {
 }
 
 func (handler *adminEntityHandler) RegisterRoutes(
-	public *mux.Router,
-	private *mux.Router,
 	adminPublic *mux.Router,
 	adminPrivate *mux.Router,
 ) {

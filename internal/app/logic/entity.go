@@ -169,6 +169,30 @@ func (b *entity) DeleteCategory(name string) error {
 	return nil
 }
 
+func (b *entity) RenameTag(old string, new string) error {
+	err := es.Entity.RenameTag(old, new)
+	if err != nil {
+		return err
+	}
+	err = mongo.Entity.RenameTag(old, new)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *entity) DeleteTag(name string) error {
+	err := es.Entity.DeleteTag(name)
+	if err != nil {
+		return err
+	}
+	err = mongo.Entity.DeleteTag(name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (b *entity) UpdateEntity(id primitive.ObjectID, difference *types.EntityData, isAdmin bool) error {
@@ -183,30 +207,6 @@ func (b *entity) DeleteByID(id primitive.ObjectID) error {
 	err = mongo.Entity.DeleteByID(id)
 	if err != nil {
 		return e.Wrap(err, "delete entity by id failed")
-	}
-	return nil
-}
-
-func (b *entity) RenameTag(old string, new string) error {
-	err := es.Entity.RenameTag(old, new)
-	if err != nil {
-		return e.Wrap(err, "EntityMongo RenameTag failed")
-	}
-	err = mongo.Entity.RenameTag(old, new)
-	if err != nil {
-		return e.Wrap(err, "EntityMongo RenameTag failed")
-	}
-	return nil
-}
-
-func (b *entity) DeleteTag(name string) error {
-	err := es.Entity.DeleteTag(name)
-	if err != nil {
-		return e.Wrap(err, "EntityMongo DeleteTag failed")
-	}
-	err = mongo.Entity.DeleteTag(name)
-	if err != nil {
-		return e.Wrap(err, "EntityMongo DeleteTag failed")
 	}
 	return nil
 }

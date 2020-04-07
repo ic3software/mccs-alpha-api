@@ -38,8 +38,6 @@ func newUserHandler() *userHandler {
 func (handler *userHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
-	adminPublic *mux.Router,
-	adminPrivate *mux.Router,
 ) {
 	handler.once.Do(func() {
 		public.Path("/login").HandlerFunc(handler.login()).Methods("POST")

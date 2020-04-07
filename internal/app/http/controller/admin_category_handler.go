@@ -36,10 +36,10 @@ func (handler *categoryHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	handler.once.Do(func() {
-		adminPrivate.Path("/categories").HandlerFunc(handler.createCategory()).Methods("POST")
-		public.Path("/categories").HandlerFunc(handler.searchCategory()).Methods("GET")
-		adminPrivate.Path("/categories/{id}").HandlerFunc(handler.updateCategory()).Methods("PATCH")
-		adminPrivate.Path("/categories/{id}").HandlerFunc(handler.deleteCategory()).Methods("DELETE")
+		adminPrivate.Path("/categories").HandlerFunc(handler.create()).Methods("POST")
+		public.Path("/categories").HandlerFunc(handler.search()).Methods("GET")
+		adminPrivate.Path("/categories/{id}").HandlerFunc(handler.update()).Methods("PATCH")
+		adminPrivate.Path("/categories/{id}").HandlerFunc(handler.delete()).Methods("DELETE")
 
 		adminPrivate.Path("/categories").HandlerFunc(handler.SearchCategories()).Methods("GET")
 	})
@@ -52,7 +52,7 @@ func (handler *categoryHandler) Update(categories []string) {
 	}
 }
 
-func (handler *categoryHandler) createCategory() func(http.ResponseWriter, *http.Request) {
+func (handler *categoryHandler) create() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.CategoryRespond `json:"data"`
 	}
@@ -71,7 +71,7 @@ func (handler *categoryHandler) createCategory() func(http.ResponseWriter, *http
 
 		created, err := logic.Category.CreateOne(req.Name)
 		if err != nil {
-			l.Logger.Error("[Error] CategoryHandler.createCategory failed:", zap.Error(err))
+			l.Logger.Error("[Error] CategoryHandler.create failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
@@ -83,7 +83,7 @@ func (handler *categoryHandler) createCategory() func(http.ResponseWriter, *http
 	}
 }
 
-func (handler *categoryHandler) searchCategory() func(http.ResponseWriter, *http.Request) {
+func (handler *categoryHandler) search() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
 		TotalPages      int `json:"totalPages"`
@@ -95,7 +95,7 @@ func (handler *categoryHandler) searchCategory() func(http.ResponseWriter, *http
 	return func(w http.ResponseWriter, r *http.Request) {
 		query, err := api.NewSearchCategoryQuery(r.URL.Query())
 		if err != nil {
-			l.Logger.Info("[Info] CategoryHandler.searchCategory failed:", zap.Error(err))
+			l.Logger.Info("[Info] CategoryHandler.search failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -108,7 +108,7 @@ func (handler *categoryHandler) searchCategory() func(http.ResponseWriter, *http
 
 		found, err := logic.Category.Search(query)
 		if err != nil {
-			l.Logger.Error("[Error] CategoryHandler.searchCategory failed:", zap.Error(err))
+			l.Logger.Error("[Error] CategoryHandler.search failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
@@ -123,7 +123,7 @@ func (handler *categoryHandler) searchCategory() func(http.ResponseWriter, *http
 	}
 }
 
-func (handler *categoryHandler) updateCategory() func(http.ResponseWriter, *http.Request) {
+func (handler *categoryHandler) update() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.CategoryRespond `json:"data"`
 	}
@@ -142,14 +142,14 @@ func (handler *categoryHandler) updateCategory() func(http.ResponseWriter, *http
 
 		old, err := logic.Category.FindByIDString(req.ID)
 		if err != nil {
-			l.Logger.Error("[Error] CategoryHandler.updateCategory failed:", zap.Error(err))
+			l.Logger.Error("[Error] CategoryHandler.update failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
 		updated, err := logic.Category.FindOneAndUpdate(old.ID, &types.Category{Name: req.Name})
 		if err != nil {
-			l.Logger.Error("[Error] CategoryHandler.updateCategory failed:", zap.Error(err))
+			l.Logger.Error("[Error] CategoryHandler.update failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
@@ -157,7 +157,7 @@ func (handler *categoryHandler) updateCategory() func(http.ResponseWriter, *http
 		go func() {
 			err := logic.Entity.RenameCategory(old.Name, updated.Name)
 			if err != nil {
-				l.Logger.Error("[Error] CategoryHandler.updateCategory failed:", zap.Error(err))
+				l.Logger.Error("[Error] CategoryHandler.update failed:", zap.Error(err))
 				return
 			}
 		}()
@@ -169,7 +169,7 @@ func (handler *categoryHandler) updateCategory() func(http.ResponseWriter, *http
 	}
 }
 
-func (handler *categoryHandler) deleteCategory() func(http.ResponseWriter, *http.Request) {
+func (handler *categoryHandler) delete() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.CategoryRespond `json:"data"`
 	}
@@ -182,7 +182,7 @@ func (handler *categoryHandler) deleteCategory() func(http.ResponseWriter, *http
 
 		deleted, err := logic.Category.FindOneAndDelete(req.ID)
 		if err != nil {
-			l.Logger.Error("[Error] CategoryHandler.deleteCategory failed:", zap.Error(err))
+			l.Logger.Error("[Error] CategoryHandler.delete failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -190,7 +190,7 @@ func (handler *categoryHandler) deleteCategory() func(http.ResponseWriter, *http
 		go func() {
 			err := logic.Entity.DeleteCategory(deleted.Name)
 			if err != nil {
-				l.Logger.Error("[Error] logic.Entity.DeleteCategory failed:", zap.Error(err))
+				l.Logger.Error("[Error] logic.Entity.delete failed:", zap.Error(err))
 			}
 		}()
 

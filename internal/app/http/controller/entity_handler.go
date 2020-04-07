@@ -35,8 +35,6 @@ func newEntityHandler() *entityHandler {
 func (b *entityHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
-	adminPublic *mux.Router,
-	adminPrivate *mux.Router,
 ) {
 	b.once.Do(func() {
 		public.Path("/entities").HandlerFunc(b.searchEntity()).Methods("GET")

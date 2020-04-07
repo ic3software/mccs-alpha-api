@@ -27,8 +27,6 @@ func newServiceDiscovery() *serviceDiscovery {
 func (s *serviceDiscovery) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
-	adminPublic *mux.Router,
-	adminPrivate *mux.Router,
 ) {
 	s.once.Do(func() {
 		public.Path("/health").HandlerFunc(s.healthCheck).Methods("GET")

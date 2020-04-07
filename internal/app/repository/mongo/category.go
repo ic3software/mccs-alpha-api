@@ -100,10 +100,9 @@ func (c *category) FindByName(name string) (*types.Category, error) {
 }
 
 func (c *category) FindOneAndUpdate(id primitive.ObjectID, update *types.Category) (*types.Category, error) {
-	filter := bson.M{"_id": id}
 	result := c.c.FindOneAndUpdate(
 		context.Background(),
-		filter,
+		bson.M{"_id": id},
 		bson.M{
 			"$set": bson.M{
 				"name":      update.Name,
@@ -132,7 +131,7 @@ func (c *category) FindOneAndDelete(id primitive.ObjectID) (*types.Category, err
 	)
 	if result.Err() != nil {
 		if result.Err() == mongo.ErrNoDocuments {
-			return nil, errors.New("Category does not exists.")
+			return nil, errors.New("Category does not exist.")
 		}
 		return nil, result.Err()
 	}

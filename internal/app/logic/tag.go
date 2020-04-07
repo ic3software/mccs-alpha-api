@@ -14,12 +14,76 @@ type tag struct{}
 
 var Tag = &tag{}
 
-func (t *tag) Find(query *types.SearchTagQuery) (*types.FindTagResult, error) {
-	found, err := mongo.Tag.Find(query)
+func (t *tag) Create(name string) (*types.Tag, error) {
+	created, err := mongo.Tag.Create(name)
+	if err != nil {
+		return nil, err
+	}
+	err = es.Tag.Create(created.ID, name)
+	if err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
+func (t *tag) Search(query *types.SearchTagQuery) (*types.FindTagResult, error) {
+	found, err := mongo.Tag.Search(query)
 	if err != nil {
 		return nil, err
 	}
 	return found, nil
+}
+
+func (t *tag) FindByName(name string) (*types.Tag, error) {
+	tag, err := mongo.Tag.FindByName(name)
+	if err != nil {
+		return nil, err
+	}
+	return tag, nil
+}
+
+func (t *tag) FindByID(objectID primitive.ObjectID) (*types.Tag, error) {
+	tag, err := mongo.Tag.FindByID(objectID)
+	if err != nil {
+		return nil, err
+	}
+	return tag, nil
+}
+
+func (t *tag) FindByIDString(id string) (*types.Tag, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	tag, err := mongo.Tag.FindByID(objectID)
+	if err != nil {
+		return nil, err
+	}
+	return tag, nil
+}
+
+func (t *tag) FindOneAndUpdate(id primitive.ObjectID, update *types.Tag) (*types.Tag, error) {
+	err := es.Tag.Update(id, update)
+	if err != nil {
+		return nil, err
+	}
+	updated, err := mongo.Tag.FindOneAndUpdate(id, update)
+	if err != nil {
+		return nil, err
+	}
+	return updated, nil
+}
+
+func (t *tag) FindOneAndDelete(id primitive.ObjectID) (*types.Tag, error) {
+	err := es.Tag.DeleteByID(id.Hex())
+	if err != nil {
+		return nil, err
+	}
+	deleted, err := mongo.Tag.FindOneAndDelete(id)
+	if err != nil {
+		return nil, err
+	}
+	return deleted, nil
 }
 
 // UpdateOffer will add/modify the offer tag.
@@ -44,60 +108,6 @@ func (t *tag) UpdateWant(name string) error {
 	err = es.Tag.UpdateWant(id.Hex(), name)
 	if err != nil {
 		return err
-	}
-	return nil
-}
-
-// TO BE REMOVED
-
-func (t *tag) Create(name string) error {
-	id, err := mongo.Tag.Create(name)
-	if err != nil {
-		return e.Wrap(err, "TagService Create failed")
-	}
-	err = es.Tag.Create(id, name)
-	if err != nil {
-		return e.Wrap(err, "TagService Create failed")
-	}
-	return nil
-}
-
-func (t *tag) FindByName(name string) (*types.Tag, error) {
-	tag, err := mongo.Tag.FindByName(name)
-	if err != nil {
-		return nil, e.Wrap(err, "TagService FindTag failed")
-	}
-	return tag, nil
-}
-
-func (t *tag) FindByID(id primitive.ObjectID) (*types.Tag, error) {
-	tag, err := mongo.Tag.FindByID(id)
-	if err != nil {
-		return nil, e.Wrap(err, "TagService FindByID failed")
-	}
-	return tag, nil
-}
-
-func (t *tag) Rename(tag *types.Tag) error {
-	err := es.Tag.Rename(tag)
-	if err != nil {
-		return e.Wrap(err, "TagService Rename failed")
-	}
-	err = mongo.Tag.Rename(tag)
-	if err != nil {
-		return e.Wrap(err, "TagService Rename failed")
-	}
-	return nil
-}
-
-func (t *tag) DeleteByID(id primitive.ObjectID) error {
-	err := es.Tag.DeleteByID(id.Hex())
-	if err != nil {
-		return e.Wrap(err, "TagService DeleteByID failed")
-	}
-	err = mongo.Tag.DeleteByID(id)
-	if err != nil {
-		return e.Wrap(err, "TagService DeleteByID failed")
 	}
 	return nil
 }
