@@ -9,14 +9,12 @@ var (
 	specialCharRe *regexp.Regexp
 	multiDashRe   *regexp.Regexp
 	ltDashRe      *regexp.Regexp
-	categoryRe    *regexp.Regexp
 )
 
 func init() {
 	specialCharRe = regexp.MustCompile("(&quot;)|([^a-zA-Z-]+)")
 	multiDashRe = regexp.MustCompile("-+")
 	ltDashRe = regexp.MustCompile("(^-+)|(-+$)")
-	categoryRe = regexp.MustCompile("[0-9]|(&quot;)|([^a-zA-Z ]+)")
 }
 
 func InputToTag(input string) string {
@@ -95,8 +93,4 @@ func TagDifference(new, old []string) ([]string, []string) {
 		}
 	}
 	return added, removed
-}
-
-func FormatCategory(tag string) string {
-	return categoryRe.ReplaceAllString(tag, "")
 }
