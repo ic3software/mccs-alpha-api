@@ -33,7 +33,7 @@ func (handler *adminTagHandler) RegisterRoutes(
 	handler.once.Do(func() {
 		adminPrivate.Path("/tags").HandlerFunc(handler.create()).Methods("POST")
 		adminPrivate.Path("/tags/{id}").HandlerFunc(handler.update()).Methods("PATCH")
-		adminPrivate.Path("/tags/{id}").HandlerFunc(handler.deleteTag()).Methods("DELETE")
+		adminPrivate.Path("/tags/{id}").HandlerFunc(handler.delete()).Methods("DELETE")
 	})
 }
 
@@ -114,7 +114,7 @@ func (h *adminTagHandler) update() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (h *adminTagHandler) deleteTag() func(http.ResponseWriter, *http.Request) {
+func (h *adminTagHandler) delete() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.TagRespond `json:"data"`
 	}
@@ -135,7 +135,7 @@ func (h *adminTagHandler) deleteTag() func(http.ResponseWriter, *http.Request) {
 		go func() {
 			err := logic.Entity.DeleteTag(deleted.Name)
 			if err != nil {
-				l.Logger.Error("[Error] logic.Entity.DeleteTag failed:", zap.Error(err))
+				l.Logger.Error("[Error] logic.Entity.delete failed:", zap.Error(err))
 			}
 		}()
 

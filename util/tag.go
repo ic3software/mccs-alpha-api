@@ -20,6 +20,10 @@ func init() {
 }
 
 func InputToTag(input string) string {
+	if input == "" {
+		return ""
+	}
+
 	splitFn := func(c rune) bool {
 		return c == ','
 	}
