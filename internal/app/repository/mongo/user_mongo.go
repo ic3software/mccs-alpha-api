@@ -110,6 +110,49 @@ func (u *user) FindOneAndUpdate(update *types.User) (*types.User, error) {
 	return &user, nil
 }
 
+func (u *user) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types.LoginInfo, error) {
+	old := &types.LoginInfo{}
+	filter := bson.M{"_id": id}
+	projection := bson.M{
+		"currentLoginIP":   1,
+		"currentLoginDate": 1,
+		"lastLoginIP":      1,
+		"lastLoginDate":    1,
+	}
+	findOneOptions := options.FindOne()
+	findOneOptions.SetProjection(projection)
+	err := u.c.FindOne(context.Background(), filter, findOneOptions).Decode(&old)
+	if err != nil {
+		return nil, err
+	}
+
+	new := &types.LoginInfo{
+		CurrentLoginDate: time.Now(),
+		CurrentLoginIP:   newLoginIP,
+		LastLoginIP:      old.CurrentLoginIP,
+		LastLoginDate:    old.CurrentLoginDate,
+	}
+
+	filter = bson.M{"_id": id}
+	update := bson.M{"$set": bson.M{
+		"currentLoginIP":   new.CurrentLoginIP,
+		"currentLoginDate": new.CurrentLoginDate,
+		"lastLoginIP":      new.LastLoginIP,
+		"lastLoginDate":    new.LastLoginDate,
+		"updatedAt":        time.Now(),
+	}}
+	_, err = u.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return new, nil
+}
+
 func (u *user) UpdateLoginAttempts(email string, attempts int, lockUser bool) error {
 	filter := bson.M{"email": email}
 	set := bson.M{
@@ -306,27 +349,6 @@ func (u *user) GetLoginInfo(id primitive.ObjectID) (*types.LoginInfo, error) {
 		return nil, e.Wrap(err, "UserMongo GetLoginInfo failed")
 	}
 	return loginInfo, nil
-}
-
-func (u *user) UpdateLoginInfo(id primitive.ObjectID, i *types.LoginInfo) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"currentLoginIP":           i.CurrentLoginIP,
-		"currentLoginDate":         time.Now(),
-		"lastNotificationSentDate": time.Now(),
-		"lastLoginIP":              i.LastLoginIP,
-		"lastLoginDate":            i.LastLoginDate,
-		"updatedAt":                time.Now(),
-	}}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return e.Wrap(err, "update user login info failed")
-	}
-	return nil
 }
 
 func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {

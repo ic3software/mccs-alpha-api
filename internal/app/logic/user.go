@@ -101,6 +101,14 @@ func (u *user) Login(email string, password string) (*types.User, error) {
 	return user, nil
 }
 
+func (a *user) UpdateLoginInfo(id primitive.ObjectID, ip string) (*types.LoginInfo, error) {
+	info, err := mongo.User.UpdateLoginInfo(id, ip)
+	if err != nil {
+		return nil, err
+	}
+	return info, nil
+}
+
 func (u *user) UpdateLoginAttempts(email string) error {
 	user, err := mongo.User.FindByEmail(email)
 	if err != nil {
@@ -245,25 +253,6 @@ func (u *user) AdminUpdateUser(user *types.User) error {
 	err = mongo.User.AdminUpdateUser(user)
 	if err != nil {
 		return e.Wrap(err, "AdminUpdateUser failed")
-	}
-	return nil
-}
-
-func (u *user) UpdateLoginInfo(id primitive.ObjectID, ip string) error {
-	loginInfo, err := mongo.User.GetLoginInfo(id)
-	if err != nil {
-		return e.Wrap(err, "UserService UpdateLoginInfo failed")
-	}
-
-	newLoginInfo := &types.LoginInfo{
-		CurrentLoginIP: ip,
-		LastLoginIP:    loginInfo.CurrentLoginIP,
-		LastLoginDate:  loginInfo.CurrentLoginDate,
-	}
-
-	err = mongo.User.UpdateLoginInfo(id, newLoginInfo)
-	if err != nil {
-		return e.Wrap(err, "UserService UpdateLoginInfo failed")
 	}
 	return nil
 }
