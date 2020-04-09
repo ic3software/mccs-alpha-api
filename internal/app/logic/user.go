@@ -157,16 +157,16 @@ func (u *user) ResetPassword(email string, newPassword string) error {
 	return nil
 }
 
-func (u *user) FindOneAndUpdate(user *types.User) (*types.User, error) {
-	err := es.User.Update(user)
+func (u *user) FindOneAndUpdate(userID primitive.ObjectID, update *types.User) (*types.User, error) {
+	err := es.User.Update(userID, update)
 	if err != nil {
 		return nil, err
 	}
-	user, err = mongo.User.FindOneAndUpdate(user)
+	updated, err := mongo.User.FindOneAndUpdate(userID, update)
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	return updated, nil
 }
 
 func (u *user) FindEntities(userID primitive.ObjectID) ([]*types.Entity, error) {
@@ -179,6 +179,18 @@ func (u *user) FindEntities(userID primitive.ObjectID) ([]*types.Entity, error) 
 		return nil, err
 	}
 	return entities, nil
+}
+
+func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.User) (*types.User, error) {
+	err := es.User.Update(userID, update)
+	if err != nil {
+		return nil, err
+	}
+	updated, err := mongo.User.AdminFindOneAndUpdate(userID, update)
+	if err != nil {
+		return nil, err
+	}
+	return updated, nil
 }
 
 // TO BE REMOVED
@@ -232,27 +244,10 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	return users, nil
 }
 
-// Logout logs out the user.
-func (u *user) Logout() error {
-	return nil
-}
-
 func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
 	err := mongo.User.UpdateLastNotificationSentDate(id)
 	if err != nil {
 		return e.Wrap(err, "UserService UpdateLastNotificationSentDate failed")
-	}
-	return nil
-}
-
-func (u *user) AdminUpdateUser(user *types.User) error {
-	err := es.User.Update(user)
-	if err != nil {
-		return e.Wrap(err, "AdminUpdateUser failed")
-	}
-	err = mongo.User.AdminUpdateUser(user)
-	if err != nil {
-		return e.Wrap(err, "AdminUpdateUser failed")
 	}
 	return nil
 }
@@ -265,16 +260,6 @@ func (u *user) DeleteByID(id primitive.ObjectID) error {
 	err = mongo.User.DeleteByID(id)
 	if err != nil {
 		return e.Wrap(err, "delete user by id failed")
-	}
-	return nil
-}
-
-// APIs
-
-func (u *user) ToggleShowRecentMatchedTags(id primitive.ObjectID) error {
-	err := mongo.User.ToggleShowRecentMatchedTags(id)
-	if err != nil {
-		return e.Wrap(err, "UserService ToggleShowRecentMatchedTags failed")
 	}
 	return nil
 }

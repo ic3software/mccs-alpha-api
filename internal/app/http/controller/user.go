@@ -55,7 +55,8 @@ func (handler *userHandler) RegisterRoutes(
 		private.Path("/user/entities").HandlerFunc(handler.listUserEntities()).Methods("GET")
 		private.Path("/user/entities/{entityID}").HandlerFunc(handler.updateUserEntity()).Methods("PATCH")
 
-		adminPrivate.Path("/users/{userID}").HandlerFunc(handler.getUser()).Methods("GET")
+		adminPrivate.Path("/users/{userID}").HandlerFunc(handler.adminGetUser()).Methods("GET")
+		adminPrivate.Path("/users/{userID}").HandlerFunc(handler.adminUpdateUser()).Methods("PATCH")
 	})
 }
 
@@ -121,7 +122,7 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		return d
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := api.NewLoginReqBody(r)
+		req, errs := types.NewLoginReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -155,7 +156,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := api.NewSignupReqBody(r)
+		req, err := types.NewSignupReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.signup failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -408,24 +409,14 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 		Data *types.UserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.UpdateUserReqBody
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
-		if err != nil {
-			l.Logger.Info("[INFO] UserHandler.updateUser failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		errs := req.Validate()
+		req, errs := types.NewUpdateUserReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
 		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-		user, err := logic.User.FindOneAndUpdate(&types.User{
-			ID:                    userID,
+		user, err := logic.User.FindOneAndUpdate(userID, &types.User{
 			FirstName:             req.FirstName,
 			LastName:              req.LastName,
 			Telephone:             req.UserPhone,
@@ -470,7 +461,7 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 		Data *types.EntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := api.NewUpdateUserEntityReqBody(r)
+		req, err := types.NewUpdateUserEntityReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.updateUserEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -531,7 +522,7 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 	}
 }
 
-func (handler *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) adminGetUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.AdminGetUserRespond `json:"data"`
 	}
@@ -557,5 +548,42 @@ func (handler *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(user, entities)})
+	}
+}
+
+func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.AdminGetUserRespond `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req, errs := types.NewAdminUpdateUserReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		updated, err := logic.User.AdminFindOneAndUpdate(req.UserID, &types.User{
+			Email:                 req.Email,
+			FirstName:             req.FirstName,
+			LastName:              req.LastName,
+			Telephone:             req.UserPhone,
+			Password:              req.Password,
+			DailyNotification:     req.DailyEmailMatchNotification,
+			ShowRecentMatchedTags: req.ShowTagsMatchedSinceLastLogin,
+		})
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.adminUpdateUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		entities, err := logic.Entity.FindByIDs(updated.Entities)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.adminUpdateUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(updated, entities)})
 	}
 }

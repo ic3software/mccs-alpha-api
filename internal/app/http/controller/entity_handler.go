@@ -270,7 +270,7 @@ func (handler *entityHandler) checkEntityStatus(SenderEntity, ReceiverEntity *ty
 
 func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := api.NewEmailReqBody(r)
+		req, err := types.NewEmailReqBody(r)
 		if err != nil {
 			l.Logger.Info("[Info] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
