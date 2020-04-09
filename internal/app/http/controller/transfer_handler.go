@@ -69,7 +69,7 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: api.NewProposeTransferRespond(journal)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewProposeTransferRespond(journal)})
 
 		go func() {
 			err := email.Transfer.Initiate(req)

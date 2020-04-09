@@ -153,7 +153,7 @@ func (handler *adminEntityHandler) updateEntity() func(http.ResponseWriter, *htt
 		if len(req.Wants) != 0 {
 			newEntity.Wants = types.ToTagFields(req.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: api.NewAdminEntityRespond(newEntity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminEntityRespond(newEntity)})
 	}
 }
 

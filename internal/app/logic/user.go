@@ -174,7 +174,7 @@ func (u *user) FindEntities(userID primitive.ObjectID) ([]*types.Entity, error) 
 	if err != nil {
 		return nil, err
 	}
-	entities, err := mongo.Entity.FindByIDs(util.ToIDStrings(user.Entities))
+	entities, err := mongo.Entity.FindByStringIDs(util.ToIDStrings(user.Entities))
 	if err != nil {
 		return nil, err
 	}

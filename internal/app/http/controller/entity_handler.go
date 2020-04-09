@@ -149,7 +149,7 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 		result := []*types.SearchEntityRespond{}
 		queryingEntityStatus := handler.getQueryingEntityStatus(query.QueryingEntityID)
 		for _, entity := range entities {
-			result = append(result, api.NewSearchEntityRespond(entity, queryingEntityStatus, query.FavoriteEntities))
+			result = append(result, types.NewSearchEntityRespond(entity, queryingEntityStatus, query.FavoriteEntities))
 		}
 		return result
 	}
@@ -225,7 +225,7 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 		queryingEntityStatus := handler.getQueryingEntityStatus(queryingEntityID)
 		favoriteEntities := handler.getFavoriteEntities(queryingEntityID)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: api.NewSearchEntityRespond(searchEntity, queryingEntityStatus, favoriteEntities)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewSearchEntityRespond(searchEntity, queryingEntityStatus, favoriteEntities)})
 	}
 }
 

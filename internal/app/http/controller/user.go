@@ -38,6 +38,8 @@ func newUserHandler() *userHandler {
 func (handler *userHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
+	adminPublic *mux.Router,
+	adminPrivate *mux.Router,
 ) {
 	handler.once.Do(func() {
 		public.Path("/login").HandlerFunc(handler.login()).Methods("POST")
@@ -53,7 +55,7 @@ func (handler *userHandler) RegisterRoutes(
 		private.Path("/user/entities").HandlerFunc(handler.listUserEntities()).Methods("GET")
 		private.Path("/user/entities/{entityID}").HandlerFunc(handler.updateUserEntity()).Methods("PATCH")
 
-		private.Path("/users/toggleShowRecentMatchedTags").HandlerFunc(handler.toggleShowRecentMatchedTags()).Methods("POST")
+		adminPrivate.Path("/users/{userID}").HandlerFunc(handler.getUser()).Methods("GET")
 	})
 }
 
@@ -397,7 +399,7 @@ func (handler *userHandler) userProfile() func(http.ResponseWriter, *http.Reques
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: api.NewUserRespond(user)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
 
@@ -436,7 +438,7 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: api.NewUserRespond(user)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
 
@@ -447,7 +449,7 @@ func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.R
 	toData := func(entities []*types.Entity) []*types.EntityRespond {
 		result := []*types.EntityRespond{}
 		for _, entity := range entities {
-			result = append(result, api.NewEntityRespondWithEmail(entity))
+			result = append(result, types.NewEntityRespondWithEmail(entity))
 		}
 		return result
 	}
@@ -525,24 +527,35 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 		if len(req.Wants) != 0 {
 			entity.Wants = types.ToTagFields(req.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: api.NewEntityRespondWithEmail(entity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(entity)})
 	}
 }
 
-func (handler *userHandler) toggleShowRecentMatchedTags() func(http.ResponseWriter, *http.Request) {
+func (handler *userHandler) getUser() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.AdminGetUserRespond `json:"data"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		objID, err := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-		if err != nil {
-			l.Logger.Error("ToggleShowRecentMatchedTags failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+		req, errs := types.NewAdminGetUserReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
-		err = logic.User.ToggleShowRecentMatchedTags(objID)
+
+		user, err := logic.User.FindByID(req.UserID)
 		if err != nil {
-			l.Logger.Error("ToggleShowRecentMatchedTags failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+			l.Logger.Error("[Error] UserHandler.getUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+
+		entities, err := logic.Entity.FindByIDs(user.Entities)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.getUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(user, entities)})
 	}
 }

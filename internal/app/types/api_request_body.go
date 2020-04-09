@@ -581,3 +581,21 @@ func NewAdminDeleteTagReqBody(r *http.Request) (*AdminDeleteTagReqBody, []error)
 		ID: objectID,
 	}, nil
 }
+
+type AdminGetUser struct {
+	UserID primitive.ObjectID
+}
+
+func NewAdminGetUserReqBody(r *http.Request) (*AdminGetUser, []error) {
+	userID := mux.Vars(r)["userID"]
+	if userID == "" {
+		return nil, []error{errors.New("Please enter user id.")}
+	}
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, []error{errors.New("Please enter valid user id.")}
+	}
+	return &AdminGetUser{
+		UserID: objectID,
+	}, nil
+}

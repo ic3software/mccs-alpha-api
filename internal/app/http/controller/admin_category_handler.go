@@ -54,7 +54,7 @@ func (handler *categoryHandler) Update(categories []string) {
 
 func (handler *categoryHandler) create() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.CategoryRespond `json:"data"`
+		Data *types.AdminCategoryRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminCreateCategoryReqBody(r)
@@ -76,10 +76,7 @@ func (handler *categoryHandler) create() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: &types.CategoryRespond{
-			ID:   created.ID.Hex(),
-			Name: created.Name,
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(created)})
 	}
 }
 
@@ -125,7 +122,7 @@ func (handler *categoryHandler) search() func(http.ResponseWriter, *http.Request
 
 func (handler *categoryHandler) update() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.CategoryRespond `json:"data"`
+		Data *types.AdminCategoryRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminUpdateCategoryReqBody(r)
@@ -162,16 +159,13 @@ func (handler *categoryHandler) update() func(http.ResponseWriter, *http.Request
 			}
 		}()
 
-		api.Respond(w, r, http.StatusOK, respond{Data: &types.CategoryRespond{
-			ID:   updated.ID.Hex(),
-			Name: updated.Name,
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(updated)})
 	}
 }
 
 func (handler *categoryHandler) delete() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.CategoryRespond `json:"data"`
+		Data *types.AdminCategoryRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminDeleteCategoryReqBody(r)
@@ -194,10 +188,7 @@ func (handler *categoryHandler) delete() func(http.ResponseWriter, *http.Request
 			}
 		}()
 
-		api.Respond(w, r, http.StatusOK, respond{Data: &types.CategoryRespond{
-			ID:   deleted.ID.Hex(),
-			Name: deleted.Name,
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(deleted)})
 	}
 }
 
