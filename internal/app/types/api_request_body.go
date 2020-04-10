@@ -11,10 +11,21 @@ import (
 	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
+	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+func NewSignupReqBody(r *http.Request) (*SignupReqBody, error) {
+	var req SignupReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
+}
 
 type SignupReqBody struct {
 	Email                 string `json:"email"`
@@ -77,6 +88,16 @@ func (req *SignupReqBody) Validate() []error {
 	return errs
 }
 
+func NewLoginReqBody(r *http.Request) (*LoginReqBody, []error) {
+	var req LoginReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, []error{err}
+	}
+	return &req, req.Validate()
+}
+
 type LoginReqBody struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -113,6 +134,16 @@ func (req *PasswordChange) Validate() []error {
 	return errs
 }
 
+func NewUpdateUserReqBody(r *http.Request) (*UpdateUserReqBody, []error) {
+	var req UpdateUserReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, []error{err}
+	}
+	return &req, req.Validate()
+}
+
 type UpdateUserReqBody struct {
 	ID                            string `json:"id"`
 	Email                         string `json:"email"`
@@ -141,6 +172,17 @@ func (req *UpdateUserReqBody) Validate() []error {
 	errs = append(errs, user.Validate()...)
 
 	return errs
+}
+
+func NewUpdateUserEntityReqBody(r *http.Request) (*UpdateUserEntityReqBody, error) {
+	var req UpdateUserEntityReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+	req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
+	return &req, nil
 }
 
 type UpdateUserEntityReqBody struct {
@@ -194,6 +236,16 @@ func (req *UpdateUserEntityReqBody) Validate() []error {
 	errs = append(errs, validateTags(req.Wants)...)
 
 	return errs
+}
+
+func NewAddToFavoriteReqBody(r *http.Request) (*AddToFavoriteReqBody, error) {
+	var req AddToFavoriteReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
 }
 
 type AddToFavoriteReqBody struct {
@@ -268,6 +320,16 @@ func validatePassword(password string) []error {
 	}
 
 	return errs
+}
+
+func NewEmailReqBody(r *http.Request) (*EmailReqBody, error) {
+	var req EmailReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
 }
 
 type EmailReqBody struct {
@@ -396,6 +458,26 @@ func (req *UpdateTransferReqBody) Validate() []error {
 }
 
 // Admin
+
+func NewAdminUpdateEntityReqBody(r *http.Request) (*AdminUpdateEntityReqBody, error) {
+	var req AdminUpdateEntityReqBody
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	vars := mux.Vars(r)
+	entityID, err := primitive.ObjectIDFromHex(vars["entityID"])
+	if err != nil {
+		return nil, err
+	}
+	req.EntityID = entityID
+	req.Offers, req.Wants, req.Categories = util.FormatTags(req.Offers), util.FormatTags(req.Wants), util.FormatTags(req.Categories)
+
+	return &req, nil
+}
 
 type AdminUpdateEntityReqBody struct {
 	EntityID           primitive.ObjectID `json:"entityID"`
@@ -580,4 +662,103 @@ func NewAdminDeleteTagReqBody(r *http.Request) (*AdminDeleteTagReqBody, []error)
 	return &AdminDeleteTagReqBody{
 		ID: objectID,
 	}, nil
+}
+
+type AdminGetUser struct {
+	UserID primitive.ObjectID
+}
+
+func NewAdminGetUserReqBody(r *http.Request) (*AdminGetUser, []error) {
+	userID := mux.Vars(r)["userID"]
+	if userID == "" {
+		return nil, []error{errors.New("Please enter user id.")}
+	}
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, []error{errors.New("Please enter valid user id.")}
+	}
+	return &AdminGetUser{
+		UserID: objectID,
+	}, nil
+}
+
+type AdminUpdateUser struct {
+	UserID                        primitive.ObjectID
+	Email                         string
+	FirstName                     string
+	LastName                      string
+	UserPhone                     string
+	Password                      string
+	DailyEmailMatchNotification   *bool
+	ShowTagsMatchedSinceLastLogin *bool
+}
+
+type adminUpdateUser struct {
+	Email                         string `json:"email"`
+	FirstName                     string `json:"firstName"`
+	LastName                      string `json:"lastName"`
+	UserPhone                     string `json:"userPhone"`
+	Password                      string `json:"password"`
+	DailyEmailMatchNotification   *bool  `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin *bool  `json:"showTagsMatchedSinceLastLogin"`
+}
+
+func NewAdminUpdateUserReqBody(r *http.Request) (*AdminUpdateUser, []error) {
+	userID := mux.Vars(r)["userID"]
+	if userID == "" {
+		return nil, []error{errors.New("Please enter user id.")}
+	}
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, []error{errors.New("Please enter valid user id.")}
+	}
+
+	req := adminUpdateUser{}
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&req)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	errs := req.validate()
+	if len(errs) != 0 {
+		return nil, errs
+	}
+
+	if req.Password != "" {
+		hashedPassword, err := bcrypt.Hash(req.Password)
+		if err != nil {
+			return nil, []error{err}
+		}
+		req.Password = hashedPassword
+	}
+
+	return &AdminUpdateUser{
+		UserID:                        objectID,
+		Email:                         req.Email,
+		FirstName:                     req.FirstName,
+		LastName:                      req.LastName,
+		UserPhone:                     req.UserPhone,
+		Password:                      req.Password,
+		DailyEmailMatchNotification:   req.DailyEmailMatchNotification,
+		ShowTagsMatchedSinceLastLogin: req.ShowTagsMatchedSinceLastLogin,
+	}, nil
+}
+
+func (req *adminUpdateUser) validate() []error {
+	errs := []error{}
+
+	if req.Password != "" {
+		errs = append(errs, validatePassword(req.Password)...)
+	}
+
+	user := User{
+		Email:     req.Email,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Telephone: req.UserPhone,
+	}
+	errs = append(errs, user.Validate()...)
+
+	return errs
 }

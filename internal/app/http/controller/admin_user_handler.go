@@ -76,7 +76,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 		return d
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := api.NewLoginReqBody(r)
+		req, errs := types.NewLoginReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return

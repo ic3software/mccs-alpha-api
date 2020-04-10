@@ -98,7 +98,7 @@ func (handler *adminEntityHandler) updateEntity() func(http.ResponseWriter, *htt
 		Data *types.AdminEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := api.NewAdminUpdateEntityReqBody(r)
+		req, err := types.NewAdminUpdateEntityReqBody(r)
 		if err != nil {
 			l.Logger.Info("[INFO] AdminEntityHandler.updateEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -153,7 +153,7 @@ func (handler *adminEntityHandler) updateEntity() func(http.ResponseWriter, *htt
 		if len(req.Wants) != 0 {
 			newEntity.Wants = types.ToTagFields(req.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: api.NewAdminEntityRespond(newEntity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminEntityRespond(newEntity)})
 	}
 }
 

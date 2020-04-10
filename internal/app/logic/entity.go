@@ -48,6 +48,14 @@ func (_ *entity) FindByID(objectID primitive.ObjectID) (*types.Entity, error) {
 	return entity, nil
 }
 
+func (_ *entity) FindByIDs(ids []primitive.ObjectID) ([]*types.Entity, error) {
+	entity, err := mongo.Entity.FindByIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	return entity, nil
+}
+
 func (_ *entity) FindByAccountNumber(accountNumber string) (*types.Entity, error) {
 	entity, err := mongo.Entity.FindByAccountNumber(accountNumber)
 	if err != nil {
@@ -106,7 +114,7 @@ func (_ *entity) Find(query *types.SearchEntityQuery) (*types.FindEntityResult, 
 	if err != nil {
 		return nil, err
 	}
-	entities, err := mongo.Entity.FindByIDs(result.IDs)
+	entities, err := mongo.Entity.FindByStringIDs(result.IDs)
 	if err != nil {
 		return nil, err
 	}

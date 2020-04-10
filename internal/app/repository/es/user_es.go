@@ -43,16 +43,16 @@ func (es *user) Create(userID primitive.ObjectID, user *types.User) error {
 	return nil
 }
 
-func (es *user) Update(u *types.User) error {
+func (es *user) Update(userID primitive.ObjectID, update *types.User) error {
 	doc := map[string]interface{}{
-		"email":     u.Email,
-		"firstName": u.FirstName,
-		"lastName":  u.LastName,
+		"email":     update.Email,
+		"firstName": update.FirstName,
+		"lastName":  update.LastName,
 	}
 
 	_, err := es.c.Update().
 		Index(es.index).
-		Id(u.ID.Hex()).
+		Id(userID.Hex()).
 		Doc(doc).
 		Do(context.Background())
 	if err != nil {

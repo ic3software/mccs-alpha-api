@@ -190,7 +190,7 @@ func (e *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
 	return nil
 }
 
-func (e *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
+func (e *entity) FindByStringIDs(ids []string) ([]*types.Entity, error) {
 	var results []*types.Entity
 
 	objectIDs, err := toObjectIDs(ids)
@@ -199,6 +199,31 @@ func (e *entity) FindByIDs(ids []string) ([]*types.Entity, error) {
 	}
 
 	pipeline := newFindByIDsPipeline(objectIDs)
+	cur, err := e.c.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	for cur.Next(context.TODO()) {
+		var elem types.Entity
+		err := cur.Decode(&elem)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	cur.Close(context.TODO())
+
+	return results, nil
+}
+
+func (e *entity) FindByIDs(ids []primitive.ObjectID) ([]*types.Entity, error) {
+	var results []*types.Entity
+
+	pipeline := newFindByIDsPipeline(ids)
 	cur, err := e.c.Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return nil, err

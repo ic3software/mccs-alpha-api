@@ -81,8 +81,8 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 	return nil
 }
 
-func (u *user) FindOneAndUpdate(update *types.User) (*types.User, error) {
-	filter := bson.M{"_id": update.ID}
+func (u *user) FindOneAndUpdate(userID primitive.ObjectID, update *types.User) (*types.User, error) {
+	filter := bson.M{"_id": userID}
 	update.Email = strings.ToLower(update.Email)
 	update.UpdatedAt = time.Now()
 
@@ -171,6 +171,35 @@ func (u *user) UpdateLoginAttempts(email string, attempts int, lockUser bool) er
 		return err
 	}
 	return nil
+}
+
+func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.User) (*types.User, error) {
+	filter := bson.M{"_id": userID}
+	update.Email = strings.ToLower(update.Email)
+	update.UpdatedAt = time.Now()
+
+	doc, err := toDoc(update)
+	if err != nil {
+		return nil, err
+	}
+
+	result := u.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{"$set": doc},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	user := types.User{}
+	err = result.Decode(&user)
+	if err != nil {
+		return nil, result.Err()
+	}
+
+	return &user, nil
 }
 
 // TO BE REMOVED
@@ -310,29 +339,6 @@ func (u *user) UpdateUserInfo(user *types.User) error {
 	return nil
 }
 
-func (u *user) AdminUpdateUser(user *types.User) error {
-	user.Email = strings.ToLower(user.Email)
-
-	filter := bson.M{"_id": user.ID}
-	update := bson.M{"$set": bson.M{
-		"email":             user.Email,
-		"firstName":         user.FirstName,
-		"lastName":          user.LastName,
-		"telephone":         user.Telephone,
-		"dailyNotification": user.DailyNotification,
-		"updatedAt":         time.Now(),
-	}}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return e.Wrap(err, "UserMongo AdminUpdateUser failed")
-	}
-	return nil
-}
-
 func (u *user) GetLoginInfo(id primitive.ObjectID) (*types.LoginInfo, error) {
 	loginInfo := &types.LoginInfo{}
 	filter := bson.M{"_id": id}
@@ -381,31 +387,6 @@ func (u *user) DeleteByID(id primitive.ObjectID) error {
 	)
 	if err != nil {
 		return e.Wrap(err, "delete user failed")
-	}
-	return nil
-}
-
-// APIs
-
-func (u *user) ToggleShowRecentMatchedTags(id primitive.ObjectID) error {
-	var res struct {
-		ShowRecentMatchedTags bool `bson:"showRecentMatchedTags,omitempty"`
-	}
-
-	filter := bson.M{"_id": id}
-	projection := bson.M{"showRecentMatchedTags": 1}
-	findOneOptions := options.FindOne()
-	findOneOptions.SetProjection(projection)
-	err := u.c.FindOne(context.Background(), filter, findOneOptions).Decode(&res)
-	if err != nil {
-		return e.Wrap(err, "UserMongo ToggleShowRecentMatchedTags failed")
-	}
-
-	filter = bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{"showRecentMatchedTags": !res.ShowRecentMatchedTags}}
-	_, err = u.c.UpdateOne(context.Background(), filter, update)
-	if err != nil {
-		return e.Wrap(err, "UserMongo ToggleShowRecentMatchedTags failed")
 	}
 	return nil
 }

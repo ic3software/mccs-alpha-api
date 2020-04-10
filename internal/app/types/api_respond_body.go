@@ -2,7 +2,24 @@ package types
 
 import (
 	"time"
+
+	"github.com/ic3network/mccs-alpha-api/util"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+func NewUserRespond(user *User) *UserRespond {
+	return &UserRespond{
+		ID:                            user.ID.Hex(),
+		Email:                         user.Email,
+		UserPhone:                     user.Telephone,
+		FirstName:                     user.FirstName,
+		LastName:                      user.LastName,
+		LastLoginIP:                   user.LastLoginIP,
+		LastLoginDate:                 user.LastLoginDate,
+		DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
+		ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
+	}
+}
 
 type UserRespond struct {
 	ID                            string    `json:"id"`
@@ -14,6 +31,51 @@ type UserRespond struct {
 	LastLoginDate                 time.Time `json:"lastLoginDate"`
 	DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
 	ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
+}
+
+func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
+	return &EntityRespond{
+		ID:                 entity.ID.Hex(),
+		AccountNumber:      entity.AccountNumber,
+		EntityName:         entity.EntityName,
+		Email:              entity.Email,
+		EntityPhone:        entity.EntityPhone,
+		IncType:            entity.IncType,
+		CompanyNumber:      entity.CompanyNumber,
+		Website:            entity.Website,
+		Turnover:           entity.Turnover,
+		Description:        entity.Description,
+		LocationAddress:    entity.LocationAddress,
+		LocationCity:       entity.LocationCity,
+		LocationRegion:     entity.LocationRegion,
+		LocationPostalCode: entity.LocationPostalCode,
+		LocationCountry:    entity.LocationCountry,
+		Status:             entity.Status,
+		Offers:             TagFieldToNames(entity.Offers),
+		Wants:              TagFieldToNames(entity.Wants),
+	}
+}
+
+func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
+	return &EntityRespond{
+		ID:                 entity.ID.Hex(),
+		AccountNumber:      entity.AccountNumber,
+		EntityName:         entity.EntityName,
+		EntityPhone:        entity.EntityPhone,
+		IncType:            entity.IncType,
+		CompanyNumber:      entity.CompanyNumber,
+		Website:            entity.Website,
+		Turnover:           entity.Turnover,
+		Description:        entity.Description,
+		LocationAddress:    entity.LocationAddress,
+		LocationCity:       entity.LocationCity,
+		LocationRegion:     entity.LocationRegion,
+		LocationPostalCode: entity.LocationPostalCode,
+		LocationCountry:    entity.LocationCountry,
+		Status:             entity.Status,
+		Offers:             TagFieldToNames(entity.Offers),
+		Wants:              TagFieldToNames(entity.Wants),
+	}
 }
 
 type EntityRespond struct {
@@ -37,6 +99,34 @@ type EntityRespond struct {
 	Wants              []string `json:"wants"`
 }
 
+func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favoriteEntities []primitive.ObjectID) *SearchEntityRespond {
+	email := ""
+	if util.IsTradingAccepted(entity.Status) && util.IsTradingAccepted(queryingEntityStatus) {
+		email = entity.Email
+	}
+	return &SearchEntityRespond{
+		ID:                 entity.ID.Hex(),
+		AccountNumber:      entity.AccountNumber,
+		EntityName:         entity.EntityName,
+		Email:              email,
+		EntityPhone:        entity.EntityPhone,
+		IncType:            entity.IncType,
+		CompanyNumber:      entity.CompanyNumber,
+		Website:            entity.Website,
+		Turnover:           entity.Turnover,
+		Description:        entity.Description,
+		LocationAddress:    entity.LocationAddress,
+		LocationCity:       entity.LocationCity,
+		LocationRegion:     entity.LocationRegion,
+		LocationPostalCode: entity.LocationPostalCode,
+		LocationCountry:    entity.LocationCountry,
+		Status:             entity.Status,
+		Offers:             TagFieldToNames(entity.Offers),
+		Wants:              TagFieldToNames(entity.Wants),
+		IsFavorite:         util.ContainID(favoriteEntities, entity.ID.Hex()),
+	}
+}
+
 // SearchEntityRespond will always return IsFavorite.
 type SearchEntityRespond struct {
 	ID                 string   `json:"id"`
@@ -58,6 +148,17 @@ type SearchEntityRespond struct {
 	Offers             []string `json:"offers"`
 	Wants              []string `json:"wants"`
 	IsFavorite         bool     `json:"isFavorite"`
+}
+
+func NewProposeTransferRespond(journal *Journal) *ProposeTransferRespond {
+	return &ProposeTransferRespond{
+		ID:          journal.TransferID,
+		From:        journal.FromAccountNumber,
+		To:          journal.ToAccountNumber,
+		Amount:      journal.Amount,
+		Description: journal.Description,
+		Status:      journal.Status,
+	}
 }
 
 type ProposeTransferRespond struct {
@@ -90,6 +191,30 @@ type SearchTransferRespond struct {
 
 // Admin
 
+func NewAdminEntityRespond(entity *Entity) *AdminEntityRespond {
+	return &AdminEntityRespond{
+		ID:                 entity.ID.Hex(),
+		AccountNumber:      entity.AccountNumber,
+		EntityName:         entity.EntityName,
+		Email:              entity.Email,
+		EntityPhone:        entity.EntityPhone,
+		IncType:            entity.IncType,
+		CompanyNumber:      entity.CompanyNumber,
+		Website:            entity.Website,
+		Turnover:           entity.Turnover,
+		Description:        entity.Description,
+		LocationAddress:    entity.LocationAddress,
+		LocationCity:       entity.LocationCity,
+		LocationRegion:     entity.LocationRegion,
+		LocationPostalCode: entity.LocationPostalCode,
+		LocationCountry:    entity.LocationCountry,
+		Status:             entity.Status,
+		Offers:             TagFieldToNames(entity.Offers),
+		Wants:              TagFieldToNames(entity.Wants),
+		Categories:         entity.Categories,
+	}
+}
+
 type AdminEntityRespond struct {
 	ID                 string   `json:"id"`
 	AccountNumber      string   `json:"accountNumber"`
@@ -112,7 +237,14 @@ type AdminEntityRespond struct {
 	Categories         []string `json:"categories,omitempty"`
 }
 
-type CategoryRespond struct {
+func NewAdminCategoryRespond(category *Category) *AdminCategoryRespond {
+	return &AdminCategoryRespond{
+		ID:   category.ID.Hex(),
+		Name: category.Name,
+	}
+}
+
+type AdminCategoryRespond struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
@@ -120,4 +252,37 @@ type CategoryRespond struct {
 type TagRespond struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+func NewAdminGetUserRespond(user *User, entities []*Entity) *AdminGetUserRespond {
+	adminEntityResponds := []*AdminEntityRespond{}
+	for _, e := range entities {
+		adminEntityResponds = append(adminEntityResponds, NewAdminEntityRespond(e))
+	}
+
+	return &AdminGetUserRespond{
+		ID:                            user.ID.Hex(),
+		Email:                         user.Email,
+		UserPhone:                     user.Telephone,
+		FirstName:                     user.FirstName,
+		LastName:                      user.LastName,
+		LastLoginIP:                   user.LastLoginIP,
+		LastLoginDate:                 user.LastLoginDate,
+		DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
+		ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
+		Entities:                      adminEntityResponds,
+	}
+}
+
+type AdminGetUserRespond struct {
+	ID                            string                `json:"id"`
+	Email                         string                `json:"email"`
+	FirstName                     string                `json:"firstName"`
+	LastName                      string                `json:"lastName"`
+	UserPhone                     string                `json:"userPhone"`
+	LastLoginIP                   string                `json:"lastLoginIP"`
+	LastLoginDate                 time.Time             `json:"lastLoginDate"`
+	DailyEmailMatchNotification   bool                  `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin bool                  `json:"showTagsMatchedSinceLastLogin"`
+	Entities                      []*AdminEntityRespond `json:"entities"`
 }
