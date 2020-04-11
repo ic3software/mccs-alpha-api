@@ -43,15 +43,15 @@ func (t *tag) Create(name string) (*types.Tag, error) {
 	return &tag, nil
 }
 
-func (t *tag) Search(query *types.SearchTagQuery) (*types.FindTagResult, error) {
+func (t *tag) Search(req *types.SearchTagReqBody) (*types.FindTagResult, error) {
 	var results []*types.Tag
 
 	findOptions := options.Find()
-	findOptions.SetSkip(int64(query.PageSize * (query.Page - 1)))
-	findOptions.SetLimit(int64(query.PageSize))
+	findOptions.SetSkip(int64(req.PageSize * (req.Page - 1)))
+	findOptions.SetLimit(int64(req.PageSize))
 
 	filter := bson.M{
-		"name":      primitive.Regex{Pattern: query.Fragment, Options: "i"},
+		"name":      primitive.Regex{Pattern: req.Fragment, Options: "i"},
 		"deletedAt": bson.M{"$exists": false},
 	}
 	cur, err := t.c.Find(context.TODO(), filter, findOptions)
@@ -80,7 +80,7 @@ func (t *tag) Search(query *types.SearchTagQuery) (*types.FindTagResult, error) 
 	return &types.FindTagResult{
 		Tags:            results,
 		NumberOfResults: int(totalCount),
-		TotalPages:      util.GetNumberOfPages(int(totalCount), int(query.PageSize)),
+		TotalPages:      util.GetNumberOfPages(int(totalCount), int(req.PageSize)),
 	}, nil
 }
 

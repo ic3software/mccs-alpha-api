@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
+	"time"
 
 	"unicode"
 
@@ -452,6 +454,158 @@ func (req *UpdateTransferReqBody) Validate() []error {
 		errs = append(errs, errors.New("The transaction has already been completed by the counterparty."))
 	} else if req.Journal.Status == constant.Transfer.Cancelled {
 		errs = append(errs, errors.New("The transaction has already been cancelled by the counterparty."))
+	}
+
+	return errs
+}
+
+func NewSearchEntityReqBody(q url.Values) (*SearchEntityReqBody, error) {
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, err
+	}
+	return &SearchEntityReqBody{
+		QueryingEntityID: q.Get("querying_entity_id"),
+		Page:             page,
+		PageSize:         pageSize,
+		EntityName:       q.Get("entity_name"),
+		Category:         q.Get("category"),
+		Offers:           util.ToSearchTags(q.Get("offers")),
+		Wants:            util.ToSearchTags(q.Get("wants")),
+		TaggedSince:      util.ParseTime(q.Get("tagged_since")),
+		FavoritesOnly:    q.Get("favorites_only") == "true",
+		Statuses: []string{
+			constant.Entity.Accepted,
+			constant.Trading.Pending,
+			constant.Trading.Accepted,
+			constant.Trading.Rejected,
+		},
+	}, nil
+}
+
+type SearchEntityReqBody struct {
+	QueryingEntityID string
+	Page             int
+	PageSize         int
+	EntityName       string
+	Wants            []string
+	Offers           []string
+	Category         string
+	FavoriteEntities []primitive.ObjectID
+	FavoritesOnly    bool
+	TaggedSince      time.Time
+	Statuses         []string // accepted", "pending", rejected", "tradingPending", "tradingAccepted", "tradingRejected"
+
+	LocationCountry string
+	LocationCity    string
+}
+
+func (query *SearchEntityReqBody) Validate() []error {
+	errs := []error{}
+
+	if query.FavoritesOnly == true && query.QueryingEntityID == "" {
+		errs = append(errs, errors.New("Please specify the querying_entity_id."))
+	}
+
+	if !query.TaggedSince.IsZero() && len(query.Wants) == 0 && len(query.Offers) == 0 {
+		errs = append(errs, errors.New("Please specify an offer or want tag."))
+	}
+
+	return errs
+}
+
+func NewSearchTagReqBody(q url.Values) (*SearchTagReqBody, error) {
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, err
+	}
+	return &SearchTagReqBody{
+		Fragment: q.Get("fragment"),
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+type SearchTagReqBody struct {
+	Fragment string `json:"fragment"`
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
+}
+
+func (q *SearchTagReqBody) Validate() []error {
+	errs := []error{}
+	return errs
+}
+
+func NewSearchCategoryReqBody(q url.Values) (*SearchCategoryReqBody, error) {
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, err
+	}
+	return &SearchCategoryReqBody{
+		Fragment: q.Get("fragment"),
+		Prefix:   q.Get("prefix"),
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+type SearchCategoryReqBody struct {
+	Fragment string `json:"fragment"`
+	Prefix   string `json:"prefix"`
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
+}
+
+func (query *SearchCategoryReqBody) Validate() []error {
+	errs := []error{}
+	return errs
+}
+
+type SearchTransferReqBody struct {
+	Page             int
+	PageSize         int
+	Status           string
+	QueryingEntityID string
+
+	QueryingAccountNumber string
+	Offset                int
+}
+
+func (query *SearchTransferReqBody) Validate() []error {
+	errs := []error{}
+
+	if query.QueryingEntityID == "" {
+		errs = append(errs, errors.New("Please specify the querying_entity_id."))
+	}
+	if query.Status != "all" && query.Status != "initiated" && query.Status != "completed" && query.Status != "cancelled" {
+		errs = append(errs, errors.New("Please specify valid status."))
+	}
+
+	return errs
+}
+
+type BalanceReqBody struct {
+	QueryingEntityID string
+}
+
+func (query *BalanceReqBody) Validate() []error {
+	errs := []error{}
+
+	if query.QueryingEntityID == "" {
+		errs = append(errs, errors.New("Please specify the querying_entity_id."))
 	}
 
 	return errs

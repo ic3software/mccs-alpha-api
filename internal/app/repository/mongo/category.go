@@ -45,15 +45,15 @@ func (c *category) Create(name string) (*types.Category, error) {
 	return &category, nil
 }
 
-func (c *category) Search(query *types.SearchCategoryQuery) (*types.FindCategoryResult, error) {
+func (c *category) Search(req *types.SearchCategoryReqBody) (*types.FindCategoryResult, error) {
 	var results []*types.Category
 
 	findOptions := options.Find()
-	findOptions.SetSkip(int64(query.PageSize * (query.Page - 1)))
-	findOptions.SetLimit(int64(query.PageSize))
+	findOptions.SetSkip(int64(req.PageSize * (req.Page - 1)))
+	findOptions.SetLimit(int64(req.PageSize))
 
 	filter := bson.M{
-		"name":      primitive.Regex{Pattern: "^" + query.Prefix + ".*" + query.Fragment + ".*", Options: "i"},
+		"name":      primitive.Regex{Pattern: "^" + req.Prefix + ".*" + req.Fragment + ".*", Options: "i"},
 		"deletedAt": bson.M{"$exists": false},
 	}
 	cur, err := c.c.Find(context.TODO(), filter, findOptions)
@@ -82,7 +82,7 @@ func (c *category) Search(query *types.SearchCategoryQuery) (*types.FindCategory
 	return &types.FindCategoryResult{
 		Categories:      results,
 		NumberOfResults: int(totalCount),
-		TotalPages:      util.GetNumberOfPages(int(totalCount), query.PageSize),
+		TotalPages:      util.GetNumberOfPages(int(totalCount), req.PageSize),
 	}, nil
 }
 

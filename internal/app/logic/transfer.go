@@ -13,8 +13,8 @@ type transfer struct{}
 
 var Transfer = &transfer{}
 
-func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRespond, error) {
-	transactions, err := pg.Transfer.Search(q)
+func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransferRespond, error) {
+	transactions, err := pg.Transfer.Search(req)
 	if err != nil {
 		return nil, err
 	}
