@@ -762,3 +762,22 @@ func (req *adminUpdateUser) validate() []error {
 
 	return errs
 }
+
+type AdminDeleteUser struct {
+	UserID primitive.ObjectID
+}
+
+func NewAdminDeleteUserReqBody(r *http.Request) (*AdminDeleteUser, []error) {
+	userID := mux.Vars(r)["userID"]
+	if userID == "" {
+		return nil, []error{errors.New("Please enter user id.")}
+	}
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, []error{errors.New("Please enter valid user id.")}
+	}
+
+	return &AdminDeleteUser{
+		UserID: objectID,
+	}, nil
+}

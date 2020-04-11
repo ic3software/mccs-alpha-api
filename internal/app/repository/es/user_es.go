@@ -3,6 +3,7 @@ package es
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
@@ -57,6 +58,19 @@ func (es *user) Update(userID primitive.ObjectID, update *types.User) error {
 		Do(context.Background())
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (es *user) Delete(id string) error {
+	_, err := es.c.Delete().
+		Index(es.index).
+		Id(id).
+		Do(context.Background())
+	if err != nil {
+		if elastic.IsNotFound(err) {
+			return errors.New("The user does not exist")
+		}
 	}
 	return nil
 }
@@ -117,17 +131,6 @@ func (es *user) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegi
 		Index(es.index).
 		Id(id.Hex()).
 		Doc(doc).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (es *user) Delete(id string) error {
-	_, err := es.c.Delete().
-		Index(es.index).
-		Id(id).
 		Do(context.Background())
 	if err != nil {
 		return err

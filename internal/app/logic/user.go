@@ -193,6 +193,18 @@ func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.Us
 	return updated, nil
 }
 
+func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error) {
+	err := es.User.Delete(id.Hex())
+	if err != nil {
+		return nil, err
+	}
+	user, err := mongo.User.AdminFindOneAndDelete(id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 // TO BE REMOVED
 
 func (u *user) FindByEmail(email string) (*types.User, error) {
@@ -248,18 +260,6 @@ func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
 	err := mongo.User.UpdateLastNotificationSentDate(id)
 	if err != nil {
 		return e.Wrap(err, "UserService UpdateLastNotificationSentDate failed")
-	}
-	return nil
-}
-
-func (u *user) DeleteByID(id primitive.ObjectID) error {
-	err := es.User.Delete(id.Hex())
-	if err != nil {
-		return e.Wrap(err, "delete user by id failed")
-	}
-	err = mongo.User.DeleteByID(id)
-	if err != nil {
-		return e.Wrap(err, "delete user by id failed")
 	}
 	return nil
 }

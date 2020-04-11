@@ -30,10 +30,7 @@ func (u *user) FindByEmail(email string) (*types.User, error) {
 	}
 
 	user := types.User{}
-	filter := bson.M{
-		"email":     email,
-		"deletedAt": bson.M{"$exists": false},
-	}
+	filter := bson.M{"email": email, "deletedAt": bson.M{"$exists": false}}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
 		return nil, e.New(e.UserNotFound, "The specified user could not be found.")
@@ -44,10 +41,7 @@ func (u *user) FindByEmail(email string) (*types.User, error) {
 
 func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 	user := types.User{}
-	filter := bson.M{
-		"_id":       id,
-		"deletedAt": bson.M{"$exists": false},
-	}
+	filter := bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
 		return nil, err
@@ -65,7 +59,7 @@ func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
 }
 
 func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
-	filter := bson.M{"_id": userID}
+	filter := bson.M{"_id": userID, "deletedAt": bson.M{"$exists": false}}
 	update := bson.M{
 		"$addToSet": bson.M{"entities": entityID},
 		"$set":      bson.M{"updatedAt": time.Now()},
@@ -82,7 +76,6 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 }
 
 func (u *user) FindOneAndUpdate(userID primitive.ObjectID, update *types.User) (*types.User, error) {
-	filter := bson.M{"_id": userID}
 	update.Email = strings.ToLower(update.Email)
 	update.UpdatedAt = time.Now()
 
@@ -90,6 +83,8 @@ func (u *user) FindOneAndUpdate(userID primitive.ObjectID, update *types.User) (
 	if err != nil {
 		return nil, err
 	}
+
+	filter := bson.M{"_id": userID, "deletedAt": bson.M{"$exists": false}}
 
 	result := u.c.FindOneAndUpdate(
 		context.Background(),
@@ -112,7 +107,7 @@ func (u *user) FindOneAndUpdate(userID primitive.ObjectID, update *types.User) (
 
 func (u *user) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types.LoginInfo, error) {
 	old := &types.LoginInfo{}
-	filter := bson.M{"_id": id}
+	filter := bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
 	projection := bson.M{
 		"currentLoginIP":   1,
 		"currentLoginDate": 1,
@@ -133,7 +128,7 @@ func (u *user) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types
 		LastLoginDate:    old.CurrentLoginDate,
 	}
 
-	filter = bson.M{"_id": id}
+	filter = bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
 	update := bson.M{"$set": bson.M{
 		"currentLoginIP":   new.CurrentLoginIP,
 		"currentLoginDate": new.CurrentLoginDate,
@@ -154,7 +149,7 @@ func (u *user) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types
 }
 
 func (u *user) UpdateLoginAttempts(email string, attempts int, lockUser bool) error {
-	filter := bson.M{"email": email}
+	filter := bson.M{"email": email, "deletedAt": bson.M{"$exists": false}}
 	set := bson.M{
 		"loginAttempts": attempts,
 	}
@@ -174,7 +169,7 @@ func (u *user) UpdateLoginAttempts(email string, attempts int, lockUser bool) er
 }
 
 func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.User) (*types.User, error) {
-	filter := bson.M{"_id": userID}
+	filter := bson.M{"_id": userID, "deletedAt": bson.M{"$exists": false}}
 	update.Email = strings.ToLower(update.Email)
 	update.UpdatedAt = time.Now()
 
@@ -195,6 +190,28 @@ func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.Us
 
 	user := types.User{}
 	err = result.Decode(&user)
+	if err != nil {
+		return nil, result.Err()
+	}
+
+	return &user, nil
+}
+
+func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error) {
+	filter := bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
+
+	result := u.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{"$set": bson.M{
+			"deletedAt": time.Now(),
+			"updatedAt": time.Now(),
+		}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	)
+
+	user := types.User{}
+	err := result.Decode(&user)
 	if err != nil {
 		return nil, result.Err()
 	}
@@ -370,23 +387,6 @@ func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
 	)
 	if err != nil {
 		return e.Wrap(err, "UserMongo UpdateLastNotificationSentDate failed")
-	}
-	return nil
-}
-
-func (u *user) DeleteByID(id primitive.ObjectID) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"deletedAt": time.Now(),
-		"updatedAt": time.Now(),
-	}}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return e.Wrap(err, "delete user failed")
 	}
 	return nil
 }
