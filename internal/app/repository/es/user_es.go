@@ -6,10 +6,8 @@ import (
 	"errors"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/olivere/elastic/v7"
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -75,52 +73,51 @@ func (es *user) Delete(id string) error {
 	return nil
 }
 
-// TO BE REMOVED
-
-// Find finds users from Elasticsearch.
-func (es *user) Find(u *types.User, page int64) ([]string, int, int, error) {
-	if page < 0 || page == 0 {
-		return nil, 0, 0, e.New(e.InvalidPageNumber, "find user failed")
-	}
-
+func (es *user) AdminSearchUser(req *types.AdminSearchUserReqBody) (*types.ESSearchUserResult, error) {
 	var ids []string
-	size := viper.GetInt("page_size")
-	from := viper.GetInt("page_size") * (int(page) - 1)
+	pageSize := req.PageSize
+	from := pageSize * (req.Page - 1)
 
 	q := elastic.NewBoolQuery()
 
-	if u.LastName != "" {
-		q.Must(newFuzzyWildcardQuery("lastName", u.LastName))
+	if req.LastName != "" {
+		q.Must(newFuzzyWildcardQuery("lastName", req.LastName))
 	}
-	if u.Email != "" {
-		q.Must(newFuzzyWildcardQuery("email", u.Email))
+	if req.Email != "" {
+		q.Must(newFuzzyWildcardQuery("email", req.Email))
 	}
 
 	res, err := es.c.Search().
 		Index(es.index).
 		From(from).
-		Size(size).
+		Size(pageSize).
 		Query(q).
 		Do(context.Background())
 
 	if err != nil {
-		return nil, 0, 0, e.Wrap(err, "find user failed")
+		return nil, err
 	}
 
 	for _, hit := range res.Hits.Hits {
 		var record types.UserESRecord
 		err := json.Unmarshal(hit.Source, &record)
 		if err != nil {
-			return nil, 0, 0, e.Wrap(err, "find user failed")
+			return nil, err
 		}
 		ids = append(ids, record.UserID)
 	}
 
 	numberOfResults := int(res.Hits.TotalHits.Value)
-	totalPages := util.GetNumberOfPages(numberOfResults, viper.GetInt("page_size"))
+	totalPages := util.GetNumberOfPages(numberOfResults, pageSize)
 
-	return ids, int(numberOfResults), totalPages, nil
+	return &types.ESSearchUserResult{
+		UserIDs:         ids,
+		NumberOfResults: numberOfResults,
+		TotalPages:      totalPages,
+	}, nil
 }
+
+// TO BE REMOVED
 
 func (es *user) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
 	doc := map[string]interface{}{

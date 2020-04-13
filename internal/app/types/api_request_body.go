@@ -584,13 +584,13 @@ type SearchTransferReqBody struct {
 	Offset                int
 }
 
-func (query *SearchTransferReqBody) Validate() []error {
+func (req *SearchTransferReqBody) Validate() []error {
 	errs := []error{}
 
-	if query.QueryingEntityID == "" {
+	if req.QueryingEntityID == "" {
 		errs = append(errs, errors.New("Please specify the querying_entity_id."))
 	}
-	if query.Status != "all" && query.Status != "initiated" && query.Status != "completed" && query.Status != "cancelled" {
+	if req.Status != "all" && req.Status != "initiated" && req.Status != "completed" && req.Status != "cancelled" {
 		errs = append(errs, errors.New("Please specify valid status."))
 	}
 
@@ -934,4 +934,38 @@ func NewAdminDeleteUserReqBody(r *http.Request) (*AdminDeleteUser, []error) {
 	return &AdminDeleteUser{
 		UserID: objectID,
 	}, nil
+}
+
+type AdminSearchUserReqBody struct {
+	Email    string `json:"email"`
+	LastName string `json:"last_name"`
+	Page     int
+	PageSize int
+}
+
+func NewAdminSearchUserReqBody(r *http.Request) (*AdminSearchUserReqBody, []error) {
+	q := r.URL.Query()
+
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, []error{err}
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	req := AdminSearchUserReqBody{
+		Email:    q.Get("email"),
+		LastName: q.Get("last_name"),
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	return &req, req.validate()
+}
+
+func (req *AdminSearchUserReqBody) validate() []error {
+	errs := []error{}
+	return errs
 }

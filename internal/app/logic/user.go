@@ -205,6 +205,22 @@ func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error)
 	return user, nil
 }
 
+func (u *user) AdminSearchUser(req *types.AdminSearchUserReqBody) (*types.SearchUserResult, error) {
+	result, err := es.User.AdminSearchUser(req)
+	if err != nil {
+		return nil, err
+	}
+	users, err := mongo.User.FindByStringIDs(result.UserIDs)
+	if err != nil {
+		return nil, err
+	}
+	return &types.SearchUserResult{
+		Users:           users,
+		NumberOfResults: result.NumberOfResults,
+		TotalPages:      result.TotalPages,
+	}, nil
+}
+
 // TO BE REMOVED
 
 func (u *user) FindByEmail(email string) (*types.User, error) {
@@ -230,22 +246,6 @@ func (u *user) UserEmailExists(email string) bool {
 		return false
 	}
 	return true
-}
-
-func (u *user) FindUsers(user *types.User, page int64) (*types.FindUserResult, error) {
-	ids, numberOfResults, totalPages, err := es.User.Find(user, page)
-	if err != nil {
-		return nil, e.Wrap(err, "UserService FindUsers failed")
-	}
-	users, err := mongo.User.FindByIDs(ids)
-	if err != nil {
-		return nil, e.Wrap(err, "UserService FindUsers failed")
-	}
-	return &types.FindUserResult{
-		Users:           users,
-		NumberOfResults: numberOfResults,
-		TotalPages:      totalPages,
-	}, nil
 }
 
 func (u *user) FindByDailyNotification() ([]*types.User, error) {

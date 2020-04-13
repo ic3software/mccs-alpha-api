@@ -55,6 +55,7 @@ func (handler *userHandler) RegisterRoutes(
 		private.Path("/user/entities").HandlerFunc(handler.listUserEntities()).Methods("GET")
 		private.Path("/user/entities/{entityID}").HandlerFunc(handler.updateUserEntity()).Methods("PATCH")
 
+		adminPrivate.Path("/users").HandlerFunc(handler.adminSearchUser()).Methods("GET")
 		adminPrivate.Path("/users/{userID}").HandlerFunc(handler.adminGetUser()).Methods("GET")
 		adminPrivate.Path("/users/{userID}").HandlerFunc(handler.adminUpdateUser()).Methods("PATCH")
 		adminPrivate.Path("/users/{userID}").HandlerFunc(handler.adminDeleteUser()).Methods("DELETE")
@@ -549,6 +550,28 @@ func (handler *userHandler) adminGetUser() func(http.ResponseWriter, *http.Reque
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(user, entities)})
+	}
+}
+
+func (handler *userHandler) adminSearchUser() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.SearchUserResult `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req, errs := types.NewAdminSearchUserReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		searchUserResult, err := logic.User.AdminSearchUser(req)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.adminSearchUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: searchUserResult})
 	}
 }
 

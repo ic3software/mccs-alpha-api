@@ -49,6 +49,36 @@ func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 	return &user, nil
 }
 
+func (u *user) FindByStringIDs(ids []string) ([]*types.User, error) {
+	var results []*types.User
+
+	objectIDs, err := toObjectIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+
+	pipeline := newFindByIDsPipeline(objectIDs)
+	cur, err := u.c.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	for cur.Next(context.TODO()) {
+		var elem types.User
+		err := cur.Decode(&elem)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	cur.Close(context.TODO())
+
+	return results, nil
+}
+
 func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
 	user.CreatedAt = time.Now()
 	res, err := u.c.InsertOne(context.Background(), user)
@@ -287,36 +317,6 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	cur.Close(context.TODO())
 
 	return users, nil
-}
-
-func (u *user) FindByIDs(ids []string) ([]*types.User, error) {
-	var results []*types.User
-
-	objectIDs, err := toObjectIDs(ids)
-	if err != nil {
-		return nil, e.Wrap(err, "find user failed")
-	}
-
-	pipeline := newFindByIDsPipeline(objectIDs)
-	cur, err := u.c.Aggregate(context.TODO(), pipeline)
-	if err != nil {
-		return nil, e.Wrap(err, "find user failed")
-	}
-
-	for cur.Next(context.TODO()) {
-		var elem types.User
-		err := cur.Decode(&elem)
-		if err != nil {
-			return nil, e.Wrap(err, "find user failed")
-		}
-		results = append(results, &elem)
-	}
-	if err := cur.Err(); err != nil {
-		return nil, e.Wrap(err, "find user failed")
-	}
-	cur.Close(context.TODO())
-
-	return results, nil
 }
 
 func (u *user) UpdatePassword(user *types.User) error {
