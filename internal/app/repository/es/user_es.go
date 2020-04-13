@@ -69,7 +69,7 @@ func (es *user) Delete(id string) error {
 		Do(context.Background())
 	if err != nil {
 		if elastic.IsNotFound(err) {
-			return errors.New("The user does not exist")
+			return errors.New("User does not exist.")
 		}
 	}
 	return nil
