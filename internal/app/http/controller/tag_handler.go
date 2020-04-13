@@ -68,7 +68,7 @@ func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) 
 		Meta meta     `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := api.NewSearchTagQuery(r.URL.Query())
+		query, err := types.NewSearchTagReqBody(r.URL.Query())
 		if err != nil {
 			l.Logger.Info("[Info] TagHandler.searchTag failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)

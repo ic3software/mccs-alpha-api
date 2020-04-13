@@ -90,20 +90,20 @@ func (handler *categoryHandler) search() func(http.ResponseWriter, *http.Request
 		Meta meta     `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := api.NewSearchCategoryQuery(r.URL.Query())
+		req, err := types.NewSearchCategoryReqBody(r.URL.Query())
 		if err != nil {
 			l.Logger.Info("[Info] CategoryHandler.search failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		errs := query.Validate()
+		errs := req.Validate()
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		found, err := logic.Category.Search(query)
+		found, err := logic.Category.Search(req)
 		if err != nil {
 			l.Logger.Error("[Error] CategoryHandler.search failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)

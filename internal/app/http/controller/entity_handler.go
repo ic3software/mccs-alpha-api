@@ -111,8 +111,8 @@ func (handler *entityHandler) UpdateOffersAndWants(old *types.Entity, offers, wa
 	}
 }
 
-func (handler *entityHandler) getSearchEntityQueryParams(q url.Values) (*types.SearchEntityQuery, error) {
-	query, err := api.NewSearchEntityQuery(q)
+func (handler *entityHandler) getSearchEntityQueryParams(q url.Values) (*types.SearchEntityReqBody, error) {
+	query, err := types.NewSearchEntityReqBody(q)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 		Data []*types.SearchEntityRespond `json:"data"`
 		Meta meta                         `json:"meta"`
 	}
-	toData := func(query *types.SearchEntityQuery, entities []*types.Entity) []*types.SearchEntityRespond {
+	toData := func(query *types.SearchEntityReqBody, entities []*types.Entity) []*types.SearchEntityRespond {
 		result := []*types.SearchEntityRespond{}
 		queryingEntityStatus := handler.getQueryingEntityStatus(query.QueryingEntityID)
 		for _, entity := range entities {

@@ -14,7 +14,7 @@ type transfer struct{}
 
 var Transfer = &transfer{}
 
-func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRespond, error) {
+func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransferRespond, error) {
 	var journals []*types.Journal
 	var numberOfResults int
 	var err error
@@ -30,23 +30,23 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 		WHERE (from_account_number = ? OR to_account_number = ?)
 	`
 
-	if q.Status == "all" {
-		err = db.Raw(countSQL, q.QueryingAccountNumber, q.QueryingAccountNumber).Count(&numberOfResults).Error
+	if req.Status == "all" {
+		err = db.Raw(countSQL, req.QueryingAccountNumber, req.QueryingAccountNumber).Count(&numberOfResults).Error
 		err = db.Raw(searchSQL+"ORDER BY created_at DESC LIMIT ? OFFSET ?",
-			q.QueryingAccountNumber,
-			q.QueryingAccountNumber,
-			q.PageSize,
-			q.Offset).
+			req.QueryingAccountNumber,
+			req.QueryingAccountNumber,
+			req.PageSize,
+			req.Offset).
 			Scan(&journals).Error
 	} else {
-		err = db.Raw(countSQL+"AND status = ?", q.QueryingAccountNumber, q.QueryingAccountNumber, constant.MapTransferType(q.Status)).
+		err = db.Raw(countSQL+"AND status = ?", req.QueryingAccountNumber, req.QueryingAccountNumber, constant.MapTransferType(req.Status)).
 			Count(&numberOfResults).Error
 		err = db.Raw(searchSQL+"AND status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
-			q.QueryingAccountNumber,
-			q.QueryingAccountNumber,
-			constant.MapTransferType(q.Status),
-			q.PageSize,
-			q.Offset).
+			req.QueryingAccountNumber,
+			req.QueryingAccountNumber,
+			constant.MapTransferType(req.Status),
+			req.PageSize,
+			req.Offset).
 			Scan(&journals).Error
 	}
 	if err != nil {
@@ -54,9 +54,9 @@ func (t *transfer) Search(q *types.SearchTransferQuery) (*types.SearchTransferRe
 	}
 
 	found := &types.SearchTransferRespond{
-		Transfers:       t.journalsToTransfers(journals, q.QueryingAccountNumber),
+		Transfers:       t.journalsToTransfers(journals, req.QueryingAccountNumber),
 		NumberOfResults: numberOfResults,
-		TotalPages:      util.GetNumberOfPages(numberOfResults, q.PageSize),
+		TotalPages:      util.GetNumberOfPages(numberOfResults, req.PageSize),
 	}
 
 	return found, nil

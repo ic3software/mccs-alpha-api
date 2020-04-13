@@ -55,8 +55,10 @@ func (handler *userHandler) RegisterRoutes(
 		private.Path("/user/entities").HandlerFunc(handler.listUserEntities()).Methods("GET")
 		private.Path("/user/entities/{entityID}").HandlerFunc(handler.updateUserEntity()).Methods("PATCH")
 
+		adminPrivate.Path("/users").HandlerFunc(handler.adminSearchUser()).Methods("GET")
 		adminPrivate.Path("/users/{userID}").HandlerFunc(handler.adminGetUser()).Methods("GET")
 		adminPrivate.Path("/users/{userID}").HandlerFunc(handler.adminUpdateUser()).Methods("PATCH")
+		adminPrivate.Path("/users/{userID}").HandlerFunc(handler.adminDeleteUser()).Methods("DELETE")
 	})
 }
 
@@ -551,6 +553,47 @@ func (handler *userHandler) adminGetUser() func(http.ResponseWriter, *http.Reque
 	}
 }
 
+func (handler *userHandler) adminSearchUser() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data []*types.AdminGetUserRespond `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req, errs := types.NewAdminSearchUserReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		searchUserResult, err := logic.User.AdminSearchUser(req)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.adminSearchUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		res, err := handler.newAdminSearchUserRespond(searchUserResult)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.adminSearchUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: res})
+	}
+}
+
+func (handler *userHandler) newAdminSearchUserRespond(searchUserResult *types.SearchUserResult) ([]*types.AdminGetUserRespond, error) {
+	respond := []*types.AdminGetUserRespond{}
+	for _, user := range searchUserResult.Users {
+		entities, err := logic.Entity.FindByIDs(user.Entities)
+		if err != nil {
+			return nil, err
+		}
+		respond = append(respond, types.NewAdminGetUserRespond(user, entities))
+	}
+	return respond, nil
+}
+
 func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.AdminGetUserRespond `json:"data"`
@@ -585,5 +628,34 @@ func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Re
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(updated, entities)})
+	}
+}
+
+func (handler *userHandler) adminDeleteUser() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.AdminGetUserRespond `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req, errs := types.NewAdminDeleteUserReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		deleted, err := logic.User.AdminFindOneAndDelete(req.UserID)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.adminDeleteUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		entities, err := logic.Entity.FindByIDs(deleted.Entities)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.adminDeleteUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(deleted, entities)})
 	}
 }

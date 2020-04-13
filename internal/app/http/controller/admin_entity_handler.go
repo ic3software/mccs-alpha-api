@@ -325,19 +325,19 @@ func (a *adminEntityHandler) deleteEntity() func(http.ResponseWriter, *http.Requ
 			return
 		}
 
-		user, err := logic.User.FindByEntityID(bsID)
+		_, err = logic.User.FindByEntityID(bsID)
 		if err != nil {
 			l.Logger.Error("DeleteEntity failed", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		err = logic.User.DeleteByID(user.ID)
-		if err != nil {
-			l.Logger.Error("DeleteEntity failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		// err = logic.User.AdminFindOneAndDelete(user.ID)
+		// if err != nil {
+		// 	l.Logger.Error("DeleteEntity failed", zap.Error(err))
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	return
+		// }
 
 		w.WriteHeader(http.StatusOK)
 	}

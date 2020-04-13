@@ -139,10 +139,10 @@ func (es *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDiffere
 	return nil
 }
 
-func seachByStatus(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elastic.BoolQuery {
-	if len(query.Statuses) != 0 {
+func seachByStatus(q *elastic.BoolQuery, req *types.SearchEntityReqBody) *elastic.BoolQuery {
+	if len(req.Statuses) != 0 {
 		qq := elastic.NewBoolQuery()
-		for _, status := range query.Statuses {
+		for _, status := range req.Statuses {
 			qq.Should(elastic.NewMatchQuery("status", status))
 		}
 		q.Must(qq)
@@ -150,39 +150,39 @@ func seachByStatus(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elasti
 	return q
 }
 
-func seachByAddress(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elastic.BoolQuery {
-	if query.EntityName != "" {
-		q.Must(newFuzzyWildcardQuery("entityName", query.EntityName))
+func seachByAddress(q *elastic.BoolQuery, req *types.SearchEntityReqBody) *elastic.BoolQuery {
+	if req.EntityName != "" {
+		q.Must(newFuzzyWildcardQuery("entityName", req.EntityName))
 	}
-	if query.LocationCountry != "" {
-		q.Must(elastic.NewMatchQuery("locationCountry", query.LocationCountry))
+	if req.LocationCountry != "" {
+		q.Must(elastic.NewMatchQuery("locationCountry", req.LocationCountry))
 	}
-	if query.LocationCity != "" {
-		q.Must(newFuzzyWildcardQuery("locationCity", query.LocationCity))
+	if req.LocationCity != "" {
+		q.Must(newFuzzyWildcardQuery("locationCity", req.LocationCity))
 	}
 	return q
 }
 
-func seachByTags(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elastic.BoolQuery {
+func seachByTags(q *elastic.BoolQuery, req *types.SearchEntityReqBody) *elastic.BoolQuery {
 	// "Tag Added After" will associate with "tags".
-	if len(query.Offers) != 0 {
+	if len(req.Offers) != 0 {
 		qq := elastic.NewBoolQuery()
 		// weighted is used to make sure the tags are shown in order.
 		weighted := 2.0
-		for _, offer := range query.Offers {
-			qq.Should(newFuzzyWildcardTimeQueryForTag("offers", offer, query.TaggedSince).
+		for _, offer := range req.Offers {
+			qq.Should(newFuzzyWildcardTimeQueryForTag("offers", offer, req.TaggedSince).
 				Boost(weighted))
 			weighted *= 0.9
 		}
 		// Must match one of the "Should" queries.
 		q.Must(qq)
 	}
-	if len(query.Wants) != 0 {
+	if len(req.Wants) != 0 {
 		qq := elastic.NewBoolQuery()
 		// weighted is used to make sure the tags are shown in order.
 		weighted := 2.0
-		for _, want := range query.Wants {
-			qq.Should(newFuzzyWildcardTimeQueryForTag("wants", want, query.TaggedSince).
+		for _, want := range req.Wants {
+			qq.Should(newFuzzyWildcardTimeQueryForTag("wants", want, req.TaggedSince).
 				Boost(weighted))
 			weighted *= 0.9
 		}
@@ -192,28 +192,28 @@ func seachByTags(q *elastic.BoolQuery, query *types.SearchEntityQuery) *elastic.
 	return q
 }
 
-func (es *entity) Find(query *types.SearchEntityQuery) (*types.ESFindEntityResult, error) {
+func (es *entity) Find(req *types.SearchEntityReqBody) (*types.ESFindEntityResult, error) {
 	var ids []string
 
 	q := elastic.NewBoolQuery()
 
-	if query.FavoritesOnly {
-		idQuery := elastic.NewIdsQuery().Ids(util.ToIDStrings(query.FavoriteEntities)...)
+	if req.FavoritesOnly {
+		idQuery := elastic.NewIdsQuery().Ids(util.ToIDStrings(req.FavoriteEntities)...)
 		q.Must(idQuery)
 	}
-	if query.Category != "" {
-		q.Must(elastic.NewMatchQuery("categories", query.Category))
+	if req.Category != "" {
+		q.Must(elastic.NewMatchQuery("categories", req.Category))
 	}
 
-	seachByStatus(q, query)
-	seachByAddress(q, query)
-	seachByTags(q, query)
+	seachByStatus(q, req)
+	seachByAddress(q, req)
+	seachByTags(q, req)
 
-	from := query.PageSize * (query.Page - 1)
+	from := req.PageSize * (req.Page - 1)
 	res, err := es.c.Search().
 		Index(es.index).
 		From(from).
-		Size(query.PageSize).
+		Size(req.PageSize).
 		Query(q).
 		Do(context.Background())
 	if err != nil {
@@ -230,7 +230,7 @@ func (es *entity) Find(query *types.SearchEntityQuery) (*types.ESFindEntityResul
 	}
 
 	numberOfResults := int(res.Hits.TotalHits.Value)
-	totalPages := util.GetNumberOfPages(numberOfResults, query.PageSize)
+	totalPages := util.GetNumberOfPages(numberOfResults, req.PageSize)
 
 	return &types.ESFindEntityResult{
 		IDs:             ids,

@@ -55,8 +55,14 @@ func (user *User) Validate() []error {
 
 // Helper types
 
-type FindUserResult struct {
+type SearchUserResult struct {
 	Users           []*User
+	NumberOfResults int
+	TotalPages      int
+}
+
+type ESSearchUserResult struct {
+	UserIDs         []string
 	NumberOfResults int
 	TotalPages      int
 }
