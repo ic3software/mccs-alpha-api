@@ -555,7 +555,7 @@ func (handler *userHandler) adminGetUser() func(http.ResponseWriter, *http.Reque
 
 func (handler *userHandler) adminSearchUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.SearchUserResult `json:"data"`
+		Data []*types.AdminGetUserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminSearchUserReqBody(r)
@@ -571,8 +571,27 @@ func (handler *userHandler) adminSearchUser() func(http.ResponseWriter, *http.Re
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: searchUserResult})
+		res, err := handler.newAdminSearchUserRespond(searchUserResult)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.adminSearchUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: res})
 	}
+}
+
+func (handler *userHandler) newAdminSearchUserRespond(searchUserResult *types.SearchUserResult) ([]*types.AdminGetUserRespond, error) {
+	respond := []*types.AdminGetUserRespond{}
+	for _, user := range searchUserResult.Users {
+		entities, err := logic.Entity.FindByIDs(user.Entities)
+		if err != nil {
+			return nil, err
+		}
+		respond = append(respond, types.NewAdminGetUserRespond(user, entities))
+	}
+	return respond, nil
 }
 
 func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Request) {
