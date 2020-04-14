@@ -236,22 +236,13 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 
 func (handler *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.AddToFavoriteReqBody
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&req)
-		if err != nil {
-			l.Logger.Info("[Info] EntityHandler.addToFavorite failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		errs := req.Validate()
+		req, errs := types.NewAddToFavoriteReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		err = logic.Entity.AddToFavoriteEntities(&req)
+		err := logic.Entity.AddToFavoriteEntities(req)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.addToFavorite failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
@@ -275,14 +266,7 @@ func (handler *entityHandler) checkEntityStatus(SenderEntity, ReceiverEntity *ty
 
 func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewEmailReqBody(r)
-		if err != nil {
-			l.Logger.Info("[Info] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		errs := req.Validate()
+		req, errs := types.NewEmailReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -414,14 +398,7 @@ func (handler *entityHandler) adminUpdateEntity() func(http.ResponseWriter, *htt
 		Data *types.AdminEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewAdminUpdateEntityReqBody(r)
-		if err != nil {
-			l.Logger.Info("[INFO] AdminEntityHandler.updateEntity failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		errs := req.Validate()
+		req, errs := types.NewAdminUpdateEntityReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return

@@ -19,14 +19,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func NewSignupReqBody(r *http.Request) (*SignupReqBody, error) {
+func NewSignupReqBody(r *http.Request) (*SignupReqBody, []error) {
 	var req SignupReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
-	return &req, nil
+	return &req, req.validate()
 }
 
 type SignupReqBody struct {
@@ -54,7 +54,7 @@ type SignupReqBody struct {
 	Wants              []string `json:"wants"`
 }
 
-func (req *SignupReqBody) Validate() []error {
+func (req *SignupReqBody) validate() []error {
 	errs := []error{}
 
 	errs = append(errs, validateEmail(req.Email)...)
@@ -97,7 +97,7 @@ func NewLoginReqBody(r *http.Request) (*LoginReqBody, []error) {
 	if err != nil {
 		return nil, []error{err}
 	}
-	return &req, req.Validate()
+	return &req, req.validate()
 }
 
 type LoginReqBody struct {
@@ -105,7 +105,7 @@ type LoginReqBody struct {
 	Password string `json:"password"`
 }
 
-func (req *LoginReqBody) Validate() []error {
+func (req *LoginReqBody) validate() []error {
 	errs := []error{}
 	if req.Email == "" {
 		errs = append(errs, errors.New("Please specify an email address."))
@@ -143,7 +143,7 @@ func NewUpdateUserReqBody(r *http.Request) (*UpdateUserReqBody, []error) {
 	if err != nil {
 		return nil, []error{err}
 	}
-	return &req, req.Validate()
+	return &req, req.validate()
 }
 
 type UpdateUserReqBody struct {
@@ -156,7 +156,7 @@ type UpdateUserReqBody struct {
 	ShowTagsMatchedSinceLastLogin *bool  `json:"showTagsMatchedSinceLastLogin"`
 }
 
-func (req *UpdateUserReqBody) Validate() []error {
+func (req *UpdateUserReqBody) validate() []error {
 	errs := []error{}
 
 	if req.ID != "" {
@@ -176,15 +176,15 @@ func (req *UpdateUserReqBody) Validate() []error {
 	return errs
 }
 
-func NewUpdateUserEntityReqBody(r *http.Request) (*UpdateUserEntityReqBody, error) {
+func NewUpdateUserEntityReqBody(r *http.Request) (*UpdateUserEntityReqBody, []error) {
 	var req UpdateUserEntityReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 	req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
-	return &req, nil
+	return &req, req.validate()
 }
 
 type UpdateUserEntityReqBody struct {
@@ -208,7 +208,7 @@ type UpdateUserEntityReqBody struct {
 	Status string `json:"status"`
 }
 
-func (req *UpdateUserEntityReqBody) Validate() []error {
+func (req *UpdateUserEntityReqBody) validate() []error {
 	errs := []error{}
 
 	if req.ID != "" {
@@ -240,14 +240,14 @@ func (req *UpdateUserEntityReqBody) Validate() []error {
 	return errs
 }
 
-func NewAddToFavoriteReqBody(r *http.Request) (*AddToFavoriteReqBody, error) {
+func NewAddToFavoriteReqBody(r *http.Request) (*AddToFavoriteReqBody, []error) {
 	var req AddToFavoriteReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
-	return &req, nil
+	return &req, req.validate()
 }
 
 type AddToFavoriteReqBody struct {
@@ -256,7 +256,7 @@ type AddToFavoriteReqBody struct {
 	Favorite         *bool  `json:"favorite"`
 }
 
-func (req *AddToFavoriteReqBody) Validate() []error {
+func (req *AddToFavoriteReqBody) validate() []error {
 	errs := []error{}
 
 	_, err := primitive.ObjectIDFromHex(req.AddToEntityID)
@@ -324,14 +324,14 @@ func validatePassword(password string) []error {
 	return errs
 }
 
-func NewEmailReqBody(r *http.Request) (*EmailReqBody, error) {
+func NewEmailReqBody(r *http.Request) (*EmailReqBody, []error) {
 	var req EmailReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
-	return &req, nil
+	return &req, req.validate()
 }
 
 type EmailReqBody struct {
@@ -340,7 +340,7 @@ type EmailReqBody struct {
 	Body             string `json:"body"`
 }
 
-func (req *EmailReqBody) Validate() []error {
+func (req *EmailReqBody) validate() []error {
 	errs := []error{}
 
 	_, err := primitive.ObjectIDFromHex(req.SenderEntityID)
@@ -971,24 +971,24 @@ func NewAdminGetEntityReqBody(r *http.Request) (*AdminGetEntity, []error) {
 	}, nil
 }
 
-func NewAdminUpdateEntityReqBody(r *http.Request) (*AdminUpdateEntityReqBody, error) {
+func NewAdminUpdateEntityReqBody(r *http.Request) (*AdminUpdateEntityReqBody, []error) {
 	var req AdminUpdateEntityReqBody
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 
 	vars := mux.Vars(r)
 	entityID, err := primitive.ObjectIDFromHex(vars["entityID"])
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 	req.EntityID = entityID
 	req.Offers, req.Wants, req.Categories = util.FormatTags(req.Offers), util.FormatTags(req.Wants), util.FormatTags(req.Categories)
 
-	return &req, nil
+	return &req, req.validate()
 }
 
 type AdminUpdateEntityReqBody struct {
@@ -1013,7 +1013,7 @@ type AdminUpdateEntityReqBody struct {
 	Categories         []string           `json:"categories"`
 }
 
-func (req *AdminUpdateEntityReqBody) Validate() []error {
+func (req *AdminUpdateEntityReqBody) validate() []error {
 	errs := []error{}
 
 	if req.ID != "" {
