@@ -132,6 +132,28 @@ func (e *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 	return &entity, nil
 }
 
+func (e *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, error) {
+	filter := bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
+
+	result := e.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{"$set": bson.M{
+			"deletedAt": time.Now(),
+			"updatedAt": time.Now(),
+		}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	)
+
+	entity := types.Entity{}
+	err := result.Decode(&entity)
+	if err != nil {
+		return nil, result.Err()
+	}
+
+	return &entity, nil
+}
+
 func (e *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
 	updates := []bson.M{
 		bson.M{"$set": bson.M{"updatedAt": time.Now()}},

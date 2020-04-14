@@ -613,79 +613,6 @@ func (query *BalanceReqBody) Validate() []error {
 
 // Admin
 
-func NewAdminUpdateEntityReqBody(r *http.Request) (*AdminUpdateEntityReqBody, error) {
-	var req AdminUpdateEntityReqBody
-
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&req)
-	if err != nil {
-		return nil, err
-	}
-
-	vars := mux.Vars(r)
-	entityID, err := primitive.ObjectIDFromHex(vars["entityID"])
-	if err != nil {
-		return nil, err
-	}
-	req.EntityID = entityID
-	req.Offers, req.Wants, req.Categories = util.FormatTags(req.Offers), util.FormatTags(req.Wants), util.FormatTags(req.Categories)
-
-	return &req, nil
-}
-
-type AdminUpdateEntityReqBody struct {
-	EntityID           primitive.ObjectID `json:"entityID"`
-	ID                 string             `json:"id"`
-	Status             string             `json:"status"`
-	EntityName         string             `json:"entityName"`
-	Email              string             `json:"email"`
-	EntityPhone        string             `json:"entityPhone"`
-	IncType            string             `json:"incType"`
-	CompanyNumber      string             `json:"companyNumber"`
-	Website            string             `json:"website"`
-	Turnover           int                `json:"turnover"`
-	Description        string             `json:"description"`
-	LocationAddress    string             `json:"locationAddress"`
-	LocationCity       string             `json:"locationCity"`
-	LocationRegion     string             `json:"locationRegion"`
-	LocationPostalCode string             `json:"locationPostalCode"`
-	LocationCountry    string             `json:"locationCountry"`
-	Offers             []string           `json:"offers"`
-	Wants              []string           `json:"wants"`
-	Categories         []string           `json:"categories"`
-}
-
-func (req *AdminUpdateEntityReqBody) Validate() []error {
-	errs := []error{}
-
-	if req.ID != "" {
-		errs = append(errs, errors.New("The entity ID cannot be changed."))
-	}
-
-	entity := Entity{
-		Email:              req.Email,
-		EntityName:         req.EntityName,
-		EntityPhone:        req.EntityPhone,
-		IncType:            req.IncType,
-		CompanyNumber:      req.CompanyNumber,
-		Website:            req.Website,
-		Turnover:           req.Turnover,
-		Description:        req.Description,
-		LocationCity:       req.LocationCity,
-		LocationCountry:    req.LocationCountry,
-		LocationAddress:    req.LocationAddress,
-		LocationRegion:     req.LocationRegion,
-		LocationPostalCode: req.LocationPostalCode,
-		Categories:         req.Categories,
-		Status:             req.Status,
-	}
-	errs = append(errs, entity.Validate()...)
-	errs = append(errs, validateTags(req.Offers)...)
-	errs = append(errs, validateTags(req.Wants)...)
-
-	return errs
-}
-
 type AdminUpdateCategoryReqBody struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -968,4 +895,170 @@ func NewAdminSearchUserReqBody(r *http.Request) (*AdminSearchUserReqBody, []erro
 func (req *AdminSearchUserReqBody) validate() []error {
 	errs := []error{}
 	return errs
+}
+
+// Admin Entity
+
+func NewAdminSearchEntityReqBody(r *http.Request) (*AdminSearchEntityReqBody, []error) {
+	q := r.URL.Query()
+
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, []error{err}
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	req := &AdminSearchEntityReqBody{
+		Page:        page,
+		PageSize:    pageSize,
+		EntityName:  q.Get("entity_name"),
+		Category:    q.Get("category"),
+		Offers:      util.ToSearchTags(q.Get("offers")),
+		Wants:       util.ToSearchTags(q.Get("wants")),
+		TaggedSince: util.ParseTime(q.Get("tagged_since")),
+		Statuses: []string{
+			constant.Entity.Accepted,
+			constant.Trading.Pending,
+			constant.Trading.Accepted,
+			constant.Trading.Rejected,
+		},
+	}
+
+	return req, req.validate()
+}
+
+type AdminSearchEntityReqBody struct {
+	Page            int
+	PageSize        int
+	EntityName      string
+	Wants           []string
+	Offers          []string
+	Category        string
+	TaggedSince     time.Time
+	LocationCountry string
+	LocationCity    string
+	Statuses        []string
+}
+
+func (query *AdminSearchEntityReqBody) validate() []error {
+	errs := []error{}
+
+	if !query.TaggedSince.IsZero() && len(query.Wants) == 0 && len(query.Offers) == 0 {
+		errs = append(errs, errors.New("Please specify an offer or want tag."))
+	}
+
+	return errs
+}
+
+type AdminGetEntity struct {
+	EntityID primitive.ObjectID
+}
+
+func NewAdminGetEntityReqBody(r *http.Request) (*AdminGetEntity, []error) {
+	entityID := mux.Vars(r)["entityID"]
+	if entityID == "" {
+		return nil, []error{errors.New("Please enter entity id.")}
+	}
+	objectID, err := primitive.ObjectIDFromHex(entityID)
+	if err != nil {
+		return nil, []error{errors.New("Please enter valid entity id.")}
+	}
+	return &AdminGetEntity{
+		EntityID: objectID,
+	}, nil
+}
+
+func NewAdminUpdateEntityReqBody(r *http.Request) (*AdminUpdateEntityReqBody, error) {
+	var req AdminUpdateEntityReqBody
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	vars := mux.Vars(r)
+	entityID, err := primitive.ObjectIDFromHex(vars["entityID"])
+	if err != nil {
+		return nil, err
+	}
+	req.EntityID = entityID
+	req.Offers, req.Wants, req.Categories = util.FormatTags(req.Offers), util.FormatTags(req.Wants), util.FormatTags(req.Categories)
+
+	return &req, nil
+}
+
+type AdminUpdateEntityReqBody struct {
+	EntityID           primitive.ObjectID `json:"entityID"`
+	ID                 string             `json:"id"`
+	Status             string             `json:"status"`
+	EntityName         string             `json:"entityName"`
+	Email              string             `json:"email"`
+	EntityPhone        string             `json:"entityPhone"`
+	IncType            string             `json:"incType"`
+	CompanyNumber      string             `json:"companyNumber"`
+	Website            string             `json:"website"`
+	Turnover           int                `json:"turnover"`
+	Description        string             `json:"description"`
+	LocationAddress    string             `json:"locationAddress"`
+	LocationCity       string             `json:"locationCity"`
+	LocationRegion     string             `json:"locationRegion"`
+	LocationPostalCode string             `json:"locationPostalCode"`
+	LocationCountry    string             `json:"locationCountry"`
+	Offers             []string           `json:"offers"`
+	Wants              []string           `json:"wants"`
+	Categories         []string           `json:"categories"`
+}
+
+func (req *AdminUpdateEntityReqBody) Validate() []error {
+	errs := []error{}
+
+	if req.ID != "" {
+		errs = append(errs, errors.New("The entity ID cannot be changed."))
+	}
+
+	entity := Entity{
+		Email:              req.Email,
+		EntityName:         req.EntityName,
+		EntityPhone:        req.EntityPhone,
+		IncType:            req.IncType,
+		CompanyNumber:      req.CompanyNumber,
+		Website:            req.Website,
+		Turnover:           req.Turnover,
+		Description:        req.Description,
+		LocationCity:       req.LocationCity,
+		LocationCountry:    req.LocationCountry,
+		LocationAddress:    req.LocationAddress,
+		LocationRegion:     req.LocationRegion,
+		LocationPostalCode: req.LocationPostalCode,
+		Categories:         req.Categories,
+		Status:             req.Status,
+	}
+	errs = append(errs, entity.Validate()...)
+	errs = append(errs, validateTags(req.Offers)...)
+	errs = append(errs, validateTags(req.Wants)...)
+
+	return errs
+}
+
+type AdminDeleteEntity struct {
+	EntityID primitive.ObjectID
+}
+
+func NewAdminDeleteEntity(r *http.Request) (*AdminDeleteEntity, []error) {
+	entityID := mux.Vars(r)["entityID"]
+	if entityID == "" {
+		return nil, []error{errors.New("Please enter entity id.")}
+	}
+	objectID, err := primitive.ObjectIDFromHex(entityID)
+	if err != nil {
+		return nil, []error{errors.New("Please enter valid entity id.")}
+	}
+
+	return &AdminDeleteEntity{
+		EntityID: objectID,
+	}, nil
 }

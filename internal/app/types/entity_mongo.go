@@ -92,34 +92,8 @@ func (entity *Entity) Validate() []error {
 
 // Helper types
 
-type FindEntityResult struct {
+type SearchEntityResult struct {
 	Entities        []*Entity
 	NumberOfResults int
 	TotalPages      int
-}
-
-// TO BE REMOVED
-
-type EntityData struct {
-	ID                 primitive.ObjectID
-	EntityName         string
-	IncType            string
-	CompanyNumber      string
-	EntityPhone        string
-	Website            string
-	Turnover           int
-	Offers             []*TagField
-	Wants              []*TagField
-	OffersAdded        []string
-	OffersRemoved      []string
-	WantsAdded         []string
-	WantsRemoved       []string
-	Description        string
-	LocationAddress    string
-	LocationCity       string
-	LocationRegion     string
-	LocationPostalCode string
-	LocationCountry    string
-	Status             string
-	Categories         []string
 }

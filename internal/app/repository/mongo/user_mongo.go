@@ -23,6 +23,15 @@ func (u *user) Register(db *mongo.Database) {
 	u.c = db.Collection("users")
 }
 
+func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
+	user.CreatedAt = time.Now()
+	res, err := u.c.InsertOne(context.Background(), user)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	return res.InsertedID.(primitive.ObjectID), nil
+}
+
 func (u *user) FindByEmail(email string) (*types.User, error) {
 	email = strings.ToLower(email)
 	if email == "" {
@@ -47,6 +56,31 @@ func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (u *user) FindByIDs(objectIDs []primitive.ObjectID) ([]*types.User, error) {
+	var results []*types.User
+
+	pipeline := newFindByIDsPipeline(objectIDs)
+	cur, err := u.c.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	for cur.Next(context.TODO()) {
+		var elem types.User
+		err := cur.Decode(&elem)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	cur.Close(context.TODO())
+
+	return results, nil
 }
 
 func (u *user) FindByStringIDs(ids []string) ([]*types.User, error) {
@@ -77,15 +111,6 @@ func (u *user) FindByStringIDs(ids []string) ([]*types.User, error) {
 	cur.Close(context.TODO())
 
 	return results, nil
-}
-
-func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
-	user.CreatedAt = time.Now()
-	res, err := u.c.InsertOne(context.Background(), user)
-	if err != nil {
-		return primitive.ObjectID{}, err
-	}
-	return res.InsertedID.(primitive.ObjectID), nil
 }
 
 func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {

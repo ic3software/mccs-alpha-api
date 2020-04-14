@@ -18,23 +18,6 @@ type user struct{}
 
 var User = &user{}
 
-func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
-	user, err := mongo.User.FindByID(id)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func (u *user) FindByStringID(id string) (*types.User, error) {
-	objectID, _ := primitive.ObjectIDFromHex(id)
-	user, err := mongo.User.FindByID(objectID)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
 func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
 	_, err := mongo.User.FindByEmail(user.Email)
 	if err == nil {
@@ -99,6 +82,31 @@ func (u *user) Login(email string, password string) (*types.User, error) {
 	}
 
 	return user, nil
+}
+
+func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
+	user, err := mongo.User.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (u *user) FindByStringID(id string) (*types.User, error) {
+	objectID, _ := primitive.ObjectIDFromHex(id)
+	user, err := mongo.User.FindByID(objectID)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (u *user) FindByIDs(ids []primitive.ObjectID) ([]*types.User, error) {
+	users, err := mongo.User.FindByIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func (a *user) UpdateLoginInfo(id primitive.ObjectID, ip string) (*types.LoginInfo, error) {

@@ -524,6 +524,8 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 	}
 }
 
+// Admin
+
 func (handler *userHandler) adminGetUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.AdminGetUserRespond `json:"data"`
