@@ -324,8 +324,13 @@ func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *htt
 // Admin
 
 func (handler *entityHandler) adminSearchEntity() func(http.ResponseWriter, *http.Request) {
+	type meta struct {
+		NumberOfResults int `json:"numberOfResults"`
+		TotalPages      int `json:"totalPages"`
+	}
 	type respond struct {
 		Data []*types.AdminGetEntityRespond `json:"data"`
+		Meta meta                           `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminSearchEntityReqBody(r)
@@ -348,7 +353,13 @@ func (handler *entityHandler) adminSearchEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: res})
+		api.Respond(w, r, http.StatusOK, respond{
+			Data: res,
+			Meta: meta{
+				TotalPages:      searchEntityResult.TotalPages,
+				NumberOfResults: searchEntityResult.NumberOfResults,
+			},
+		})
 	}
 }
 

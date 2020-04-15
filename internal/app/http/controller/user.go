@@ -542,8 +542,13 @@ func (handler *userHandler) adminGetUser() func(http.ResponseWriter, *http.Reque
 }
 
 func (handler *userHandler) adminSearchUser() func(http.ResponseWriter, *http.Request) {
+	type meta struct {
+		NumberOfResults int `json:"numberOfResults"`
+		TotalPages      int `json:"totalPages"`
+	}
 	type respond struct {
 		Data []*types.AdminGetUserRespond `json:"data"`
+		Meta meta                         `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminSearchUserReqBody(r)
@@ -566,7 +571,13 @@ func (handler *userHandler) adminSearchUser() func(http.ResponseWriter, *http.Re
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: res})
+		api.Respond(w, r, http.StatusOK, respond{
+			Data: res,
+			Meta: meta{
+				TotalPages:      searchUserResult.TotalPages,
+				NumberOfResults: searchUserResult.NumberOfResults,
+			},
+		})
 	}
 }
 
