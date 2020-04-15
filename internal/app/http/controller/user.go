@@ -159,11 +159,13 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewSignupReqBody(r)
-		if logic.User.UserEmailExists(req.Email) {
-			errs = append(errs, errors.New("Email address is already registered."))
-		}
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		if logic.User.UserEmailExists(req.Email) {
+			api.Respond(w, r, http.StatusBadRequest, errors.New("Email address is already registered."))
 			return
 		}
 
