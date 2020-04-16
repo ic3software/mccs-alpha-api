@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -44,8 +43,6 @@ func (handler *entityHandler) RegisterRoutes(
 		public.Path("/entities/{searchEntityID}").HandlerFunc(handler.getEntity()).Methods("GET")
 		private.Path("/favorites").HandlerFunc(handler.addToFavoriteEntities()).Methods("POST")
 		private.Path("/send-email").HandlerFunc(handler.sendEmailToEntity()).Methods("POST")
-
-		private.Path("/entities/search/match-tags").HandlerFunc(handler.searhMatchTags()).Methods("GET")
 
 		adminPrivate.Path("/entities").HandlerFunc(handler.adminSearchEntity()).Methods("GET")
 		adminPrivate.Path("/entities/{entityID}").HandlerFunc(handler.adminGetEntity()).Methods("GET")
@@ -140,6 +137,8 @@ func (handler *entityHandler) getQueryingEntityStatus(entityID string) string {
 	}
 	return ""
 }
+
+// GET /entities
 
 func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
@@ -321,7 +320,7 @@ func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *htt
 	}
 }
 
-// Admin
+// GET /admin/entities
 
 func (handler *entityHandler) adminSearchEntity() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
@@ -370,10 +369,20 @@ func (handler *entityHandler) newAdminSearchEntityRespond(searchEntityResult *ty
 		if err != nil {
 			return nil, err
 		}
-		respond = append(respond, types.NewAdminGetEntityRespond(entity, users))
+		account, err := logic.Account.FindByAccountNumber(entity.AccountNumber)
+		if err != nil {
+			return nil, err
+		}
+		balanceLimit, err := logic.BalanceLimit.FindByAccountNumber(entity.AccountNumber)
+		if err != nil {
+			return nil, err
+		}
+		respond = append(respond, types.NewAdminGetEntityRespond(entity, users, account, balanceLimit))
 	}
 	return respond, nil
 }
+
+// GET /admin/entities/{entityID}
 
 func (handler *entityHandler) adminGetEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
@@ -393,16 +402,34 @@ func (handler *entityHandler) adminGetEntity() func(http.ResponseWriter, *http.R
 			return
 		}
 
-		users, err := logic.User.FindByIDs(entity.Users)
+		res, err := handler.newAdminGetEntityRespond(entity)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.adminGetEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetEntityRespond(entity, users)})
+		api.Respond(w, r, http.StatusOK, respond{Data: res})
 	}
 }
+
+func (handler *entityHandler) newAdminGetEntityRespond(entity *types.Entity) (*types.AdminGetEntityRespond, error) {
+	users, err := logic.User.FindByIDs(entity.Users)
+	if err != nil {
+		return nil, err
+	}
+	account, err := logic.Account.FindByAccountNumber(entity.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	balanceLimit, err := logic.BalanceLimit.FindByAccountNumber(entity.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return types.NewAdminGetEntityRespond(entity, users, account, balanceLimit), nil
+}
+
+// PATCH /admin/entities/{entityID}
 
 func (handler *entityHandler) adminUpdateEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
@@ -507,6 +534,8 @@ func (handler *entityHandler) updateOfferAndWants(oldEntity *types.Entity, newSt
 	}
 }
 
+// DELETE /admin/entities/{entityID}
+
 func (handler *entityHandler) adminDeleteEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.AdminGetEntityRespond `json:"data"`
@@ -525,148 +554,29 @@ func (handler *entityHandler) adminDeleteEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
-		users, err := logic.User.FindByIDs(deleted.Users)
+		res, err := handler.newAdminDeleteEntityRespond(deleted)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.adminDeleteEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetEntityRespond(deleted, users)})
+		api.Respond(w, r, http.StatusOK, respond{Data: res})
 	}
 }
 
-// TO BE REMOVED
-
-func (handler *entityHandler) searhMatchTags() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/entities/search?"+r.URL.Query().Encode(), http.StatusFound)
+func (handler *entityHandler) newAdminDeleteEntityRespond(entity *types.Entity) (*types.AdminGetEntityRespond, error) {
+	users, err := logic.User.FindByIDs(entity.Users)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func (handler *entityHandler) entityStatus() func(http.ResponseWriter, *http.Request) {
-	type response struct {
-		Status string `json:"status"`
+	account, err := logic.Account.FindByAccountNumber(entity.AccountNumber)
+	if err != nil {
+		return nil, err
 	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		var entity *types.Entity
-		var err error
-
-		q := r.URL.Query()
-
-		if q.Get("entity_id") != "" {
-			objID, err := primitive.ObjectIDFromHex(q.Get("entity_id"))
-			if err != nil {
-				l.Logger.Error("EntityHandler.entityStatus failed", zap.Error(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			entity, err = logic.Entity.FindByID(objID)
-			if err != nil {
-				l.Logger.Error("EntityHandler.entityStatus failed", zap.Error(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		} else {
-			entity, err = EntityHandler.FindByUserID(r.Header.Get("userID"))
-			if err != nil {
-				l.Logger.Error("EntityHandler.entityStatus failed", zap.Error(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		}
-
-		res := &response{Status: entity.Status}
-		js, err := json.Marshal(res)
-		if err != nil {
-			l.Logger.Error("EntityHandler.entityStatus failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
+	balanceLimit, err := logic.BalanceLimit.FindByAccountNumber(entity.AccountNumber)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func (handler *entityHandler) getEntityName() func(http.ResponseWriter, *http.Request) {
-	type response struct {
-		Name string
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-
-		user, err := logic.User.FindByEmail(q.Get("email"))
-		if err != nil {
-			l.Logger.Error("EntityHandler.getEntityName failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		entity, err := logic.Entity.FindByID(user.Entities[0])
-		if err != nil {
-			l.Logger.Error("EntityHandler.getEntityName failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		res := response{Name: entity.EntityName}
-		js, err := json.Marshal(res)
-		if err != nil {
-			l.Logger.Error("EntityHandler.getEntityName failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
-	}
-}
-
-func (handler *entityHandler) tradingMemberStatus() func(http.ResponseWriter, *http.Request) {
-	type response struct {
-		Self  bool `json:"self"`
-		Other bool `json:"other"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-
-		objID, err := primitive.ObjectIDFromHex(q.Get("entity_id"))
-		if err != nil {
-			l.Logger.Error("EntityHandler.tradingMemberStatus failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		other, err := logic.Entity.FindByID(objID)
-		if err != nil {
-			l.Logger.Error("EntityHandler.tradingMemberStatus failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		self, err := EntityHandler.FindByUserID(r.Header.Get("userID"))
-		if err != nil {
-			l.Logger.Error("EntityHandler.tradingMemberStatus failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		res := &response{}
-		if self.Status == constant.Trading.Accepted {
-			res.Self = true
-		}
-		if other.Status == constant.Trading.Accepted {
-			res.Other = true
-		}
-		js, err := json.Marshal(res)
-		if err != nil {
-			l.Logger.Error("EntityHandler.tradingMemberStatus failed", zap.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
-	}
+	return types.NewAdminGetEntityRespond(entity, users, account, balanceLimit), nil
 }

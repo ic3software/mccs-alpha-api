@@ -47,7 +47,7 @@ func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
 		return err
 	}
 
-	exceed, err := BalanceLimit.IsExceedLimit(from.ID, from.Balance-req.Amount)
+	exceed, err := BalanceLimit.IsExceedLimit(from.AccountNumber, from.Balance-req.Amount)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
 		return errors.New("Sender will exceed its credit limit." + " The maximum amount that can be sent is: " + fmt.Sprintf("%.2f", amount))
 	}
 
-	exceed, err = BalanceLimit.IsExceedLimit(to.ID, to.Balance+req.Amount)
+	exceed, err = BalanceLimit.IsExceedLimit(to.AccountNumber, to.Balance+req.Amount)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
 }
 
 func (t *transfer) maxPositiveBalanceCanBeTransferred(a *types.Account) (float64, error) {
-	maxPosBal, err := BalanceLimit.GetMaxPosBalance(a.ID)
+	maxPosBal, err := BalanceLimit.GetMaxPosBalance(a.AccountNumber)
 	if err != nil {
 		return 0, err
 	}
@@ -86,7 +86,7 @@ func (t *transfer) maxPositiveBalanceCanBeTransferred(a *types.Account) (float64
 }
 
 func (t *transfer) maxNegativeBalanceCanBeTransferred(a *types.Account) (float64, error) {
-	maxNegBal, err := BalanceLimit.GetMaxNegBalance(a.ID)
+	maxNegBal, err := BalanceLimit.GetMaxNegBalance(a.AccountNumber)
 	if err != nil {
 		return 0, err
 	}

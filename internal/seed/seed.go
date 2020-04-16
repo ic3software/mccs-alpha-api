@@ -29,15 +29,6 @@ func LoadData() {
 	json.Unmarshal(data, &entities)
 	entityData = entities
 
-	// Load balance limit data.
-	data, err = ioutil.ReadFile("internal/seed/data/balance_limits.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	balanceLimits := make([]types.BalanceLimit, 0)
-	json.Unmarshal(data, &balanceLimits)
-	balanceLimitData = balanceLimits
-
 	// Load user data.
 	data, err = ioutil.ReadFile("internal/seed/data/user.json")
 	if err != nil {
@@ -93,6 +84,11 @@ func Run() {
 		}
 		b.ID = entityID
 
+		err = PostgresSQL.UpdateBalanceLimits(accountNumber)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		err = ElasticSearch.CreateEntity(&b)
 		if err != nil {
 			log.Fatal(err)
@@ -120,12 +116,7 @@ func Run() {
 		}
 	}
 
-	err := PostgresSQL.UpdateBalanceLimits(balanceLimitData)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = MongoDB.CreateAdminUsers(adminUserData)
+	err := MongoDB.CreateAdminUsers(adminUserData)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -12,8 +12,8 @@ type balanceLimit struct{}
 var BalanceLimit = balanceLimit{}
 
 // IsExceedLimit checks whether or not the account exceeds the max positive or max negative limit.
-func (b balanceLimit) IsExceedLimit(id uint, balance float64) (bool, error) {
-	limit, err := pg.BalanceLimit.FindByAccountID(id)
+func (b balanceLimit) IsExceedLimit(accountNumber string, balance float64) (bool, error) {
+	limit, err := pg.BalanceLimit.FindByAccountNumber(accountNumber)
 	if err != nil {
 		return false, err
 	}
@@ -23,16 +23,24 @@ func (b balanceLimit) IsExceedLimit(id uint, balance float64) (bool, error) {
 	return false, nil
 }
 
-func (b balanceLimit) GetMaxPosBalance(id uint) (float64, error) {
-	balanceLimitRecord, err := pg.BalanceLimit.FindByAccountID(id)
+func (b balanceLimit) FindByAccountNumber(accountNumber string) (*types.BalanceLimit, error) {
+	record, err := pg.BalanceLimit.FindByAccountNumber(accountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+func (b balanceLimit) GetMaxPosBalance(accountNumber string) (float64, error) {
+	balanceLimitRecord, err := pg.BalanceLimit.FindByAccountNumber(accountNumber)
 	if err != nil {
 		return 0, err
 	}
 	return balanceLimitRecord.MaxPosBal, nil
 }
 
-func (b balanceLimit) GetMaxNegBalance(id uint) (float64, error) {
-	balanceLimitRecord, err := pg.BalanceLimit.FindByAccountID(id)
+func (b balanceLimit) GetMaxNegBalance(accountNumber string) (float64, error) {
+	balanceLimitRecord, err := pg.BalanceLimit.FindByAccountNumber(accountNumber)
 	if err != nil {
 		return 0, err
 	}
@@ -41,20 +49,12 @@ func (b balanceLimit) GetMaxNegBalance(id uint) (float64, error) {
 
 // TO BE REMOVE
 
-func (b balanceLimit) FindByAccountID(id uint) (*types.BalanceLimit, error) {
-	record, err := pg.BalanceLimit.FindByAccountID(id)
-	if err != nil {
-		return nil, err
-	}
-	return record, nil
-}
-
 func (b balanceLimit) FindByEntityID(id string) (*types.BalanceLimit, error) {
 	account, err := Account.FindByEntityID(id)
 	if err != nil {
 		return nil, err
 	}
-	record, err := pg.BalanceLimit.FindByAccountID(account.ID)
+	record, err := pg.BalanceLimit.FindByAccountNumber(account.AccountNumber)
 	if err != nil {
 		return nil, err
 	}

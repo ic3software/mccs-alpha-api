@@ -313,7 +313,12 @@ type AdminGetUserRespond struct {
 	Entities                      []*AdminEntityRespond `json:"entities"`
 }
 
-func NewAdminGetEntityRespond(entity *Entity, users []*User) *AdminGetEntityRespond {
+func NewAdminGetEntityRespond(
+	entity *Entity,
+	users []*User,
+	account *Account,
+	balanceLimit *BalanceLimit,
+) *AdminGetEntityRespond {
 	adminUserResponds := []*AdminUserRespond{}
 	for _, u := range users {
 		adminUserResponds = append(adminUserResponds, NewAdminUserRespond(u))
@@ -340,6 +345,9 @@ func NewAdminGetEntityRespond(entity *Entity, users []*User) *AdminGetEntityResp
 		Wants:              TagFieldToNames(entity.Wants),
 		Categories:         entity.Categories,
 		Users:              adminUserResponds,
+		Balance:            account.Balance,
+		MaxNegativeBalance: balanceLimit.MaxNegBal,
+		MaxPositiveBalance: balanceLimit.MaxPosBal,
 	}
 }
 
@@ -364,4 +372,7 @@ type AdminGetEntityRespond struct {
 	Wants              []string            `json:"wants,omitempty"`
 	Categories         []string            `json:"categories,omitempty"`
 	Users              []*AdminUserRespond `json:"users"`
+	Balance            float64             `json:"balance"`
+	MaxPositiveBalance float64             `json:"maxPositiveBalance"`
+	MaxNegativeBalance float64             `json:"maxNegativeBalance"`
 }

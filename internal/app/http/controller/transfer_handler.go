@@ -232,7 +232,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReqBody) 
 		return err
 	}
 
-	exceed, err := logic.BalanceLimit.IsExceedLimit(fromAccount.ID, fromAccount.Balance-req.Journal.Amount)
+	exceed, err := logic.BalanceLimit.IsExceedLimit(fromAccount.AccountNumber, fromAccount.Balance-req.Journal.Amount)
 	if err != nil {
 		return err
 	}
@@ -252,7 +252,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReqBody) 
 		return errors.New(reason)
 	}
 
-	exceed, err = logic.BalanceLimit.IsExceedLimit(toAccount.ID, toAccount.Balance+req.Journal.Amount)
+	exceed, err = logic.BalanceLimit.IsExceedLimit(toAccount.AccountNumber, toAccount.Balance+req.Journal.Amount)
 	if err != nil {
 		return err
 	}

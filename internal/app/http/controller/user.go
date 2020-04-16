@@ -97,12 +97,7 @@ func (handler *userHandler) IsEntityBelongsToUser(entityID, userID string) bool 
 	return false
 }
 
-func (u *userHandler) updateLoginAttempts(email string) {
-	err := logic.User.UpdateLoginAttempts(email)
-	if err != nil {
-		l.Logger.Error("[Error] UserHandler.updateLoginAttempts failed:", zap.Error(err))
-	}
-}
+// POST /login
 
 func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 	type data struct {
@@ -147,6 +142,15 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		api.Respond(w, r, http.StatusOK, respond{Data: respondData(loginInfo, token)})
 	}
 }
+
+func (u *userHandler) updateLoginAttempts(email string) {
+	err := logic.User.UpdateLoginAttempts(email)
+	if err != nil {
+		l.Logger.Error("[Error] UserHandler.updateLoginAttempts failed:", zap.Error(err))
+	}
+}
+
+// POST /signup
 
 func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 	type data struct {
@@ -232,6 +236,8 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		}})
 	}
 }
+
+// POST /logout
 
 func (handler *userHandler) logout() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {

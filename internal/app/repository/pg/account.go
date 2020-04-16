@@ -14,9 +14,9 @@ var Account = &account{}
 func (a *account) FindByID(accountID uint) (*types.Account, error) {
 	var result types.Account
 	err := db.Raw(`
-		SELECT A.id, A.balance
-		FROM accounts AS A
-		WHERE A.id = ?
+		SELECT id, account_number, balance
+		FROM accounts
+		WHERE id = ?
 		LIMIT 1
 	`, accountID).Scan(&result).Error
 	if err != nil {
@@ -28,9 +28,9 @@ func (a *account) FindByID(accountID uint) (*types.Account, error) {
 func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, error) {
 	var result types.Account
 	err := db.Raw(`
-		SELECT id, balance
+		SELECT id, account_number, balance
 		FROM accounts
-		WHERE accounts.account_number = ?
+		WHERE account_number = ?
 		LIMIT 1
 	`, accountNumber).Scan(&result).Error
 	if err != nil {
@@ -42,9 +42,9 @@ func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, err
 func (a *account) ifAccountExisted(db *gorm.DB, accountNumber string) bool {
 	var result types.Account
 	return !db.Raw(`
-		SELECT account_number
+		SELECT id, account_number, balance
 		FROM accounts
-		WHERE accounts.account_number = ?
+		WHERE account_number = ?
 		LIMIT 1
 	`, accountNumber).Scan(&result).RecordNotFound()
 }
@@ -69,7 +69,7 @@ func (a *account) Create() (*types.Account, error) {
 		tx.Rollback()
 		return nil, err
 	}
-	err = BalanceLimit.Create(tx, account.ID)
+	err = BalanceLimit.Create(tx, accountNumber)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
