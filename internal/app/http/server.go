@@ -21,12 +21,14 @@ func (a *appServer) Run(port string) {
 	r := mux.NewRouter().StrictSlash(true)
 	RegisterRoutes(r)
 
+	headersOk := handlers.AllowedHeaders([]string{"Authorization", "Content-Type"})
+
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("0.0.0.0:%s", port),
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
-		Handler:      handlers.CORS()(r),
+		Handler:      handlers.CORS(headersOk)(r),
 	}
 
 	l.Logger.Info("app is running at localhost:" + port)
