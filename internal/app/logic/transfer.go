@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/pg"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 )
@@ -14,15 +15,27 @@ type transfer struct{}
 var Transfer = &transfer{}
 
 func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransferRespond, error) {
-	transactions, err := pg.Transfer.Search(req)
+	transfers, err := pg.Journal.Search(req)
 	if err != nil {
 		return nil, err
 	}
-	return transactions, nil
+	return transfers, nil
 }
 
 func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
-	journal, err := pg.Transfer.FindJournal(transferID)
+	journal, err := pg.Journal.FindJournal(transferID)
+	if err != nil {
+		return nil, err
+	}
+	return journal, nil
+}
+
+func (t *transfer) Create(req *types.TransferReqBody) (*types.Journal, error) {
+	journal, err := pg.Journal.Create(req)
+	if err != nil {
+		return nil, err
+	}
+	err = es.Journal.Create(journal)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +43,11 @@ func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
 }
 
 func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
-	journal, err := pg.Transfer.Propose(req)
+	journal, err := pg.Journal.Propose(req)
+	if err != nil {
+		return nil, err
+	}
+	err = es.Journal.Create(journal)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +114,7 @@ func (t *transfer) maxNegativeBalanceCanBeTransferred(a *types.Account) (float64
 }
 
 func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, error) {
-	j, err := pg.Transfer.Cancel(transferID, reason)
+	j, err := pg.Journal.Cancel(transferID, reason)
 	if err != nil {
 		return nil, err
 	}
@@ -105,43 +122,19 @@ func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, err
 }
 
 func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
-	updated, err := pg.Transfer.Accept(j)
+	updated, err := pg.Journal.Accept(j)
 	if err != nil {
 		return nil, err
 	}
 	return updated, nil
 }
 
-// TO BE REMOVED
+// GET /admin/transfers/{transferID}
 
-// func (t *transfer) Find(transactionID uint) (*types.Transfer, error) {
-// 	transaction, err := pg.Transfer.Find(transactionID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return transaction, nil
-// }
-
-// func (t *transfer) FindPendings(accountID uint) ([]*types.Transfer, error) {
-// 	transactions, err := pg.Transfer.FindPendings(accountID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return transactions, nil
-// }
-
-// func (t *transfer) FindRecent(accountID uint) ([]*types.Transfer, error) {
-// 	transactions, err := pg.Transfer.FindRecent(accountID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return transactions, nil
-// }
-
-// func (t *transfer) FindInRange(accountID uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.Transfer, int, error) {
-// 	transactions, totalPages, err := pg.Transfer.FindInRange(accountID, dateFrom, dateTo, page)
-// 	if err != nil {
-// 		return nil, 0, err
-// 	}
-// 	return transactions, totalPages, nil
-// }
+func (t *transfer) AdminGetTransfer(transferID string) (*types.Journal, error) {
+	journal, err := pg.Journal.FindJournal(transferID)
+	if err != nil {
+		return nil, err
+	}
+	return journal, nil
+}

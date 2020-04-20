@@ -7,6 +7,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// GET /user
+
 func NewUserRespond(user *User) *UserRespond {
 	return &UserRespond{
 		ID:                            user.ID.Hex(),
@@ -32,6 +34,8 @@ type UserRespond struct {
 	DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
 	ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
 }
+
+// GET /user/entities
 
 func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
 	return &EntityRespond{
@@ -127,7 +131,8 @@ func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favorit
 	}
 }
 
-// SearchEntityRespond will always return IsFavorite.
+// GET /entities
+
 type SearchEntityRespond struct {
 	ID                 string   `json:"id"`
 	AccountNumber      string   `json:"accountNumber"`
@@ -150,6 +155,8 @@ type SearchEntityRespond struct {
 	IsFavorite         bool     `json:"isFavorite"`
 }
 
+// POST /transfers
+
 func NewProposeTransferRespond(journal *Journal) *ProposeTransferRespond {
 	return &ProposeTransferRespond{
 		ID:          journal.TransferID,
@@ -158,19 +165,21 @@ func NewProposeTransferRespond(journal *Journal) *ProposeTransferRespond {
 		Amount:      journal.Amount,
 		Description: journal.Description,
 		Status:      journal.Status,
+		CreatedAt:   &journal.CreatedAt,
 	}
 }
 
 type ProposeTransferRespond struct {
-	ID          string  `json:"id"`
-	From        string  `json:"from"`
-	To          string  `json:"to"`
-	Amount      float64 `json:"amount"`
-	Description string  `json:"description"`
-	Status      string  `json:"status"`
+	ID          string     `json:"id"`
+	From        string     `json:"from"`
+	To          string     `json:"to"`
+	Amount      float64    `json:"amount"`
+	Description string     `json:"description"`
+	Status      string     `json:"status"`
+	CreatedAt   *time.Time `json:"dateProposed,omitempty"`
 }
 
-type Transfer struct {
+type TransferRespond struct {
 	TransferID    string     `json:"id"`
 	Transfer      string     `json:"transfer"`
 	IsInitiator   bool       `json:"isInitiator"`
@@ -184,7 +193,7 @@ type Transfer struct {
 }
 
 type SearchTransferRespond struct {
-	Transfers       []*Transfer
+	Transfers       []*TransferRespond
 	NumberOfResults int
 	TotalPages      int
 }
@@ -312,6 +321,8 @@ type AdminGetUserRespond struct {
 	ShowTagsMatchedSinceLastLogin bool                  `json:"showTagsMatchedSinceLastLogin"`
 	Entities                      []*AdminEntityRespond `json:"entities"`
 }
+
+// GET /admin/entities, GET /admin/entities/{entityID}
 
 func NewAdminGetEntityRespond(
 	entity *Entity,

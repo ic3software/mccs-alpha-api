@@ -3,7 +3,6 @@ package controller
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"sync"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
 	"go.uber.org/zap"
 )
@@ -36,12 +34,11 @@ func (handler *categoryHandler) RegisterRoutes(
 	adminPrivate *mux.Router,
 ) {
 	handler.once.Do(func() {
-		adminPrivate.Path("/categories").HandlerFunc(handler.create()).Methods("POST")
 		public.Path("/categories").HandlerFunc(handler.search()).Methods("GET")
+
+		adminPrivate.Path("/categories").HandlerFunc(handler.create()).Methods("POST")
 		adminPrivate.Path("/categories/{id}").HandlerFunc(handler.update()).Methods("PATCH")
 		adminPrivate.Path("/categories/{id}").HandlerFunc(handler.delete()).Methods("DELETE")
-
-		adminPrivate.Path("/categories").HandlerFunc(handler.SearchCategories()).Methods("GET")
 	})
 }
 
@@ -52,33 +49,7 @@ func (handler *categoryHandler) Update(categories []string) {
 	}
 }
 
-func (handler *categoryHandler) create() func(http.ResponseWriter, *http.Request) {
-	type respond struct {
-		Data *types.AdminCategoryRespond `json:"data"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminCreateCategoryReqBody(r)
-		if len(errs) > 0 {
-			api.Respond(w, r, http.StatusBadRequest, errs)
-			return
-		}
-
-		_, err := logic.Category.FindByName(req.Name)
-		if err == nil {
-			api.Respond(w, r, http.StatusBadRequest, errors.New("Category already exists."))
-			return
-		}
-
-		created, err := logic.Category.CreateOne(req.Name)
-		if err != nil {
-			l.Logger.Error("[Error] CategoryHandler.create failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(created)})
-	}
-}
+// GET /categories
 
 func (handler *categoryHandler) search() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
@@ -119,6 +90,38 @@ func (handler *categoryHandler) search() func(http.ResponseWriter, *http.Request
 		})
 	}
 }
+
+// POST /admin/categories
+
+func (handler *categoryHandler) create() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.AdminCategoryRespond `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req, errs := types.NewAdminCreateCategoryReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		_, err := logic.Category.FindByName(req.Name)
+		if err == nil {
+			api.Respond(w, r, http.StatusBadRequest, errors.New("Category already exists."))
+			return
+		}
+
+		created, err := logic.Category.CreateOne(req.Name)
+		if err != nil {
+			l.Logger.Error("[Error] CategoryHandler.create failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(created)})
+	}
+}
+
+// PATCH /admin/categories/{id}
 
 func (handler *categoryHandler) update() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
@@ -163,6 +166,8 @@ func (handler *categoryHandler) update() func(http.ResponseWriter, *http.Request
 	}
 }
 
+// DELETE /admin/categories/{id}
+
 func (handler *categoryHandler) delete() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.AdminCategoryRespond `json:"data"`
@@ -189,58 +194,5 @@ func (handler *categoryHandler) delete() func(http.ResponseWriter, *http.Request
 		}()
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(deleted)})
-	}
-}
-
-// TO BE REMOVED
-
-func (handler *categoryHandler) SaveCategories(categories []string) error {
-	for _, category := range categories {
-		err := logic.Category.Create(category)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (handler *categoryHandler) SearchCategories() func(http.ResponseWriter, *http.Request) {
-	t := template.NewView("admin/admin-tags")
-	type formData struct {
-		Name string
-		Page int
-	}
-	type response struct {
-		FormData formData
-		Result   *types.FindCategoryResult
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		page, err := strconv.Atoi(r.URL.Query().Get("page"))
-		if err != nil {
-			l.Logger.Error("SearchCategories failed", zap.Error(err))
-			t.Error(w, r, nil, err)
-			return
-		}
-
-		f := formData{
-			Name: r.URL.Query().Get("name"),
-			Page: page,
-		}
-		res := response{FormData: f}
-
-		if f.Name == "" {
-			t.Render(w, r, res, []string{"Please enter the category name"})
-			return
-		}
-
-		findResult, err := logic.Category.FindTags(f.Name, int64(f.Page))
-		if err != nil {
-			l.Logger.Error("SearchCategories failed", zap.Error(err))
-			t.Error(w, r, res, err)
-			return
-		}
-		res.Result = findResult
-
-		t.Render(w, r, res, nil)
 	}
 }

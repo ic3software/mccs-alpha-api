@@ -199,35 +199,38 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 	}
 }
 
+// GET /entities/{entityID}
+
 func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.SearchEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		searchEntity, err := logic.Entity.FindByStringID(vars["searchEntityID"])
+		req, errs := types.NewGetEntityReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		searchEntity, err := logic.Entity.FindByStringID(req.SearchEntityID)
 		if err != nil {
 			l.Logger.Info("[INFO] EntityHandler.getEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
-
-		q := r.URL.Query()
-		queryingEntityID := q.Get("querying_entity_id")
-
-		if queryingEntityID != "" {
+		if req.QueryingEntityID != "" {
 			if r.Header.Get("userID") == "" {
 				api.Respond(w, r, http.StatusUnauthorized, api.ErrUnauthorized)
 				return
 			}
-			if !UserHandler.IsEntityBelongsToUser(queryingEntityID, r.Header.Get("userID")) {
+			if !UserHandler.IsEntityBelongsToUser(req.QueryingEntityID, r.Header.Get("userID")) {
 				api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
 				return
 			}
 		}
 
-		queryingEntityStatus := handler.getQueryingEntityStatus(queryingEntityID)
-		favoriteEntities := handler.getFavoriteEntities(queryingEntityID)
+		queryingEntityStatus := handler.getQueryingEntityStatus(req.QueryingEntityID)
+		favoriteEntities := handler.getFavoriteEntities(req.QueryingEntityID)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewSearchEntityRespond(searchEntity, queryingEntityStatus, favoriteEntities)})
 	}

@@ -10,11 +10,11 @@ import (
 	"github.com/segmentio/ksuid"
 )
 
-type transfer struct{}
+type journal struct{}
 
-var Transfer = &transfer{}
+var Journal = &journal{}
 
-func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransferRespond, error) {
+func (t *journal) Search(req *types.SearchTransferReqBody) (*types.SearchTransferRespond, error) {
 	var journals []*types.Journal
 	var numberOfResults int
 	var err error
@@ -54,7 +54,7 @@ func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransf
 	}
 
 	found := &types.SearchTransferRespond{
-		Transfers:       t.journalsToTransfers(journals, req.QueryingAccountNumber),
+		Transfers:       types.JournalsToTransfers(journals, req.QueryingAccountNumber),
 		NumberOfResults: numberOfResults,
 		TotalPages:      util.GetNumberOfPages(numberOfResults, req.PageSize),
 	}
@@ -62,40 +62,25 @@ func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransf
 	return found, nil
 }
 
-func (t *transfer) journalsToTransfers(journals []*types.Journal, queryingAccountNumber string) []*types.Transfer {
-	transfers := []*types.Transfer{}
-
-	for _, j := range journals {
-		t := &types.Transfer{
-			TransferID:  j.TransferID,
-			Description: j.Description,
-			Amount:      j.Amount,
-			CreatedAt:   &j.CreatedAt,
-			Status:      j.Status,
-		}
-		if j.InitiatedBy == queryingAccountNumber {
-			t.IsInitiator = true
-		}
-		if j.FromAccountNumber == queryingAccountNumber {
-			t.Transfer = "out"
-			t.AccountNumber = j.ToAccountNumber
-			t.EntityName = j.ToEntityName
-		} else {
-			t.Transfer = "in"
-			t.AccountNumber = j.FromAccountNumber
-			t.EntityName = j.FromEntityName
-		}
-		if j.Status == constant.Transfer.Completed {
-			t.CompletedAt = &j.UpdatedAt
-		}
-
-		transfers = append(transfers, t)
+func (t *journal) Create(req *types.TransferReqBody) (*types.Journal, error) {
+	tx := db.Begin()
+	journal, err := t.propose(tx, req)
+	if err != nil {
+		return nil, err
 	}
-
-	return transfers
+	updated, err := t.accept(tx, journal)
+	if err != nil {
+		return nil, err
+	}
+	return updated, err
 }
 
-func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
+func (t *journal) Propose(req *types.TransferReqBody) (*types.Journal, error) {
+	tx := db.Begin()
+	return t.propose(tx, req)
+}
+
+func (t *journal) propose(tx *gorm.DB, req *types.TransferReqBody) (*types.Journal, error) {
 	journalRecord := &types.Journal{
 		TransferID:        ksuid.New().String(),
 		InitiatedBy:       req.InitiatorAccountNumber,
@@ -110,15 +95,16 @@ func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
 		Type:              constant.Journal.Transfer,
 		Status:            constant.Transfer.Initiated,
 	}
-	err := db.Create(journalRecord).Error
+	err := tx.Create(journalRecord).Error
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
 	return journalRecord, nil
 }
 
-func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
+func (t *journal) FindJournal(transferID string) (*types.Journal, error) {
 	var result types.Journal
 
 	err := db.Raw(`
@@ -134,7 +120,7 @@ func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
 	return &result, nil
 }
 
-func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, error) {
+func (t *journal) Cancel(transferID string, reason string) (*types.Journal, error) {
 	err := db.Exec(`
 		UPDATE journals
 		SET status = ?, cancellation_reason = ?, updated_at = ?
@@ -157,9 +143,12 @@ func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, err
 	return &updated, nil
 }
 
-func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
+func (t *journal) Accept(j *types.Journal) (*types.Journal, error) {
 	tx := db.Begin()
+	return t.accept(tx, j)
+}
 
+func (t *journal) accept(tx *gorm.DB, j *types.Journal) (*types.Journal, error) {
 	// Create postings.
 	err := tx.Create(&types.Posting{
 		AccountNumber: j.FromAccountNumber,
@@ -220,71 +209,8 @@ func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
 
 // TO BE REMOVED
 
-// Create makes a transaction directly.
-// func (t *transfer) Create(
-// 	fromID uint,
-// 	fromEmail string,
-// 	fromEntityName string,
-
-// 	toID uint,
-// 	toEmail string,
-// 	toEntityName string,
-
-// 	amount float64,
-// 	desc string,
-// ) error {
-// 	tx := db.Begin()
-
-// 	journalRecord := &types.Journal{
-// 		TransferID:        ksuid.New().String(),
-// 		FromAccountNumber: "TODO",
-// 		FromEmail:         fromEmail,
-// 		FromEntityName:    fromEntityName,
-// 		ToAccountNumber:   "TODO",
-// 		ToEmail:           toEmail,
-// 		ToEntityName:      toEntityName,
-// 		Amount:            amount,
-// 		Description:       desc,
-// 		Type:              constant.Journal.Transfer,
-// 		Status:            constant.Transfer.Completed,
-// 	}
-// 	err := tx.Create(journalRecord).Error
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return e.Wrap(err, "pg.Transaction.Create")
-// 	}
-
-// 	journalID := journalRecord.ID
-
-// 	// Create postings.
-// 	err = tx.Create(&types.Posting{AccountNumber: fromID, JournalID: journalID, Amount: -amount}).Error
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return e.Wrap(err, "pg.Transaction.Create")
-// 	}
-// 	err = tx.Create(&types.Posting{AccountNumber: toID, JournalID: journalID, Amount: amount}).Error
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return e.Wrap(err, "pg.Transaction.Create")
-// 	}
-
-// 	// Update accounts' balance.
-// 	err = tx.Model(&types.Account{}).Where("id = ?", fromID).Update("balance", gorm.Expr("balance - ?", amount)).Error
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return e.Wrap(err, "pg.Transaction.Create")
-// 	}
-// 	err = tx.Model(&types.Account{}).Where("id = ?", toID).Update("balance", gorm.Expr("balance + ?", amount)).Error
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return e.Wrap(err, "pg.Transaction.Create")
-// 	}
-
-// 	return tx.Commit().Error
-// }
-
 // // FindPendings finds the pending transactions.
-// func (t *transfer) FindPendings(id uint) ([]*types.SearchTransferRespond, error) {
+// func (journal *transfer) FindPendings(id uint) ([]*types.SearchTransferRespond, error) {
 // 	var result []*types.SearchTransferRespond
 // 	err := db.Raw(`
 // 	SELECT
@@ -303,7 +229,7 @@ func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
 // }
 
 // // FindRecent finds the recent 3 completed transactions.
-// func (t *transfer) FindRecent(id uint) ([]*types.SearchTransferRespond, error) {
+// func (journal *transfer) FindRecent(id uint) ([]*types.SearchTransferRespond, error) {
 // 	var result []*types.SearchTransferRespond
 // 	err := db.Raw(`
 // 	SELECT J.transaction_id, J.from_email, J.to_email, J.from_entity_name, J.to_entity_name, J.description, P.amount, P.created_at
@@ -321,7 +247,7 @@ func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
 // }
 
 // // FindInRange finds the completed transactions in specific time range.
-// func (t *transfer) FindInRange(id uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.SearchTransferRespond, int, error) {
+// func (journal *transfer) FindInRange(id uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.SearchTransferRespond, int, error) {
 // 	limit := viper.GetInt("page_size")
 // 	offset := viper.GetInt("page_size") * (page - 1)
 

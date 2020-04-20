@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"sync"
@@ -32,20 +33,27 @@ func newTransferHandler() *transferHandler {
 func (handler *transferHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
+	adminPublic *mux.Router,
+	adminPrivate *mux.Router,
 ) {
 	handler.once.Do(func() {
 		private.Path("/transfers").HandlerFunc(handler.proposeTransfer()).Methods("POST")
 		private.Path("/transfers").HandlerFunc(handler.searchTransfers()).Methods("GET")
 		private.Path("/transfers/{transferID}").HandlerFunc(handler.updateTransfer()).Methods("PATCH")
+
+		adminPrivate.Path("/transfers").HandlerFunc(handler.adminCreateTransfer()).Methods("POST")
+		adminPrivate.Path("/transfers/{transferID}").HandlerFunc(handler.adminGetTransfer()).Methods("GET")
 	})
 }
+
+// POST /transfers
 
 func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.ProposeTransferRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := api.NewTransferReqBody(r)
+		req, errs := handler.newTransferReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -80,28 +88,48 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 	}
 }
 
+func (handler *transferHandler) newTransferReqBody(r *http.Request) (*types.TransferReqBody, []error) {
+	var body types.TransferUserReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&body)
+	if err != nil {
+		return nil, []error{err}
+	}
+	initiatorEntity, err := logic.Entity.FindByAccountNumber(body.InitiatorAccountNumber)
+	if err != nil {
+		return nil, []error{err}
+	}
+	receiverEntity, err := logic.Entity.FindByAccountNumber(body.ReceiverAccountNumber)
+	if err != nil {
+		return nil, []error{err}
+	}
+	return types.NewTransferReqBody(&body, initiatorEntity, receiverEntity)
+}
+
+// GET /transfers
+
 func (handler *transferHandler) searchTransfers() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
 		TotalPages      int `json:"totalPages"`
 	}
 	type respond struct {
-		Data []*types.Transfer `json:"data"`
-		Meta meta              `json:"meta"`
+		Data []*types.TransferRespond `json:"data"`
+		Meta meta                     `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, errs := api.NewSearchTransferQuery(r.URL.Query())
+		req, errs := handler.newSearchTransferQuery(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		if !UserHandler.IsEntityBelongsToUser(query.QueryingEntityID, r.Header.Get("userID")) {
+		if !UserHandler.IsEntityBelongsToUser(req.QueryingEntityID, r.Header.Get("userID")) {
 			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
 			return
 		}
 
-		found, err := logic.Transfer.Search(query)
+		found, err := logic.Transfer.Search(req)
 		if err != nil {
 			l.Logger.Error("[Error] TransferHandler.searchTransfers failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
@@ -124,12 +152,26 @@ func (handler *transferHandler) searchTransfers() func(http.ResponseWriter, *htt
 	}
 }
 
+func (handler *transferHandler) newSearchTransferQuery(r *http.Request) (*types.SearchTransferReqBody, []error) {
+	entity, err := logic.Entity.FindByStringID(r.URL.Query().Get("querying_entity_id"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	req, errs := types.NewSearchTransferQuery(r, entity)
+	if len(errs) > 0 {
+		return nil, errs
+	}
+	return req, nil
+}
+
+// PATCH /transfers
+
 func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.Transfer `json:"data"`
+		Data *types.TransferRespond `json:"data"`
 	}
-	var generateRespond = func(req *types.UpdateTransferReqBody, updated *types.Journal) *types.Transfer {
-		t := &types.Transfer{
+	var generateRespond = func(req *types.UpdateTransferReqBody, updated *types.Journal) *types.TransferRespond {
+		t := &types.TransferRespond{
 			TransferID:  req.TransferID,
 			Description: req.Journal.Description,
 			Amount:      req.Journal.Amount,
@@ -156,7 +198,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 		return t
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := api.NewUpdateTransferReqBody(r)
+		req, errs := handler.newUpdateTransferReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -201,6 +243,27 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 
 		api.Respond(w, r, http.StatusOK, respond{generateRespond(req, updated)})
 	}
+}
+
+func (handler *transferHandler) newUpdateTransferReqBody(r *http.Request) (*types.UpdateTransferReqBody, []error) {
+	transferID := mux.Vars(r)["transferID"]
+	journal, err := logic.Transfer.FindJournal(transferID)
+	if err != nil {
+		return nil, []error{err}
+	}
+	initiateEntity, err := logic.Entity.FindByAccountNumber(journal.InitiatedBy)
+	if err != nil {
+		return nil, []error{err}
+	}
+	fromEntity, err := logic.Entity.FindByAccountNumber(journal.FromAccountNumber)
+	if err != nil {
+		return nil, []error{err}
+	}
+	toEntity, err := logic.Entity.FindByAccountNumber(journal.ToAccountNumber)
+	if err != nil {
+		return nil, []error{err}
+	}
+	return types.NewUpdateTransferReqBody(r, journal, initiateEntity, fromEntity, toEntity)
 }
 
 func (handler *transferHandler) checkPermissions(req *types.UpdateTransferReqBody) error {
@@ -318,4 +381,76 @@ func (handler *transferHandler) cancelTransfer(j *types.Journal, reason string) 
 	}()
 
 	return updated, nil
+}
+
+// POST /admin/transfers
+
+func (handler *transferHandler) adminCreateTransfer() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.ProposeTransferRespond `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req, errs := handler.newAdminTransferReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		err := logic.Transfer.CheckBalance(req)
+		if err != nil {
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		journal, err := logic.Transfer.Create(req)
+		if err != nil {
+			l.Logger.Error("[Error] TransferHandler.adminCreateTransfer failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewProposeTransferRespond(journal)})
+	}
+}
+
+func (handler *transferHandler) newAdminTransferReqBody(r *http.Request) (*types.TransferReqBody, []error) {
+	var body types.TransferUserReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&body)
+	if err != nil {
+		return nil, []error{err}
+	}
+	initiatorEntity, err := logic.Entity.FindByAccountNumber(body.InitiatorAccountNumber)
+	if err != nil {
+		return nil, []error{err}
+	}
+	receiverEntity, err := logic.Entity.FindByAccountNumber(body.ReceiverAccountNumber)
+	if err != nil {
+		return nil, []error{err}
+	}
+	return types.NewTransferReqBody(&body, initiatorEntity, receiverEntity)
+}
+
+// GET /admin/transfers/{transferID}
+
+func (handler *transferHandler) adminGetTransfer() func(http.ResponseWriter, *http.Request) {
+	type respond struct {
+		Data *types.Journal `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req, errs := types.NewAdminGetTransfer(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		journal, err := logic.Transfer.AdminGetTransfer(req.TransferID)
+		if err != nil {
+			l.Logger.Error("[Error] TransferHandler.adminGetTransfer failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: journal})
+	}
 }

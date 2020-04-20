@@ -78,21 +78,3 @@ func (c *category) FindOneAndDelete(id primitive.ObjectID) (*types.Category, err
 	}
 	return deleted, nil
 }
-
-// TO BE REMOVED
-
-func (c *category) FindTags(name string, page int64) (*types.FindCategoryResult, error) {
-	result, err := mongo.Category.FindTags(name, page)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func (c *category) GetAll() ([]*types.Category, error) {
-	categories, err := mongo.Category.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	return categories, nil
-}

@@ -8,6 +8,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
+	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"go.uber.org/zap"
 )
@@ -44,7 +45,7 @@ func (handler *accountHandler) getBalance() func(http.ResponseWriter, *http.Requ
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, errs := api.NewBalanceQuery(r)
+		query, errs := types.NewBalanceQuery(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return

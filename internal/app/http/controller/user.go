@@ -392,6 +392,8 @@ func (handler *userHandler) passwordChange() func(http.ResponseWriter, *http.Req
 	}
 }
 
+// GET /user
+
 func (handler *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.UserRespond `json:"data"`
@@ -406,6 +408,8 @@ func (handler *userHandler) userProfile() func(http.ResponseWriter, *http.Reques
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
+
+// PATCH /user
 
 func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
@@ -435,6 +439,8 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
+
+// GET /user/entities
 
 func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
