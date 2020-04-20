@@ -17,6 +17,7 @@ require (
 	github.com/olivere/elastic/v7 v7.0.10
 	github.com/pkg/errors v0.9.0
 	github.com/robfig/cron v1.2.0
+	github.com/rs/cors v1.7.0
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sendgrid/rest v2.4.1+incompatible // indirect
 	github.com/sendgrid/sendgrid-go v3.5.0+incompatible
@@ -24,7 +25,6 @@ require (
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.4.0
 	github.com/tidwall/pretty v1.0.0 // indirect
-	github.com/unrolled/render v1.0.1
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.2.1

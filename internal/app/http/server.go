@@ -18,7 +18,6 @@ var AppServer = &appServer{}
 // Run will start the http server.
 func (a *appServer) Run(port string) {
 	r := mux.NewRouter().StrictSlash(true)
-	// New Implementation
 	RegisterRoutes(r)
 
 	srv := &http.Server{
