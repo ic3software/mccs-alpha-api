@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"go.uber.org/zap"
@@ -25,7 +26,7 @@ func (a *appServer) Run(port string) {
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
-		Handler:      r,
+		Handler:      handlers.CORS()(r),
 	}
 
 	l.Logger.Info("app is running at localhost:" + port)
