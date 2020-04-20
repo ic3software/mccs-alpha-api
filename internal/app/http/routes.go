@@ -12,11 +12,11 @@ func RegisterRoutes(r *mux.Router) {
 	public := r.PathPrefix("/api/v1").Subrouter()
 	public.Use(middleware.CORS(), middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser())
 	private := r.PathPrefix("/api/v1").Subrouter()
-	public.Use(middleware.CORS(), middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser(), middleware.RequireUser())
+	private.Use(middleware.CORS(), middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser(), middleware.RequireUser())
 	adminPublic := r.PathPrefix("/api/v1/admin").Subrouter()
-	public.Use(middleware.CORS(), middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser())
+	adminPublic.Use(middleware.CORS(), middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser())
 	adminPrivate := r.PathPrefix("/api/v1/admin").Subrouter()
-	public.Use(middleware.CORS(), middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser(), middleware.RequireAdmin())
+	adminPrivate.Use(middleware.CORS(), middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser(), middleware.RequireAdmin())
 
 	// Serving static files.
 	fs := http.FileServer(http.Dir("web/static"))
