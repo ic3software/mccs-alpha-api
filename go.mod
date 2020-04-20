@@ -10,6 +10,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible
+	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.3
 	github.com/jinzhu/gorm v1.9.12
 	github.com/jinzhu/now v1.1.1
@@ -24,7 +25,6 @@ require (
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.4.0
 	github.com/tidwall/pretty v1.0.0 // indirect
-	github.com/unrolled/render v1.0.1
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.2.1
