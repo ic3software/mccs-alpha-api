@@ -12,8 +12,10 @@ func CORS() mux.MiddlewareFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c := cors.New(cors.Options{
 				AllowedMethods: []string{
+					http.MethodHead,
 					http.MethodGet,
 					http.MethodPost,
+					http.MethodPut,
 					http.MethodPatch,
 					http.MethodDelete,
 				},
