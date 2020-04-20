@@ -11,7 +11,6 @@ func CORS() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c := cors.New(cors.Options{
-				AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:8080"},
 				AllowCredentials: true,
 			})
 			c.HandlerFunc(w, r)
