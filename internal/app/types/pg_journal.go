@@ -3,7 +3,6 @@ package types
 import (
 	"time"
 
-	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/jinzhu/gorm"
 )
 
@@ -32,37 +31,4 @@ type Journal struct {
 	CompletedAt time.Time
 
 	CancellationReason string `gorm:"type:varchar(510);not null;default:''"`
-}
-
-func JournalsToTransfers(journals []*Journal, queryingAccountNumber string) []*TransferRespond {
-	transfers := []*TransferRespond{}
-
-	for _, j := range journals {
-		t := &TransferRespond{
-			TransferID:  j.TransferID,
-			Description: j.Description,
-			Amount:      j.Amount,
-			CreatedAt:   &j.CreatedAt,
-			Status:      j.Status,
-		}
-		if j.InitiatedBy == queryingAccountNumber {
-			t.IsInitiator = true
-		}
-		if j.FromAccountNumber == queryingAccountNumber {
-			t.Transfer = "out"
-			t.AccountNumber = j.ToAccountNumber
-			t.EntityName = j.ToEntityName
-		} else {
-			t.Transfer = "in"
-			t.AccountNumber = j.FromAccountNumber
-			t.EntityName = j.FromEntityName
-		}
-		if j.Status == constant.Transfer.Completed {
-			t.CompletedAt = &j.UpdatedAt
-		}
-
-		transfers = append(transfers, t)
-	}
-
-	return transfers
 }

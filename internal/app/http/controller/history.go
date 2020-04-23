@@ -6,19 +6,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type adminHistoryHandler struct {
+var HistoryHandler = newHistoryHandler()
+
+type historyHandler struct {
 	once *sync.Once
 }
 
-var AdminHistoryHandler = newAdminHistoryHandler()
-
-func newAdminHistoryHandler() *adminHistoryHandler {
-	return &adminHistoryHandler{
+func newHistoryHandler() *historyHandler {
+	return &historyHandler{
 		once: new(sync.Once),
 	}
 }
 
-func (h *adminHistoryHandler) RegisterRoutes(
+func (h *historyHandler) RegisterRoutes(
 	public *mux.Router,
 	private *mux.Router,
 	adminPublic *mux.Router,

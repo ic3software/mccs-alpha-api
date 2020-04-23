@@ -23,7 +23,7 @@ func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransf
 }
 
 func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
-	journal, err := pg.Journal.FindJournal(transferID)
+	journal, err := pg.Journal.FindByID(transferID)
 	if err != nil {
 		return nil, err
 	}
@@ -113,28 +113,58 @@ func (t *transfer) maxNegativeBalanceCanBeTransferred(a *types.Account) (float64
 	return maxNegBal - math.Abs(a.Balance), nil
 }
 
-func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, error) {
-	j, err := pg.Journal.Cancel(transferID, reason)
-	if err != nil {
-		return nil, err
-	}
-	return j, nil
-}
+// PATCH /transfers/{transferID}
 
 func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
 	updated, err := pg.Journal.Accept(j)
 	if err != nil {
 		return nil, err
 	}
+	err = es.Journal.Update(updated)
+	if err != nil {
+		return nil, err
+	}
 	return updated, nil
+}
+
+// PATCH /transfers/{transferID}
+
+func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, error) {
+	canceled, err := pg.Journal.Cancel(transferID, reason)
+	if err != nil {
+		return nil, err
+	}
+	err = es.Journal.Update(canceled)
+	if err != nil {
+		return nil, err
+	}
+	return canceled, nil
 }
 
 // GET /admin/transfers/{transferID}
 
 func (t *transfer) AdminGetTransfer(transferID string) (*types.Journal, error) {
-	journal, err := pg.Journal.FindJournal(transferID)
+	journal, err := pg.Journal.FindByID(transferID)
 	if err != nil {
 		return nil, err
 	}
 	return journal, nil
+}
+
+// GET /admin/transfers
+
+func (t *transfer) AdminSearch(req *types.AdminSearchTransferReqBody) (*types.AdminSearchTransferRespond, error) {
+	result, err := es.Journal.AdminSearch(req)
+	if err != nil {
+		return nil, err
+	}
+	journals, err := pg.Journal.FindByIDs(result.IDs)
+	if err != nil {
+		return nil, err
+	}
+	return &types.AdminSearchTransferRespond{
+		Transfers:       types.NewJournalsToAdminTransfersRespond(journals),
+		NumberOfResults: result.NumberOfResults,
+		TotalPages:      result.NumberOfResults,
+	}, nil
 }

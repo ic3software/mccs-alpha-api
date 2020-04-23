@@ -84,12 +84,18 @@ func (_ *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 	return entity, nil
 }
 
-func (_ *entity) AdminFindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
-	err := es.Entity.AdminUpdate(update)
+// PATCH /admin/entities/{entityID}
+
+func (_ *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReqBody) (*types.Entity, error) {
+	err := es.Entity.AdminUpdate(req)
 	if err != nil {
 		return nil, err
 	}
-	entity, err := mongo.Entity.FindOneAndUpdate(update)
+	err = pg.BalanceLimit.AdminUpdate(req)
+	if err != nil {
+		return nil, err
+	}
+	entity, err := mongo.Entity.AdminFindOneAndUpdate(req)
 	if err != nil {
 		return nil, err
 	}

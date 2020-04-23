@@ -8,7 +8,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -259,7 +258,7 @@ func (u *user) UserEmailExists(email string) bool {
 func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	users, err := mongo.User.FindByDailyNotification()
 	if err != nil {
-		return nil, e.Wrap(err, "UserService FindByDailyNotification failed")
+		return nil, err
 	}
 	return users, nil
 }
@@ -267,7 +266,7 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
 	err := mongo.User.UpdateLastNotificationSentDate(id)
 	if err != nil {
-		return e.Wrap(err, "UserService UpdateLastNotificationSentDate failed")
+		return err
 	}
 	return nil
 }

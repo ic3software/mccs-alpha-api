@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"unicode"
@@ -512,20 +513,19 @@ func NewSearchTransferQuery(r *http.Request, entity *Entity) (*SearchTransferReq
 		Offset:                (page - 1) * pageSize,
 	}
 
-	return query, query.Validate()
+	return query, query.validate()
 }
 
 type SearchTransferReqBody struct {
-	Page             int
-	PageSize         int
-	Status           string
-	QueryingEntityID string
-
+	Page                  int
+	PageSize              int
+	Status                string
+	QueryingEntityID      string
 	QueryingAccountNumber string
 	Offset                int
 }
 
-func (req *SearchTransferReqBody) Validate() []error {
+func (req *SearchTransferReqBody) validate() []error {
 	errs := []error{}
 
 	if req.QueryingEntityID == "" {
@@ -1122,46 +1122,46 @@ func NewAdminGetEntityReqBody(r *http.Request) (*AdminGetEntity, []error) {
 
 // PATCH /admin/entities/{entityID}
 
-func NewAdminUpdateEntityReqBody(r *http.Request) (*AdminUpdateEntityReqBody, []error) {
+func NewAdminUpdateEntityReqBody(r *http.Request, originEntity *Entity) (*AdminUpdateEntityReqBody, []error) {
 	var req AdminUpdateEntityReqBody
-
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
 		return nil, []error{err}
 	}
 
-	vars := mux.Vars(r)
-	entityID, err := primitive.ObjectIDFromHex(vars["entityID"])
-	if err != nil {
-		return nil, []error{err}
-	}
-	req.EntityID = entityID
-	req.Offers, req.Wants, req.Categories = util.FormatTags(req.Offers), util.FormatTags(req.Wants), util.FormatTags(req.Categories)
+	req.OriginEntity = originEntity
+	req.Offers = util.FormatTags(req.Offers)
+	req.Wants = util.FormatTags(req.Wants)
+	req.Categories = util.FormatTags(req.Categories)
 
 	return &req, req.validate()
 }
 
 type AdminUpdateEntityReqBody struct {
-	EntityID           primitive.ObjectID `json:"entityID"`
-	ID                 string             `json:"id"`
-	Status             string             `json:"status"`
-	EntityName         string             `json:"entityName"`
-	Email              string             `json:"email"`
-	EntityPhone        string             `json:"entityPhone"`
-	IncType            string             `json:"incType"`
-	CompanyNumber      string             `json:"companyNumber"`
-	Website            string             `json:"website"`
-	Turnover           int                `json:"turnover"`
-	Description        string             `json:"description"`
-	LocationAddress    string             `json:"locationAddress"`
-	LocationCity       string             `json:"locationCity"`
-	LocationRegion     string             `json:"locationRegion"`
-	LocationPostalCode string             `json:"locationPostalCode"`
-	LocationCountry    string             `json:"locationCountry"`
-	Offers             []string           `json:"offers"`
-	Wants              []string           `json:"wants"`
-	Categories         []string           `json:"categories"`
+	OriginEntity       *Entity
+	Status             string   `json:"status"`
+	EntityName         string   `json:"entityName"`
+	Email              string   `json:"email"`
+	EntityPhone        string   `json:"entityPhone"`
+	IncType            string   `json:"incType"`
+	CompanyNumber      string   `json:"companyNumber"`
+	Website            string   `json:"website"`
+	Turnover           int      `json:"turnover"`
+	Description        string   `json:"description"`
+	LocationAddress    string   `json:"locationAddress"`
+	LocationCity       string   `json:"locationCity"`
+	LocationRegion     string   `json:"locationRegion"`
+	LocationPostalCode string   `json:"locationPostalCode"`
+	LocationCountry    string   `json:"locationCountry"`
+	Offers             []string `json:"offers"`
+	Wants              []string `json:"wants"`
+	Categories         []string `json:"categories"`
+	// Account
+	MaxPosBal *float64 `json:"max_pos_bal"`
+	MaxNegBal *float64 `json:"max_neg_bal"`
+	// Useless (Do not use it)
+	ID string `json:"id"`
 }
 
 func (req *AdminUpdateEntityReqBody) validate() []error {
@@ -1169,6 +1169,12 @@ func (req *AdminUpdateEntityReqBody) validate() []error {
 
 	if req.ID != "" {
 		errs = append(errs, errors.New("The entity ID cannot be changed."))
+	}
+	if req.MaxPosBal != nil && *req.MaxPosBal < 0 {
+		errs = append(errs, errors.New("The max positive balance should be positive."))
+	}
+	if req.MaxNegBal != nil && *req.MaxNegBal < 0 {
+		errs = append(errs, errors.New("The max negative balance should be positive."))
 	}
 
 	entity := Entity{
@@ -1232,4 +1238,59 @@ type AdminGetTransfer struct {
 func (req *AdminGetTransfer) validate() []error {
 	errs := []error{}
 	return errs
+}
+
+// GET /admin/transfers
+
+func NewAdminSearchTransferQuery(r *http.Request) (*AdminSearchTransferReqBody, []error) {
+	q := r.URL.Query()
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, []error{err}
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	dateFrom := util.ParseTime(q.Get("date_from"))
+	dateTo := util.ParseTime(q.Get("date_to"))
+
+	query := &AdminSearchTransferReqBody{
+		Page:          page,
+		PageSize:      pageSize,
+		Offset:        (page - 1) * pageSize,
+		Status:        getStatus(q.Get("status")),
+		AccountNumber: q.Get("account_number"),
+		DateFrom:      dateFrom,
+		DateTo:        dateTo,
+	}
+
+	return query, query.validate()
+}
+
+type AdminSearchTransferReqBody struct {
+	Page          int
+	PageSize      int
+	Offset        int
+	Status        []string
+	AccountNumber string
+	DateFrom      time.Time
+	DateTo        time.Time
+}
+
+func (req *AdminSearchTransferReqBody) validate() []error {
+	errs := []error{}
+	for _, s := range req.Status {
+		if s != "initiated" && s != "completed" && s != "cancelled" {
+			errs = append(errs, errors.New("Please specify valid status."))
+		}
+	}
+	return errs
+}
+
+func getStatus(input string) []string {
+	splitFn := func(c rune) bool {
+		return c == ',' || c == ' '
+	}
+	return strings.FieldsFunc(strings.ToLower(input), splitFn)
 }

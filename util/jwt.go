@@ -1,4 +1,4 @@
-package jwt
+package util
 
 import (
 	"crypto/rsa"
@@ -15,6 +15,9 @@ var j *JWT
 
 func init() {
 	global.Init()
+	if viper.GetString("env") == "seed" {
+		return
+	}
 	j = New()
 }
 

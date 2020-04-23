@@ -10,7 +10,7 @@ type JournalESRecord struct {
 	CreatedAt         time.Time `json:"createdAt,omitempty"`
 }
 
-type ESFindJournalResult struct {
+type ESSearchJournalResult struct {
 	IDs             []string
 	NumberOfResults int
 	TotalPages      int

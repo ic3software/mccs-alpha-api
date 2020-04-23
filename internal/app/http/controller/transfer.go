@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"sync"
 
@@ -38,10 +39,11 @@ func (handler *transferHandler) RegisterRoutes(
 ) {
 	handler.once.Do(func() {
 		private.Path("/transfers").HandlerFunc(handler.proposeTransfer()).Methods("POST")
-		private.Path("/transfers").HandlerFunc(handler.searchTransfers()).Methods("GET")
+		private.Path("/transfers").HandlerFunc(handler.searchTransfer()).Methods("GET")
 		private.Path("/transfers/{transferID}").HandlerFunc(handler.updateTransfer()).Methods("PATCH")
 
 		adminPrivate.Path("/transfers").HandlerFunc(handler.adminCreateTransfer()).Methods("POST")
+		adminPrivate.Path("/transfers").HandlerFunc(handler.adminSearchTransfer()).Methods("GET")
 		adminPrivate.Path("/transfers/{transferID}").HandlerFunc(handler.adminGetTransfer()).Methods("GET")
 	})
 }
@@ -93,6 +95,9 @@ func (handler *transferHandler) newTransferReqBody(r *http.Request) (*types.Tran
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&body)
 	if err != nil {
+		if err == io.EOF {
+			return nil, []error{errors.New("Please provide valid inputs.")}
+		}
 		return nil, []error{err}
 	}
 	initiatorEntity, err := logic.Entity.FindByAccountNumber(body.InitiatorAccountNumber)
@@ -108,7 +113,7 @@ func (handler *transferHandler) newTransferReqBody(r *http.Request) (*types.Tran
 
 // GET /transfers
 
-func (handler *transferHandler) searchTransfers() func(http.ResponseWriter, *http.Request) {
+func (handler *transferHandler) searchTransfer() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
 		TotalPages      int `json:"totalPages"`
@@ -136,12 +141,6 @@ func (handler *transferHandler) searchTransfers() func(http.ResponseWriter, *htt
 			return
 		}
 
-		if err != nil {
-			l.Logger.Error("[Error] EntityHandler.searchEntity failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
 		api.Respond(w, r, http.StatusOK, respond{
 			Data: found.Transfers,
 			Meta: meta{
@@ -164,7 +163,7 @@ func (handler *transferHandler) newSearchTransferQuery(r *http.Request) (*types.
 	return req, nil
 }
 
-// PATCH /transfers
+// PATCH /transfers/{transferID}
 
 func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
@@ -383,6 +382,41 @@ func (handler *transferHandler) cancelTransfer(j *types.Journal, reason string) 
 	return updated, nil
 }
 
+// GET /admin/transfers
+
+func (handler *transferHandler) adminSearchTransfer() func(http.ResponseWriter, *http.Request) {
+	type meta struct {
+		NumberOfResults int `json:"numberOfResults"`
+		TotalPages      int `json:"totalPages"`
+	}
+	type respond struct {
+		Data []*types.AdminTransferRespond `json:"data"`
+		Meta meta                          `json:"meta"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req, errs := types.NewAdminSearchTransferQuery(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		found, err := logic.Transfer.AdminSearch(req)
+		if err != nil {
+			l.Logger.Error("[Error] TransferHandler.adminSearchTransfer failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{
+			Data: found.Transfers,
+			Meta: meta{
+				TotalPages:      found.TotalPages,
+				NumberOfResults: found.NumberOfResults,
+			},
+		})
+	}
+}
+
 // POST /admin/transfers
 
 func (handler *transferHandler) adminCreateTransfer() func(http.ResponseWriter, *http.Request) {
@@ -418,6 +452,9 @@ func (handler *transferHandler) newAdminTransferReqBody(r *http.Request) (*types
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&body)
 	if err != nil {
+		if err == io.EOF {
+			return nil, []error{errors.New("Please provide valid inputs.")}
+		}
 		return nil, []error{err}
 	}
 	initiatorEntity, err := logic.Entity.FindByAccountNumber(body.InitiatorAccountNumber)
@@ -435,7 +472,7 @@ func (handler *transferHandler) newAdminTransferReqBody(r *http.Request) (*types
 
 func (handler *transferHandler) adminGetTransfer() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.Journal `json:"data"`
+		Data *types.AdminTransferRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminGetTransfer(r)
@@ -451,6 +488,6 @@ func (handler *transferHandler) adminGetTransfer() func(http.ResponseWriter, *ht
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: journal})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewJournalToAdminTransferRespond(journal)})
 	}
 }

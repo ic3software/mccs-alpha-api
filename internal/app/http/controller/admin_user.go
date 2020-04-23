@@ -14,7 +14,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/cookie"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
@@ -94,7 +93,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 			l.Logger.Error("[Error] AdminUser.UpdateLoginInfo failed:", zap.Error(err))
 		}
 
-		token, err := jwt.GenerateToken(user.ID.Hex(), true)
+		token, err := util.GenerateToken(user.ID.Hex(), true)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: respondData(loginInfo, token)})
 	}

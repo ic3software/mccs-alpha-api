@@ -65,16 +65,20 @@ func (es *entity) Update(update *types.Entity) error {
 	return nil
 }
 
-func (es *entity) AdminUpdate(update *types.Entity) error {
+// PATCH /admin/entities/{entityID}
+
+func (es *entity) AdminUpdate(req *types.AdminUpdateEntityReqBody) error {
 	doc := types.EntityESRecord{
-		EntityName:      update.EntityName,
-		LocationCountry: update.LocationCity,
-		LocationCity:    update.LocationCountry,
-		Status:          update.Status,
+		EntityName:      req.EntityName,
+		LocationCountry: req.LocationCity,
+		LocationCity:    req.LocationCountry,
+		Status:          req.Status,
+		MaxNegBal:       req.MaxNegBal,
+		MaxPosBal:       req.MaxPosBal,
 	}
 	_, err := es.c.Update().
 		Index(es.index).
-		Id(update.ID.Hex()).
+		Id(req.OriginEntity.ID.Hex()).
 		Doc(doc).
 		Do(context.Background())
 	if err != nil {
@@ -157,7 +161,7 @@ type byNameAndAddress struct {
 	LocationCity    string
 }
 
-func seachbyNameAndAddress(q *elastic.BoolQuery, req *byNameAndAddress) *elastic.BoolQuery {
+func seachbyNameAndAddress(q *elastic.BoolQuery, req *byNameAndAddress) {
 	if req.EntityName != "" {
 		q.Must(newFuzzyWildcardQuery("entityName", req.EntityName))
 	}
@@ -167,7 +171,6 @@ func seachbyNameAndAddress(q *elastic.BoolQuery, req *byNameAndAddress) *elastic
 	if req.LocationCity != "" {
 		q.Must(newFuzzyWildcardQuery("locationCity", req.LocationCity))
 	}
-	return q
 }
 
 type byTag struct {
@@ -176,7 +179,7 @@ type byTag struct {
 	TaggedSince time.Time
 }
 
-func seachByTags(q *elastic.BoolQuery, query *byTag) *elastic.BoolQuery {
+func seachByTags(q *elastic.BoolQuery, query *byTag) {
 	// "Tag Added After" will associate with "tags".
 	if len(query.Offers) != 0 {
 		qq := elastic.NewBoolQuery()
@@ -202,10 +205,9 @@ func seachByTags(q *elastic.BoolQuery, query *byTag) *elastic.BoolQuery {
 		// Must match one of the "Should" queries.
 		q.Must(qq)
 	}
-	return q
 }
 
-func (es *entity) Search(req *types.SearchEntityReqBody) (*types.ESFindEntityResult, error) {
+func (es *entity) Search(req *types.SearchEntityReqBody) (*types.ESSearchEntityResult, error) {
 	var ids []string
 
 	q := elastic.NewBoolQuery()
@@ -253,14 +255,14 @@ func (es *entity) Search(req *types.SearchEntityReqBody) (*types.ESFindEntityRes
 	numberOfResults := int(res.Hits.TotalHits.Value)
 	totalPages := util.GetNumberOfPages(numberOfResults, req.PageSize)
 
-	return &types.ESFindEntityResult{
+	return &types.ESSearchEntityResult{
 		IDs:             ids,
 		NumberOfResults: int(numberOfResults),
 		TotalPages:      totalPages,
 	}, nil
 }
 
-func (es *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.ESFindEntityResult, error) {
+func (es *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.ESSearchEntityResult, error) {
 	var ids []string
 
 	q := elastic.NewBoolQuery()
@@ -304,7 +306,7 @@ func (es *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.ESFin
 	numberOfResults := int(res.Hits.TotalHits.Value)
 	totalPages := util.GetNumberOfPages(numberOfResults, req.PageSize)
 
-	return &types.ESFindEntityResult{
+	return &types.ESSearchEntityResult{
 		IDs:             ids,
 		NumberOfResults: int(numberOfResults),
 		TotalPages:      totalPages,
@@ -453,22 +455,22 @@ func (es *entity) Delete(id string) error {
 	return nil
 }
 
-// TO BE REMOVED
+// // TO BE REMOVED
 
-func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
-	doc := map[string]interface{}{
-		"entityName":      data.EntityName,
-		"locationCity":    data.LocationCity,
-		"locationCountry": data.LocationCountry,
-		"status":          constant.Trading.Pending,
-	}
-	_, err := es.c.Update().
-		Index(es.index).
-		Id(id.Hex()).
-		Doc(doc).
-		Do(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
+// 	doc := map[string]interface{}{
+// 		"entityName":      data.EntityName,
+// 		"locationCity":    data.LocationCity,
+// 		"locationCountry": data.LocationCountry,
+// 		"status":          constant.Trading.Pending,
+// 	}
+// 	_, err := es.c.Update().
+// 		Index(es.index).
+// 		Id(id.Hex()).
+// 		Doc(doc).
+// 		Do(context.Background())
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }

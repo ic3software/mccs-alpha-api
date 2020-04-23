@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -179,6 +180,41 @@ type ProposeTransferRespond struct {
 	CreatedAt   *time.Time `json:"dateProposed,omitempty"`
 }
 
+// GET /transfers
+
+func NewJournalsToTransfersRespond(journals []*Journal, queryingAccountNumber string) []*TransferRespond {
+	transfers := []*TransferRespond{}
+
+	for _, j := range journals {
+		t := &TransferRespond{
+			TransferID:  j.TransferID,
+			Description: j.Description,
+			Amount:      j.Amount,
+			CreatedAt:   &j.CreatedAt,
+			Status:      j.Status,
+		}
+		if j.InitiatedBy == queryingAccountNumber {
+			t.IsInitiator = true
+		}
+		if j.FromAccountNumber == queryingAccountNumber {
+			t.Transfer = "out"
+			t.AccountNumber = j.ToAccountNumber
+			t.EntityName = j.ToEntityName
+		} else {
+			t.Transfer = "in"
+			t.AccountNumber = j.FromAccountNumber
+			t.EntityName = j.FromEntityName
+		}
+		if j.Status == constant.Transfer.Completed {
+			t.CompletedAt = &j.UpdatedAt
+		}
+
+		transfers = append(transfers, t)
+	}
+
+	return transfers
+}
+
 type TransferRespond struct {
 	TransferID    string     `json:"id"`
 	Transfer      string     `json:"transfer"`
@@ -197,8 +233,6 @@ type SearchTransferRespond struct {
 	NumberOfResults int
 	TotalPages      int
 }
-
-// Admin
 
 func NewAdminEntityRespond(entity *Entity) *AdminEntityRespond {
 	return &AdminEntityRespond{
@@ -322,7 +356,8 @@ type AdminGetUserRespond struct {
 	Entities                      []*AdminEntityRespond `json:"entities"`
 }
 
-// GET /admin/entities, GET /admin/entities/{entityID}
+// GET /admin/entities
+// GET /admin/entities/{entityID}
 
 func NewAdminGetEntityRespond(
 	entity *Entity,
@@ -386,4 +421,131 @@ type AdminGetEntityRespond struct {
 	Balance            float64             `json:"balance"`
 	MaxPositiveBalance float64             `json:"maxPositiveBalance"`
 	MaxNegativeBalance float64             `json:"maxNegativeBalance"`
+}
+
+// PATCH /admin/entities/{entityID}
+
+func NewAdminUpdateEntityRespond(req *AdminUpdateEntityReqBody, entity *Entity) *AdminUpdateEntityRespond {
+	respond := &AdminUpdateEntityRespond{
+		ID:                 entity.ID.Hex(),
+		AccountNumber:      entity.AccountNumber,
+		EntityName:         entity.EntityName,
+		Email:              entity.Email,
+		EntityPhone:        entity.EntityPhone,
+		IncType:            entity.IncType,
+		CompanyNumber:      entity.CompanyNumber,
+		Website:            entity.Website,
+		Turnover:           entity.Turnover,
+		Description:        entity.Description,
+		LocationAddress:    entity.LocationAddress,
+		LocationCity:       entity.LocationCity,
+		LocationRegion:     entity.LocationRegion,
+		LocationPostalCode: entity.LocationPostalCode,
+		LocationCountry:    entity.LocationCountry,
+		Status:             entity.Status,
+		Offers:             TagFieldToNames(entity.Offers),
+		Wants:              TagFieldToNames(entity.Wants),
+		Categories:         entity.Categories,
+		MaxPosBal:          req.MaxPosBal,
+		MaxNegBal:          req.MaxNegBal,
+	}
+	if len(req.Offers) != 0 {
+		respond.Offers = req.Offers
+	}
+	if len(req.Wants) != 0 {
+		respond.Wants = req.Wants
+	}
+	return respond
+}
+
+type AdminUpdateEntityRespond struct {
+	ID                 string   `json:"id"`
+	AccountNumber      string   `json:"accountNumber"`
+	EntityName         string   `json:"entityName"`
+	Email              string   `json:"email,omitempty"`
+	EntityPhone        string   `json:"entityPhone"`
+	IncType            string   `json:"incType"`
+	CompanyNumber      string   `json:"companyNumber"`
+	Website            string   `json:"website"`
+	Turnover           int      `json:"turnover"`
+	Description        string   `json:"description"`
+	LocationAddress    string   `json:"locationAddress"`
+	LocationCity       string   `json:"locationCity"`
+	LocationRegion     string   `json:"locationRegion"`
+	LocationPostalCode string   `json:"locationPostalCode"`
+	LocationCountry    string   `json:"locationCountry"`
+	Status             string   `json:"status"`
+	Offers             []string `json:"offers,omitempty"`
+	Wants              []string `json:"wants,omitempty"`
+	Categories         []string `json:"categories,omitempty"`
+	MaxPosBal          *float64 `json:"max_pos_bal"`
+	MaxNegBal          *float64 `json:"max_neg_bal"`
+}
+
+// admin/transfer
+
+type AdminTransferRespond struct {
+	TransferID        string     `json:"id"`
+	FromAccountNumber string     `json:"fromAccountNumber"`
+	FromEntityName    string     `json:"fromEntityName"`
+	ToAccountNumber   string     `json:"toAccountNumber"`
+	ToEntityName      string     `json:"toEntityName"`
+	Amount            float64    `json:"amount"`
+	Description       string     `json:"description"`
+	Status            string     `json:"status"`
+	CreatedAt         *time.Time `json:"dateProposed,omitempty"`
+	CompletedAt       *time.Time `json:"dateCompleted,omitempty"`
+}
+
+// GET /admin/transfer
+
+func NewJournalsToAdminTransfersRespond(journals []*Journal) []*AdminTransferRespond {
+	adminTransferRespond := []*AdminTransferRespond{}
+
+	for _, j := range journals {
+		t := &AdminTransferRespond{
+			TransferID:        j.TransferID,
+			FromAccountNumber: j.FromAccountNumber,
+			FromEntityName:    j.FromEntityName,
+			ToAccountNumber:   j.ToAccountNumber,
+			ToEntityName:      j.ToEntityName,
+			Amount:            j.Amount,
+			Description:       j.Description,
+			Status:            j.Status,
+			CreatedAt:         &j.CreatedAt,
+		}
+		if j.Status == constant.Transfer.Completed {
+			t.CompletedAt = &j.UpdatedAt
+		}
+
+		adminTransferRespond = append(adminTransferRespond, t)
+	}
+
+	return adminTransferRespond
+}
+
+type AdminSearchTransferRespond struct {
+	Transfers       []*AdminTransferRespond
+	NumberOfResults int
+	TotalPages      int
+}
+
+// GET /admin/transfers/{transferID}
+
+func NewJournalToAdminTransferRespond(j *Journal) *AdminTransferRespond {
+	res := &AdminTransferRespond{
+		TransferID:        j.TransferID,
+		FromAccountNumber: j.FromAccountNumber,
+		FromEntityName:    j.FromEntityName,
+		ToAccountNumber:   j.ToAccountNumber,
+		ToEntityName:      j.ToEntityName,
+		Amount:            j.Amount,
+		Description:       j.Description,
+		Status:            j.Status,
+		CreatedAt:         &j.CreatedAt,
+	}
+	if j.Status == constant.Transfer.Completed {
+		res.CompletedAt = &j.UpdatedAt
+	}
+	return res
 }

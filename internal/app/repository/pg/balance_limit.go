@@ -2,19 +2,17 @@ package pg
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
 )
 
+var BalanceLimit = &balanceLimit{}
+
 type balanceLimit struct{}
 
-var BalanceLimit = balanceLimit{}
-
-func (b balanceLimit) Create(tx *gorm.DB, accountNumber string) error {
+func (b *balanceLimit) Create(tx *gorm.DB, accountNumber string) error {
 	balance := &types.BalanceLimit{
 		AccountNumber: accountNumber,
 		MaxNegBal:     viper.GetFloat64("transaction.maxNegBal"),
@@ -27,7 +25,7 @@ func (b balanceLimit) Create(tx *gorm.DB, accountNumber string) error {
 	return nil
 }
 
-func (b balanceLimit) FindByAccountNumber(accountNumber string) (*types.BalanceLimit, error) {
+func (b *balanceLimit) FindByAccountNumber(accountNumber string) (*types.BalanceLimit, error) {
 	var result types.BalanceLimit
 
 	err := db.Raw(`
@@ -44,24 +42,19 @@ func (b balanceLimit) FindByAccountNumber(accountNumber string) (*types.BalanceL
 	return &result, nil
 }
 
-// TO BE REMOVED
+// PATCH /admin/entities/{entityID}
 
-func (b balanceLimit) Update(id uint, maxPosBal float64, maxNegBal float64) error {
-	if math.Abs(maxNegBal) == 0 {
-		maxNegBal = 0
-	} else {
-		maxNegBal = math.Abs(maxNegBal)
+func (b *balanceLimit) AdminUpdate(req *types.AdminUpdateEntityReqBody) error {
+	update := map[string]interface{}{}
+	if req.MaxPosBal != nil {
+		update["max_pos_bal"] = *req.MaxPosBal
 	}
-
-	err := db.
-		Model(&types.BalanceLimit{}).
-		Where("account_id = ?", id).
-		Updates(map[string]interface{}{
-			"max_pos_bal": math.Abs(maxPosBal),
-			"max_neg_bal": maxNegBal,
-		}).Error
+	if req.MaxNegBal != nil {
+		update["max_neg_bal"] = *req.MaxNegBal
+	}
+	err := db.Table("balance_limits").Where("account_number = ?", req.OriginEntity.AccountNumber).Updates(update).Error
 	if err != nil {
-		return e.Wrap(err, "pg.BalanceLimit.Update failed")
+		return err
 	}
 	return nil
 }

@@ -46,25 +46,3 @@ func (b balanceLimit) GetMaxNegBalance(accountNumber string) (float64, error) {
 	}
 	return math.Abs(balanceLimitRecord.MaxNegBal), nil
 }
-
-// TO BE REMOVE
-
-func (b balanceLimit) FindByEntityID(id string) (*types.BalanceLimit, error) {
-	account, err := Account.FindByEntityID(id)
-	if err != nil {
-		return nil, err
-	}
-	record, err := pg.BalanceLimit.FindByAccountNumber(account.AccountNumber)
-	if err != nil {
-		return nil, err
-	}
-	return record, nil
-}
-
-func (b balanceLimit) Update(id uint, maxPosBal float64, maxNegBal float64) error {
-	err := pg.BalanceLimit.Update(id, maxPosBal, maxNegBal)
-	if err != nil {
-		return err
-	}
-	return nil
-}

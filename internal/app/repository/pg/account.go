@@ -3,7 +3,6 @@ package pg
 import (
 	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/jinzhu/gorm"
 )
 
@@ -76,15 +75,4 @@ func (a *account) Create() (*types.Account, error) {
 	}
 
 	return &result, tx.Commit().Error
-}
-
-// TO BE REMOVED
-
-func (a *account) FindByEntityID(entityID string) (*types.Account, error) {
-	account := new(types.Account)
-	err := db.Where("entity_id = ?", entityID).First(account).Error
-	if err != nil {
-		return nil, e.New(e.UserNotFound, "user not found")
-	}
-	return account, nil
 }

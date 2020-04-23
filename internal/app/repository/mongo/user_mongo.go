@@ -289,25 +289,6 @@ func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
 	return &user, nil
 }
 
-func (u *user) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"firstName": data.FirstName,
-		"lastName":  data.LastName,
-		"telephone": data.Telephone,
-		"updatedAt": time.Now(),
-	}}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return e.Wrap(err, "UserMongo UpdateTradingInfo failed")
-	}
-	return nil
-}
-
 func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	filter := bson.M{
 		"dailyNotification": true,
@@ -324,7 +305,7 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	findOptions.SetProjection(projection)
 	cur, err := u.c.Find(context.TODO(), filter, findOptions)
 	if err != nil {
-		return nil, e.Wrap(err, "UserMongo FindByDailyNotification failed")
+		return nil, err
 	}
 
 	var users []*types.User
@@ -332,12 +313,12 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 		var elem types.User
 		err := cur.Decode(&elem)
 		if err != nil {
-			return nil, e.Wrap(err, "UserMongo FindByDailyNotification failed")
+			return nil, err
 		}
 		users = append(users, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		return nil, e.Wrap(err, "UserMongo FindByDailyNotification failed")
+		return nil, err
 	}
 	cur.Close(context.TODO())
 
@@ -394,7 +375,7 @@ func (u *user) GetLoginInfo(id primitive.ObjectID) (*types.LoginInfo, error) {
 	findOneOptions.SetProjection(projection)
 	err := u.c.FindOne(context.Background(), filter, findOneOptions).Decode(&loginInfo)
 	if err != nil {
-		return nil, e.Wrap(err, "UserMongo GetLoginInfo failed")
+		return nil, err
 	}
 	return loginInfo, nil
 }
@@ -411,7 +392,7 @@ func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "UserMongo UpdateLastNotificationSentDate failed")
+		return err
 	}
 	return nil
 }

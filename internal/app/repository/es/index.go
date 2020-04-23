@@ -106,13 +106,7 @@ var indexMappings = map[string]string{
 					}
 				},
 				"status": {
-					"type": "text",
-					"fields": {
-						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
-						}
-					}
+					"type": "keyword"
 				},
 				"offers": {
 					"type" : "nested",
@@ -149,6 +143,18 @@ var indexMappings = map[string]string{
 							}
 						}
 					}
+				},
+				"accountNumber": {
+					"type": "keyword"
+				},
+				"balance": {
+					"type" : "float"
+				},
+				"maxNegBal": {
+					"type" : "float"
+				},
+				"maxPosBal": {
+					"type" : "float"
 				}
 			}
 		}
@@ -253,6 +259,9 @@ var indexMappings = map[string]string{
 					"type": "keyword"
 				},
 				"toAccountNumber": {
+					"type": "keyword"
+				},
+				"status": {
 					"type": "keyword"
 				},
 				"createdAt": {

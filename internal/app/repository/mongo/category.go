@@ -178,26 +178,26 @@ func (c *category) FindTags(name string, page int64) (*types.FindCategoryResult,
 
 	cur, err := c.c.Find(context.TODO(), filter, findOptions)
 	if err != nil {
-		return nil, e.Wrap(err, "CategoryMongo FindTags failed")
+		return nil, err
 	}
 
 	for cur.Next(context.TODO()) {
 		var elem types.Category
 		err := cur.Decode(&elem)
 		if err != nil {
-			return nil, e.Wrap(err, "CategoryMongo FindTags failed")
+			return nil, err
 		}
 		results = append(results, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		return nil, e.Wrap(err, "CategoryMongo FindTags failed")
+		return nil, err
 	}
 	cur.Close(context.TODO())
 
 	// Calculate the total page.
 	totalCount, err := c.c.CountDocuments(context.TODO(), filter)
 	if err != nil {
-		return nil, e.Wrap(err, "CategoryMongo FindTags failed")
+		return nil, err
 	}
 	totalPages := util.GetNumberOfPages(int(totalCount), viper.GetInt("page_size"))
 
@@ -217,19 +217,19 @@ func (c *category) GetAll() ([]*types.Category, error) {
 
 	cur, err := c.c.Find(context.TODO(), filter)
 	if err != nil {
-		return nil, e.Wrap(err, "CategoryMongo GetAll failed")
+		return nil, err
 	}
 
 	for cur.Next(context.TODO()) {
 		var elem types.Category
 		err := cur.Decode(&elem)
 		if err != nil {
-			return nil, e.Wrap(err, "CategoryMongo GetAll failed")
+			return nil, err
 		}
 		results = append(results, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		return nil, e.Wrap(err, "CategoryMongo GetAll failed")
+		return nil, err
 	}
 	cur.Close(context.TODO())
 

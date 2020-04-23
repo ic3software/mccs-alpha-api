@@ -43,16 +43,6 @@ func (d Error) Message() string {
 	return Msg[InternalServerError]
 }
 
-func Wrap(err error, message string) error {
-	if v, ok := err.(Error); ok {
-		return Error{
-			Code:      v.Code,
-			SystemErr: errors.Wrap(v.SystemErr, message),
-		}
-	}
-	return errors.Wrap(err, message)
-}
-
 func IsPasswordInvalid(err error) bool {
 	if v, ok := err.(Error); ok {
 		return v.Code == PasswordIncorrect

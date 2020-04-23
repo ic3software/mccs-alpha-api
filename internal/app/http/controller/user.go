@@ -13,9 +13,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/cookie"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
@@ -74,11 +72,11 @@ func (handler *userHandler) FindByID(id string) (*types.User, error) {
 func (handler *userHandler) FindByEntityID(id string) (*types.User, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, e.Wrap(err, "controller.User.FindByEntityID failed")
+		return nil, err
 	}
 	user, err := logic.User.FindByEntityID(objID)
 	if err != nil {
-		return nil, e.Wrap(err, "controller.User.FindByEntityID failed")
+		return nil, err
 	}
 	return user, nil
 }
@@ -137,7 +135,7 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 			l.Logger.Error("[Error] AdminUser.UpdateLoginInfo failed:", zap.Error(err))
 		}
 
-		token, err := jwt.GenerateToken(user.ID.Hex(), false)
+		token, err := util.GenerateToken(user.ID.Hex(), false)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: respondData(loginInfo, token)})
 	}
@@ -222,7 +220,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		token, err := jwt.GenerateToken(userID.Hex(), false)
+		token, err := util.GenerateToken(userID.Hex(), false)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
