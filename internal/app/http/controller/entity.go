@@ -43,6 +43,7 @@ func (handler *entityHandler) RegisterRoutes(
 		public.Path("/entities/{searchEntityID}").HandlerFunc(handler.getEntity()).Methods("GET")
 		private.Path("/favorites").HandlerFunc(handler.addToFavoriteEntities()).Methods("POST")
 		private.Path("/send-email").HandlerFunc(handler.sendEmailToEntity()).Methods("POST")
+		private.Path("/balance").HandlerFunc(handler.getBalance()).Methods("GET")
 
 		adminPrivate.Path("/entities").HandlerFunc(handler.adminSearchEntity()).Methods("GET")
 		adminPrivate.Path("/entities/{entityID}").HandlerFunc(handler.adminGetEntity()).Methods("GET")
@@ -320,6 +321,42 @@ func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *htt
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// GET /balance
+
+func (handler *entityHandler) getBalance() func(http.ResponseWriter, *http.Request) {
+	type data struct {
+		Unit    string  `json:"unit"`
+		Balance float64 `json:"balance"`
+	}
+	type respond struct {
+		Data data `json:"data"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		query, errs := types.NewBalanceQuery(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
+
+		if !UserHandler.IsEntityBelongsToUser(query.QueryingEntityID, r.Header.Get("userID")) {
+			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
+			return
+		}
+
+		account, err := logic.Account.FindByEntityID(query.QueryingEntityID)
+		if err != nil {
+			l.Logger.Error("[Error] EntityHandler.getBalance failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: data{
+			Unit:    constant.Unit.UK,
+			Balance: account.Balance,
+		}})
 	}
 }
 

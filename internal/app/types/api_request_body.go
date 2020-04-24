@@ -737,6 +737,8 @@ func (query *SearchCategoryReqBody) Validate() []error {
 	return errs
 }
 
+// GET /balance
+
 func NewBalanceQuery(r *http.Request) (*BalanceReqBody, []error) {
 	req := BalanceReqBody{
 		QueryingEntityID: r.URL.Query().Get("querying_entity_id"),

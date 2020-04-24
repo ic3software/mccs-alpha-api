@@ -25,6 +25,8 @@ func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, err
 	return account, nil
 }
 
+// GET /balance
+
 func (a *account) FindByEntityID(entityID string) (*types.Account, error) {
 	entity, err := Entity.FindByStringID(entityID)
 	if err != nil {
