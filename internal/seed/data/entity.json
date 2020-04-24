@@ -211,13 +211,13 @@
     {
         "entityName": "AA",
         "email": "api-test-user06@ic3.dev",
-        "status": "tradingRejected",
+        "status": "rejected",
         "createdAt": "2020-02-28T17:12:30.849Z"
     },
     {
         "entityName": "DD",
         "email": "api-test-user07@ic3.dev",
-        "status": "tradingPending",
+        "status": "pending",
         "createdAt": "2020-02-29T17:12:30.849Z"
     },
     {
