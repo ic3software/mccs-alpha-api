@@ -168,3 +168,13 @@ func (t *transfer) AdminSearch(req *types.AdminSearchTransferReqBody) (*types.Ad
 		TotalPages:      result.NumberOfResults,
 	}, nil
 }
+
+// GET /admin/entities/{entityID}
+
+func (t *transfer) AdminGetPendingTransfers(accountNumber string) ([]*types.AdminTransferRespond, error) {
+	transfers, err := pg.Journal.AdminGetPendingTransfers(accountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return transfers, nil
+}

@@ -48,23 +48,6 @@ func (t *journal) propose(tx *gorm.DB, req *types.TransferReqBody) (*types.Journ
 	return journalRecord, nil
 }
 
-// POST /admin/transfers
-
-func (t *journal) Create(req *types.TransferReqBody) (*types.Journal, error) {
-	tx := db.Begin()
-	journal, err := t.propose(tx, req)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-	updated, err := t.accept(tx, journal)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-	return updated, tx.Commit().Error
-}
-
 // GET /transfers
 
 func (t *journal) Search(req *types.SearchTransferReqBody) (*types.SearchTransferRespond, error) {
@@ -129,19 +112,6 @@ func (t *journal) FindByID(transferID string) (*types.Journal, error) {
 	}
 
 	return &result, nil
-}
-
-// GET /admin/transfers
-
-func (t *journal) FindByIDs(transferIDs []string) ([]*types.Journal, error) {
-	var journals []*types.Journal
-
-	err := db.Where("transfer_id IN (?)", transferIDs).Find(&journals).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return journals, nil
 }
 
 // PATCH /transfers
@@ -232,4 +202,56 @@ func (t *journal) accept(tx *gorm.DB, j *types.Journal) (*types.Journal, error) 
 	}
 
 	return &updated, nil
+}
+
+// POST /admin/transfers
+
+func (t *journal) Create(req *types.TransferReqBody) (*types.Journal, error) {
+	tx := db.Begin()
+	journal, err := t.propose(tx, req)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	updated, err := t.accept(tx, journal)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	return updated, tx.Commit().Error
+}
+
+// GET /admin/transfers
+
+func (t *journal) FindByIDs(transferIDs []string) ([]*types.Journal, error) {
+	var journals []*types.Journal
+
+	err := db.Where("transfer_id IN (?)", transferIDs).Find(&journals).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return journals, nil
+}
+
+// GET /admin/entities/{entityID}
+
+func (t *journal) AdminGetPendingTransfers(accountNumber string) ([]*types.AdminTransferRespond, error) {
+	var journals []*types.Journal
+
+	searchSQL := `
+		SELECT *
+		FROM journals
+		WHERE (from_account_number = ? OR to_account_number = ?) AND status = ? ORDER BY created_at
+	`
+	err := db.Raw(searchSQL,
+		accountNumber,
+		accountNumber,
+		constant.Transfer.Initiated,
+	).Scan(&journals).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return types.NewJournalsToAdminTransfersRespond(journals), nil
 }

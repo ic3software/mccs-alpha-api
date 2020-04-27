@@ -357,6 +357,71 @@ type AdminGetUserRespond struct {
 }
 
 // GET /admin/entities
+
+func NewAdminSearchEntityRespond(
+	entity *Entity,
+	users []*User,
+	account *Account,
+	balanceLimit *BalanceLimit,
+) *AdminSearchEntityRespond {
+	adminUserResponds := []*AdminUserRespond{}
+	for _, u := range users {
+		adminUserResponds = append(adminUserResponds, NewAdminUserRespond(u))
+	}
+
+	return &AdminSearchEntityRespond{
+		ID:                 entity.ID.Hex(),
+		AccountNumber:      entity.AccountNumber,
+		EntityName:         entity.EntityName,
+		Email:              entity.Email,
+		EntityPhone:        entity.EntityPhone,
+		IncType:            entity.IncType,
+		CompanyNumber:      entity.CompanyNumber,
+		Website:            entity.Website,
+		Turnover:           entity.Turnover,
+		Description:        entity.Description,
+		LocationAddress:    entity.LocationAddress,
+		LocationCity:       entity.LocationCity,
+		LocationRegion:     entity.LocationRegion,
+		LocationPostalCode: entity.LocationPostalCode,
+		LocationCountry:    entity.LocationCountry,
+		Status:             entity.Status,
+		Offers:             TagFieldToNames(entity.Offers),
+		Wants:              TagFieldToNames(entity.Wants),
+		Categories:         entity.Categories,
+		Users:              adminUserResponds,
+		Balance:            account.Balance,
+		MaxNegativeBalance: balanceLimit.MaxNegBal,
+		MaxPositiveBalance: balanceLimit.MaxPosBal,
+	}
+}
+
+type AdminSearchEntityRespond struct {
+	ID                 string              `json:"id"`
+	AccountNumber      string              `json:"accountNumber"`
+	EntityName         string              `json:"entityName"`
+	Email              string              `json:"email,omitempty"`
+	EntityPhone        string              `json:"entityPhone"`
+	IncType            string              `json:"incType"`
+	CompanyNumber      string              `json:"companyNumber"`
+	Website            string              `json:"website"`
+	Turnover           int                 `json:"turnover"`
+	Description        string              `json:"description"`
+	LocationAddress    string              `json:"locationAddress"`
+	LocationCity       string              `json:"locationCity"`
+	LocationRegion     string              `json:"locationRegion"`
+	LocationPostalCode string              `json:"locationPostalCode"`
+	LocationCountry    string              `json:"locationCountry"`
+	Status             string              `json:"status"`
+	Offers             []string            `json:"offers,omitempty"`
+	Wants              []string            `json:"wants,omitempty"`
+	Categories         []string            `json:"categories,omitempty"`
+	Users              []*AdminUserRespond `json:"users"`
+	Balance            float64             `json:"balance"`
+	MaxPositiveBalance float64             `json:"maxPositiveBalance"`
+	MaxNegativeBalance float64             `json:"maxNegativeBalance"`
+}
+
 // GET /admin/entities/{entityID}
 
 func NewAdminGetEntityRespond(
@@ -364,6 +429,7 @@ func NewAdminGetEntityRespond(
 	users []*User,
 	account *Account,
 	balanceLimit *BalanceLimit,
+	pendingTransfers []*AdminTransferRespond,
 ) *AdminGetEntityRespond {
 	adminUserResponds := []*AdminUserRespond{}
 	for _, u := range users {
@@ -394,38 +460,44 @@ func NewAdminGetEntityRespond(
 		Balance:            account.Balance,
 		MaxNegativeBalance: balanceLimit.MaxNegBal,
 		MaxPositiveBalance: balanceLimit.MaxPosBal,
+		PendingTransfers:   pendingTransfers,
 	}
 }
 
 type AdminGetEntityRespond struct {
-	ID                 string              `json:"id"`
-	AccountNumber      string              `json:"accountNumber"`
-	EntityName         string              `json:"entityName"`
-	Email              string              `json:"email,omitempty"`
-	EntityPhone        string              `json:"entityPhone"`
-	IncType            string              `json:"incType"`
-	CompanyNumber      string              `json:"companyNumber"`
-	Website            string              `json:"website"`
-	Turnover           int                 `json:"turnover"`
-	Description        string              `json:"description"`
-	LocationAddress    string              `json:"locationAddress"`
-	LocationCity       string              `json:"locationCity"`
-	LocationRegion     string              `json:"locationRegion"`
-	LocationPostalCode string              `json:"locationPostalCode"`
-	LocationCountry    string              `json:"locationCountry"`
-	Status             string              `json:"status"`
-	Offers             []string            `json:"offers,omitempty"`
-	Wants              []string            `json:"wants,omitempty"`
-	Categories         []string            `json:"categories,omitempty"`
-	Users              []*AdminUserRespond `json:"users"`
-	Balance            float64             `json:"balance"`
-	MaxPositiveBalance float64             `json:"maxPositiveBalance"`
-	MaxNegativeBalance float64             `json:"maxNegativeBalance"`
+	ID                 string                  `json:"id"`
+	AccountNumber      string                  `json:"accountNumber"`
+	EntityName         string                  `json:"entityName"`
+	Email              string                  `json:"email,omitempty"`
+	EntityPhone        string                  `json:"entityPhone"`
+	IncType            string                  `json:"incType"`
+	CompanyNumber      string                  `json:"companyNumber"`
+	Website            string                  `json:"website"`
+	Turnover           int                     `json:"turnover"`
+	Description        string                  `json:"description"`
+	LocationAddress    string                  `json:"locationAddress"`
+	LocationCity       string                  `json:"locationCity"`
+	LocationRegion     string                  `json:"locationRegion"`
+	LocationPostalCode string                  `json:"locationPostalCode"`
+	LocationCountry    string                  `json:"locationCountry"`
+	Status             string                  `json:"status"`
+	Offers             []string                `json:"offers,omitempty"`
+	Wants              []string                `json:"wants,omitempty"`
+	Categories         []string                `json:"categories,omitempty"`
+	Users              []*AdminUserRespond     `json:"users"`
+	Balance            float64                 `json:"balance"`
+	MaxPositiveBalance float64                 `json:"maxPositiveBalance"`
+	MaxNegativeBalance float64                 `json:"maxNegativeBalance"`
+	PendingTransfers   []*AdminTransferRespond `json:"pendingTransfers"`
 }
 
 // PATCH /admin/entities/{entityID}
 
-func NewAdminUpdateEntityRespond(req *AdminUpdateEntityReqBody, entity *Entity) *AdminUpdateEntityRespond {
+func NewAdminUpdateEntityRespond(
+	req *AdminUpdateEntityReqBody,
+	entity *Entity,
+	balanceLimit *BalanceLimit,
+) *AdminUpdateEntityRespond {
 	respond := &AdminUpdateEntityRespond{
 		ID:                 entity.ID.Hex(),
 		AccountNumber:      entity.AccountNumber,
@@ -446,8 +518,8 @@ func NewAdminUpdateEntityRespond(req *AdminUpdateEntityReqBody, entity *Entity) 
 		Offers:             TagFieldToNames(entity.Offers),
 		Wants:              TagFieldToNames(entity.Wants),
 		Categories:         entity.Categories,
-		MaxPosBal:          req.MaxPosBal,
-		MaxNegBal:          req.MaxNegBal,
+		MaxPositiveBalance: balanceLimit.MaxPosBal,
+		MaxNegativeBalance: balanceLimit.MaxNegBal,
 	}
 	if len(req.Offers) != 0 {
 		respond.Offers = req.Offers
@@ -478,8 +550,66 @@ type AdminUpdateEntityRespond struct {
 	Offers             []string `json:"offers,omitempty"`
 	Wants              []string `json:"wants,omitempty"`
 	Categories         []string `json:"categories,omitempty"`
-	MaxPosBal          *float64 `json:"max_pos_bal"`
-	MaxNegBal          *float64 `json:"max_neg_bal"`
+	MaxPositiveBalance float64  `json:"maxPositiveBalance"`
+	MaxNegativeBalance float64  `json:"maxNegativeBalance"`
+}
+
+// DELETE /admin/entities/{entityID}
+
+func NewAdminDeleteEntityRespond(
+	entity *Entity,
+	account *Account,
+	balanceLimit *BalanceLimit,
+) *AdminDeleteEntityRespond {
+	return &AdminDeleteEntityRespond{
+		ID:                 entity.ID.Hex(),
+		AccountNumber:      entity.AccountNumber,
+		EntityName:         entity.EntityName,
+		Email:              entity.Email,
+		EntityPhone:        entity.EntityPhone,
+		IncType:            entity.IncType,
+		CompanyNumber:      entity.CompanyNumber,
+		Website:            entity.Website,
+		Turnover:           entity.Turnover,
+		Description:        entity.Description,
+		LocationAddress:    entity.LocationAddress,
+		LocationCity:       entity.LocationCity,
+		LocationRegion:     entity.LocationRegion,
+		LocationPostalCode: entity.LocationPostalCode,
+		LocationCountry:    entity.LocationCountry,
+		Status:             entity.Status,
+		Offers:             TagFieldToNames(entity.Offers),
+		Wants:              TagFieldToNames(entity.Wants),
+		Categories:         entity.Categories,
+		Balance:            account.Balance,
+		MaxNegativeBalance: balanceLimit.MaxNegBal,
+		MaxPositiveBalance: balanceLimit.MaxPosBal,
+	}
+}
+
+type AdminDeleteEntityRespond struct {
+	ID                 string   `json:"id"`
+	AccountNumber      string   `json:"accountNumber"`
+	EntityName         string   `json:"entityName"`
+	Email              string   `json:"email,omitempty"`
+	EntityPhone        string   `json:"entityPhone"`
+	IncType            string   `json:"incType"`
+	CompanyNumber      string   `json:"companyNumber"`
+	Website            string   `json:"website"`
+	Turnover           int      `json:"turnover"`
+	Description        string   `json:"description"`
+	LocationAddress    string   `json:"locationAddress"`
+	LocationCity       string   `json:"locationCity"`
+	LocationRegion     string   `json:"locationRegion"`
+	LocationPostalCode string   `json:"locationPostalCode"`
+	LocationCountry    string   `json:"locationCountry"`
+	Status             string   `json:"status"`
+	Offers             []string `json:"offers,omitempty"`
+	Wants              []string `json:"wants,omitempty"`
+	Categories         []string `json:"categories,omitempty"`
+	Balance            float64  `json:"balance"`
+	MaxPositiveBalance float64  `json:"maxPositiveBalance"`
+	MaxNegativeBalance float64  `json:"maxNegativeBalance"`
 }
 
 // admin/transfer
@@ -498,6 +628,7 @@ type AdminTransferRespond struct {
 }
 
 // GET /admin/transfer
+// GET /admin/entities/{entityID}
 
 func NewJournalsToAdminTransfersRespond(journals []*Journal) []*AdminTransferRespond {
 	adminTransferRespond := []*AdminTransferRespond{}

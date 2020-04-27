@@ -368,8 +368,8 @@ func (handler *entityHandler) adminSearchEntity() func(http.ResponseWriter, *htt
 		TotalPages      int `json:"totalPages"`
 	}
 	type respond struct {
-		Data []*types.AdminGetEntityRespond `json:"data"`
-		Meta meta                           `json:"meta"`
+		Data []*types.AdminSearchEntityRespond `json:"data"`
+		Meta meta                              `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminSearchEntityReqBody(r)
@@ -402,8 +402,8 @@ func (handler *entityHandler) adminSearchEntity() func(http.ResponseWriter, *htt
 	}
 }
 
-func (handler *entityHandler) newAdminSearchEntityRespond(searchEntityResult *types.SearchEntityResult) ([]*types.AdminGetEntityRespond, error) {
-	respond := []*types.AdminGetEntityRespond{}
+func (handler *entityHandler) newAdminSearchEntityRespond(searchEntityResult *types.SearchEntityResult) ([]*types.AdminSearchEntityRespond, error) {
+	respond := []*types.AdminSearchEntityRespond{}
 	for _, entity := range searchEntityResult.Entities {
 		users, err := logic.User.FindByIDs(entity.Users)
 		if err != nil {
@@ -417,7 +417,7 @@ func (handler *entityHandler) newAdminSearchEntityRespond(searchEntityResult *ty
 		if err != nil {
 			return nil, err
 		}
-		respond = append(respond, types.NewAdminGetEntityRespond(entity, users, account, balanceLimit))
+		respond = append(respond, types.NewAdminSearchEntityRespond(entity, users, account, balanceLimit))
 	}
 	return respond, nil
 }
@@ -466,7 +466,11 @@ func (handler *entityHandler) newAdminGetEntityRespond(entity *types.Entity) (*t
 	if err != nil {
 		return nil, err
 	}
-	return types.NewAdminGetEntityRespond(entity, users, account, balanceLimit), nil
+	pendingTransfers, err := logic.Transfer.AdminGetPendingTransfers(entity.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return types.NewAdminGetEntityRespond(entity, users, account, balanceLimit, pendingTransfers), nil
 }
 
 // PATCH /admin/entities/{entityID}
@@ -494,7 +498,14 @@ func (handler *entityHandler) adminUpdateEntity() func(http.ResponseWriter, *htt
 		go handler.updateEntityMemberStartedAt(req.OriginEntity, req.Status)
 		go CategoryHandler.Update(req.Categories)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminUpdateEntityRespond(req, newEntity)})
+		res, err := handler.newAdminUpdateEntityRespond(req, newEntity)
+		if err != nil {
+			l.Logger.Error("[Error] EntityHandler.updateEntity failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		api.Respond(w, r, http.StatusOK, respond{Data: res})
 	}
 }
 
@@ -504,6 +515,14 @@ func (handler *entityHandler) newAdminUpdateEntityReqBody(r *http.Request) (*typ
 		return nil, []error{err}
 	}
 	return types.NewAdminUpdateEntityReqBody(r, originEntity)
+}
+
+func (handler *entityHandler) newAdminUpdateEntityRespond(req *types.AdminUpdateEntityReqBody, entity *types.Entity) (*types.AdminUpdateEntityRespond, error) {
+	balanceLimit, err := logic.BalanceLimit.FindByAccountNumber(entity.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return types.NewAdminUpdateEntityRespond(req, entity, balanceLimit), nil
 }
 
 func (handler *entityHandler) updateEntityMemberStartedAt(oldEntity *types.Entity, newStatus string) {
@@ -556,7 +575,7 @@ func (handler *entityHandler) updateOfferAndWants(oldEntity *types.Entity, newSt
 
 func (handler *entityHandler) adminDeleteEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.AdminGetEntityRespond `json:"data"`
+		Data *types.AdminDeleteEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminDeleteEntity(r)
@@ -583,11 +602,7 @@ func (handler *entityHandler) adminDeleteEntity() func(http.ResponseWriter, *htt
 	}
 }
 
-func (handler *entityHandler) newAdminDeleteEntityRespond(entity *types.Entity) (*types.AdminGetEntityRespond, error) {
-	users, err := logic.User.FindByIDs(entity.Users)
-	if err != nil {
-		return nil, err
-	}
+func (handler *entityHandler) newAdminDeleteEntityRespond(entity *types.Entity) (*types.AdminDeleteEntityRespond, error) {
 	account, err := logic.Account.FindByAccountNumber(entity.AccountNumber)
 	if err != nil {
 		return nil, err
@@ -596,5 +611,5 @@ func (handler *entityHandler) newAdminDeleteEntityRespond(entity *types.Entity) 
 	if err != nil {
 		return nil, err
 	}
-	return types.NewAdminGetEntityRespond(entity, users, account, balanceLimit), nil
+	return types.NewAdminDeleteEntityRespond(entity, account, balanceLimit), nil
 }

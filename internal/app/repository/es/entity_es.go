@@ -8,7 +8,6 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/olivere/elastic/v7"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -89,8 +88,8 @@ func (es *entity) AdminUpdate(req *types.AdminUpdateEntityReqBody) error {
 
 func (es *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
 	params := map[string]interface{}{
-		"offersAdded":   helper.ToTagFields(difference.NewAddedOffers),
-		"wantsAdded":    helper.ToTagFields(difference.NewAddedWants),
+		"offersAdded":   types.ToTagFields(difference.NewAddedOffers),
+		"wantsAdded":    types.ToTagFields(difference.NewAddedWants),
 		"offersRemoved": difference.OffersRemoved,
 		"wantsRemoved":  difference.WantsRemoved,
 	}

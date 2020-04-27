@@ -4,7 +4,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/helper"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -56,11 +55,11 @@ func getMatchTags(user *types.User) (*types.MatchedTags, error) {
 		return nil, err
 	}
 
-	matchedOffers, err := logic.Tag.MatchOffers(helper.GetTagNames(entity.Offers), user.LastNotificationSentDate)
+	matchedOffers, err := logic.Tag.MatchOffers(getTagNames(entity.Offers), user.LastNotificationSentDate)
 	if err != nil {
 		return nil, err
 	}
-	matchedWants, err := logic.Tag.MatchWants(helper.GetTagNames(entity.Wants), user.LastNotificationSentDate)
+	matchedWants, err := logic.Tag.MatchWants(getTagNames(entity.Wants), user.LastNotificationSentDate)
 	if err != nil {
 		return nil, err
 	}
@@ -69,4 +68,12 @@ func getMatchTags(user *types.User) (*types.MatchedTags, error) {
 		MatchedOffers: matchedOffers,
 		MatchedWants:  matchedWants,
 	}, nil
+}
+
+func getTagNames(tags []*types.TagField) []string {
+	names := make([]string, 0, len(tags))
+	for _, t := range tags {
+		names = append(names, t.Name)
+	}
+	return names
 }
