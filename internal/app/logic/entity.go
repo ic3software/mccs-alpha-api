@@ -102,16 +102,30 @@ func (_ *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReqBody) (*ty
 	return entity, nil
 }
 
+// DELETE /admin/entities/{entityID}
+
 func (_ *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, error) {
 	err := es.Entity.Delete(id.Hex())
 	if err != nil {
 		return nil, err
 	}
-	entity, err := mongo.Entity.AdminFindOneAndDelete(id)
+	deleted, err := mongo.Entity.AdminFindOneAndDelete(id)
 	if err != nil {
 		return nil, err
 	}
-	return entity, nil
+	err = mongo.User.RemoveAssociatedEntities(deleted.Users, deleted.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = pg.Account.Delete(deleted.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	err = pg.BalanceLimit.Delete(deleted.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return deleted, nil
 }
 
 func (_ *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {

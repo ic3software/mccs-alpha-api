@@ -104,7 +104,7 @@ func (t *journal) FindByID(transferID string) (*types.Journal, error) {
 	err := db.Raw(`
 		SELECT *
 		FROM journals
-		WHERE transfer_id = ?
+		WHERE deleted_at IS NULL AND transfer_id = ?
 		LIMIT 1
 	`, transferID).Scan(&result).Error
 	if err != nil {
@@ -120,7 +120,7 @@ func (t *journal) Cancel(transferID string, reason string) (*types.Journal, erro
 	err := db.Exec(`
 		UPDATE journals
 		SET status = ?, cancellation_reason = ?, updated_at = ?
-		WHERE transfer_id = ?
+		WHERE deleted_at IS NULL AND transfer_id = ?
 	`, constant.Transfer.Cancelled, reason, time.Now(), transferID).Error
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (t *journal) Cancel(transferID string, reason string) (*types.Journal, erro
 	err = db.Raw(`
 		SELECT *
 		FROM journals
-		WHERE transfer_id=?
+		WHERE deleted_at IS NULL AND transfer_id = ?
 	`, transferID).Scan(&updated).Error
 	if err != nil {
 		return nil, err
@@ -184,7 +184,7 @@ func (t *journal) accept(tx *gorm.DB, j *types.Journal) (*types.Journal, error) 
 	err = tx.Exec(`
 		UPDATE journals
 		SET status = ?, completed_at = ?, updated_at = ?
-		WHERE transfer_id=?
+		WHERE deleted_at IS NULL AND transfer_id = ?
 		RETURNING *
 	`, constant.Transfer.Completed, time.Now(), time.Now(), j.TransferID).Error
 	if err != nil {
@@ -242,7 +242,7 @@ func (t *journal) AdminGetPendingTransfers(accountNumber string) ([]*types.Admin
 	searchSQL := `
 		SELECT *
 		FROM journals
-		WHERE (from_account_number = ? OR to_account_number = ?) AND status = ? ORDER BY created_at
+		WHERE deleted_at IS NULL AND (from_account_number = ? OR to_account_number = ?) AND status = ? ORDER BY created_at
 	`
 	err := db.Raw(searchSQL,
 		accountNumber,

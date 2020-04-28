@@ -274,6 +274,28 @@ func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error)
 	return &user, nil
 }
 
+// DELETE /admin/entities/{entityID}
+
+func (u *user) RemoveAssociatedEntities(userIDs []primitive.ObjectID, entityID primitive.ObjectID) error {
+	filter := bson.M{"_id": bson.M{"$in": userIDs}}
+	updates := []bson.M{
+		bson.M{"$pull": bson.M{"entities": entityID}},
+		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
+	}
+
+	var writes []mongo.WriteModel
+	for _, update := range updates {
+		model := mongo.NewUpdateManyModel().SetFilter(filter).SetUpdate(update)
+		writes = append(writes, model)
+	}
+
+	_, err := u.c.BulkWrite(context.Background(), writes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TO BE REMOVED
 
 func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {

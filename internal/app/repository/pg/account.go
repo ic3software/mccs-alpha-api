@@ -1,6 +1,8 @@
 package pg
 
 import (
+	"time"
+
 	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/jinzhu/gorm"
@@ -15,7 +17,7 @@ func (a *account) FindByID(accountID uint) (*types.Account, error) {
 	err := db.Raw(`
 		SELECT id, account_number, balance
 		FROM accounts
-		WHERE id = ?
+		WHERE deleted_at IS NULL AND id = ?
 		LIMIT 1
 	`, accountID).Scan(&result).Error
 	if err != nil {
@@ -29,7 +31,7 @@ func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, err
 	err := db.Raw(`
 		SELECT id, account_number, balance
 		FROM accounts
-		WHERE account_number = ?
+		WHERE deleted_at IS NULL AND account_number = ?
 		LIMIT 1
 	`, accountNumber).Scan(&result).Error
 	if err != nil {
@@ -43,7 +45,7 @@ func (a *account) ifAccountExisted(db *gorm.DB, accountNumber string) bool {
 	return !db.Raw(`
 		SELECT id, account_number, balance
 		FROM accounts
-		WHERE account_number = ?
+		WHERE deleted_at IS NULL AND account_number = ?
 		LIMIT 1
 	`, accountNumber).Scan(&result).RecordNotFound()
 }
@@ -75,4 +77,22 @@ func (a *account) Create() (*types.Account, error) {
 	}
 
 	return &result, tx.Commit().Error
+}
+
+// DELETE /admin/entities/{entityID}
+
+func (a *account) Delete(accountNumber string) error {
+	tx := db.Begin()
+
+	err := tx.Exec(`
+		UPDATE accounts
+		SET deleted_at = ?, updated_at = ?
+		WHERE deleted_at IS NULL AND account_number = ?
+	`, time.Now(), time.Now(), accountNumber).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }

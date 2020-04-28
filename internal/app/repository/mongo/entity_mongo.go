@@ -212,6 +212,8 @@ func (e *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, er
 	return &entity, nil
 }
 
+// PATCH /admin/entities/{entityID}
+
 func (e *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
 	updates := []bson.M{
 		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
@@ -324,6 +326,8 @@ func (e *entity) FindByIDs(ids []primitive.ObjectID) ([]*types.Entity, error) {
 
 	return results, nil
 }
+
+// PATCH /admin/entities/{entityID}
 
 func (e *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
 	filter := bson.M{"_id": id}

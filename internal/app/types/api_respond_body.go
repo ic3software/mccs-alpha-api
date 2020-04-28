@@ -556,11 +556,7 @@ type AdminUpdateEntityRespond struct {
 
 // DELETE /admin/entities/{entityID}
 
-func NewAdminDeleteEntityRespond(
-	entity *Entity,
-	account *Account,
-	balanceLimit *BalanceLimit,
-) *AdminDeleteEntityRespond {
+func NewAdminDeleteEntityRespond(entity *Entity) *AdminDeleteEntityRespond {
 	return &AdminDeleteEntityRespond{
 		ID:                 entity.ID.Hex(),
 		AccountNumber:      entity.AccountNumber,
@@ -581,9 +577,6 @@ func NewAdminDeleteEntityRespond(
 		Offers:             TagFieldToNames(entity.Offers),
 		Wants:              TagFieldToNames(entity.Wants),
 		Categories:         entity.Categories,
-		Balance:            account.Balance,
-		MaxNegativeBalance: balanceLimit.MaxNegBal,
-		MaxPositiveBalance: balanceLimit.MaxPosBal,
 	}
 }
 
@@ -607,9 +600,6 @@ type AdminDeleteEntityRespond struct {
 	Offers             []string `json:"offers,omitempty"`
 	Wants              []string `json:"wants,omitempty"`
 	Categories         []string `json:"categories,omitempty"`
-	Balance            float64  `json:"balance"`
-	MaxPositiveBalance float64  `json:"maxPositiveBalance"`
-	MaxNegativeBalance float64  `json:"maxNegativeBalance"`
 }
 
 // admin/transfer

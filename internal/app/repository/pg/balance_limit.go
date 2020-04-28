@@ -2,6 +2,7 @@ package pg
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/jinzhu/gorm"
@@ -31,7 +32,7 @@ func (b *balanceLimit) FindByAccountNumber(accountNumber string) (*types.Balance
 	err := db.Raw(`
 		SELECT max_pos_bal, max_neg_bal
 		FROM balance_limits
-		WHERE account_number = ?
+		WHERE deleted_at IS NULL AND account_number = ?
 		LIMIT 1
 	`, accountNumber).Scan(&result).Error
 	if err != nil {
@@ -52,9 +53,27 @@ func (b *balanceLimit) AdminUpdate(req *types.AdminUpdateEntityReqBody) error {
 	if req.MaxNegBal != nil {
 		update["max_neg_bal"] = *req.MaxNegBal
 	}
-	err := db.Table("balance_limits").Where("account_number = ?", req.OriginEntity.AccountNumber).Updates(update).Error
+	err := db.Table("balance_limits").Where("deleted_at IS NULL AND account_number = ?", req.OriginEntity.AccountNumber).Updates(update).Error
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// DELETE /admin/entities/{entityID}
+
+func (b *balanceLimit) Delete(accountNumber string) error {
+	tx := db.Begin()
+
+	err := tx.Exec(`
+		UPDATE balance_limits
+		SET deleted_at = ?, updated_at = ?
+		WHERE deleted_at IS NULL AND account_number = ?
+	`, time.Now(), time.Now(), accountNumber).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }

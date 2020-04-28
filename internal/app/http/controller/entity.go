@@ -591,25 +591,6 @@ func (handler *entityHandler) adminDeleteEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
-		res, err := handler.newAdminDeleteEntityRespond(deleted)
-		if err != nil {
-			l.Logger.Error("[Error] EntityHandler.adminDeleteEntity failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		api.Respond(w, r, http.StatusOK, respond{Data: res})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminDeleteEntityRespond(deleted)})
 	}
-}
-
-func (handler *entityHandler) newAdminDeleteEntityRespond(entity *types.Entity) (*types.AdminDeleteEntityRespond, error) {
-	account, err := logic.Account.FindByAccountNumber(entity.AccountNumber)
-	if err != nil {
-		return nil, err
-	}
-	balanceLimit, err := logic.BalanceLimit.FindByAccountNumber(entity.AccountNumber)
-	if err != nil {
-		return nil, err
-	}
-	return types.NewAdminDeleteEntityRespond(entity, account, balanceLimit), nil
 }
