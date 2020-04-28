@@ -24,12 +24,6 @@ func New(code int, systemErr interface{}) error {
 	return err
 }
 
-func CustomMessage(message string) error {
-	err := Error{CustomMessage: message}
-	err.SystemErr = errors.New("custom error")
-	return err
-}
-
 func (d Error) Error() string {
 	return d.SystemErr.Error()
 }
@@ -41,18 +35,4 @@ func (d Error) Message() string {
 		return msg
 	}
 	return Msg[InternalServerError]
-}
-
-func IsPasswordInvalid(err error) bool {
-	if v, ok := err.(Error); ok {
-		return v.Code == PasswordIncorrect
-	}
-	return false
-}
-
-func IsUserNotFound(err error) bool {
-	if v, ok := err.(Error); ok {
-		return v.Code == UserNotFound
-	}
-	return false
 }

@@ -463,6 +463,8 @@ func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.R
 	}
 }
 
+// PATCH /user/entities/{entityID}
+
 func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.EntityRespond `json:"data"`

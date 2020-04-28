@@ -10,7 +10,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
 	"github.com/ic3network/mccs-alpha-api/util/l"
 	"go.uber.org/zap"
 )
@@ -82,13 +81,21 @@ func (handler *categoryHandler) search() func(http.ResponseWriter, *http.Request
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{
-			Data: utils.CategoryToNames(found.Categories),
+			Data: handler.categoryToStrings(found.Categories),
 			Meta: meta{
 				TotalPages:      found.TotalPages,
 				NumberOfResults: found.NumberOfResults,
 			},
 		})
 	}
+}
+
+func (handler *categoryHandler) categoryToStrings(categories []*types.Category) []string {
+	names := []string{}
+	for _, c := range categories {
+		names = append(names, c.Name)
+	}
+	return names
 }
 
 // POST /admin/categories

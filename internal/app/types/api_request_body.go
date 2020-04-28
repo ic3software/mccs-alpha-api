@@ -643,7 +643,7 @@ type SearchEntityReqBody struct {
 	FavoriteEntities []primitive.ObjectID
 	FavoritesOnly    bool
 	TaggedSince      time.Time
-	Statuses         []string // accepted", "pending", rejected", "tradingPending", "tradingAccepted", "tradingRejected"
+	Statuses         []string
 
 	LocationCountry string
 	LocationCity    string

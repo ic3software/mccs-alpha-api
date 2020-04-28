@@ -88,6 +88,8 @@ func (handler *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	return bs, nil
 }
 
+// PATCH /user/entities/{entityID}
+
 func (handler *entityHandler) UpdateOffersAndWants(old *types.Entity, offers, wants []string) {
 	if len(offers) == 0 && len(wants) == 0 {
 		return
@@ -129,14 +131,6 @@ func (handler *entityHandler) getFavoriteEntities(entityID string) []primitive.O
 		return entity.FavoriteEntities
 	}
 	return []primitive.ObjectID{}
-}
-
-func (handler *entityHandler) getQueryingEntityStatus(entityID string) string {
-	entity, err := EntityHandler.FindByID(entityID)
-	if err == nil {
-		return entity.Status
-	}
-	return ""
 }
 
 // GET /entities
@@ -200,6 +194,14 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 	}
 }
 
+func (handler *entityHandler) getQueryingEntityStatus(entityID string) string {
+	entity, err := EntityHandler.FindByID(entityID)
+	if err == nil {
+		return entity.Status
+	}
+	return ""
+}
+
 // GET /entities/{entityID}
 
 func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Request) {
@@ -237,6 +239,8 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 	}
 }
 
+// POST favorites
+
 func (handler *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAddToFavoriteReqBody(r)
@@ -266,6 +270,8 @@ func (handler *entityHandler) checkEntityStatus(SenderEntity, ReceiverEntity *ty
 	}
 	return nil
 }
+
+// POST /send-email
 
 func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
