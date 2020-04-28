@@ -642,9 +642,11 @@ func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Re
 	}
 }
 
+// DELETE /admin/users/{userID}
+
 func (handler *userHandler) adminDeleteUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.AdminGetUserRespond `json:"data"`
+		Data *types.AdminDeleteUserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminDeleteUserReqBody(r)
@@ -660,13 +662,6 @@ func (handler *userHandler) adminDeleteUser() func(http.ResponseWriter, *http.Re
 			return
 		}
 
-		entities, err := logic.Entity.FindByIDs(deleted.Entities)
-		if err != nil {
-			l.Logger.Error("[Error] UserHandler.adminDeleteUser failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(deleted, entities)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminDeleteUserRespond(deleted)})
 	}
 }

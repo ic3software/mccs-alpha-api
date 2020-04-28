@@ -489,3 +489,25 @@ func (e *entity) updateWants(old string, new string) error {
 	}
 	return nil
 }
+
+// DELETE /admin/users/{userID}
+
+func (e *entity) RemoveAssociatedUsers(entityIDs []primitive.ObjectID, userID primitive.ObjectID) error {
+	filter := bson.M{"_id": bson.M{"$in": entityIDs}}
+	updates := []bson.M{
+		bson.M{"$pull": bson.M{"users": userID}},
+		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
+	}
+
+	var writes []mongo.WriteModel
+	for _, update := range updates {
+		model := mongo.NewUpdateManyModel().SetFilter(filter).SetUpdate(update)
+		writes = append(writes, model)
+	}
+
+	_, err := e.c.BulkWrite(context.Background(), writes)
+	if err != nil {
+		return err
+	}
+	return nil
+}

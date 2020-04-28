@@ -356,6 +356,34 @@ type AdminGetUserRespond struct {
 	Entities                      []*AdminEntityRespond `json:"entities"`
 }
 
+// DELETE /admin/users/{userID}
+
+func NewAdminDeleteUserRespond(user *User) *AdminDeleteUserRespond {
+	return &AdminDeleteUserRespond{
+		ID:                            user.ID.Hex(),
+		Email:                         user.Email,
+		UserPhone:                     user.Telephone,
+		FirstName:                     user.FirstName,
+		LastName:                      user.LastName,
+		LastLoginIP:                   user.LastLoginIP,
+		LastLoginDate:                 user.LastLoginDate,
+		DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
+		ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
+	}
+}
+
+type AdminDeleteUserRespond struct {
+	ID                            string    `json:"id"`
+	Email                         string    `json:"email"`
+	FirstName                     string    `json:"firstName"`
+	LastName                      string    `json:"lastName"`
+	UserPhone                     string    `json:"userPhone"`
+	LastLoginIP                   string    `json:"lastLoginIP"`
+	LastLoginDate                 time.Time `json:"lastLoginDate"`
+	DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
+}
+
 // GET /admin/entities
 
 func NewAdminSearchEntityRespond(

@@ -200,16 +200,22 @@ func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.Us
 	return updated, nil
 }
 
+// DELETE /admin/users/{userID}
+
 func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error) {
 	err := es.User.Delete(id.Hex())
 	if err != nil {
 		return nil, err
 	}
-	user, err := mongo.User.AdminFindOneAndDelete(id)
+	deleted, err := mongo.User.AdminFindOneAndDelete(id)
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	err = mongo.Entity.RemoveAssociatedUsers(deleted.Entities, deleted.ID)
+	if err != nil {
+		return nil, err
+	}
+	return deleted, nil
 }
 
 func (u *user) AdminSearchUser(req *types.AdminSearchUserReqBody) (*types.SearchUserResult, error) {
