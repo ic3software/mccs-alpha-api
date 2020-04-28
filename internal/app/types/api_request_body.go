@@ -1065,29 +1065,26 @@ func NewAdminSearchEntityReqBody(r *http.Request) (*AdminSearchEntityReqBody, []
 	if err != nil {
 		return nil, []error{err}
 	}
-	maxPosBal, err := util.ToFloat64(q.Get("max_pos_val"))
+	maxPosBal, err := util.ToFloat64(q.Get("max_pos_bal"))
 	if err != nil {
 		return nil, []error{err}
 	}
-	maxNegBal, err := util.ToFloat64(q.Get("max_neg_val"))
+	maxNegBal, err := util.ToFloat64(q.Get("max_neg_bal"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	statuses, err := util.AdminMapEntityStatus(q.Get("status"))
 	if err != nil {
 		return nil, []error{err}
 	}
 
 	req := &AdminSearchEntityReqBody{
-		Page:        page,
-		PageSize:    pageSize,
-		Offers:      util.ToSearchTags(q.Get("offers")),
-		Wants:       util.ToSearchTags(q.Get("wants")),
-		TaggedSince: util.ParseTime(q.Get("tagged_since")),
-		Statuses: []string{
-			constant.Entity.Pending,
-			constant.Entity.Accepted,
-			constant.Entity.Rejected,
-			constant.Trading.Pending,
-			constant.Trading.Accepted,
-			constant.Trading.Rejected,
-		},
+		Page:          page,
+		PageSize:      pageSize,
+		Offers:        util.ToSearchTags(q.Get("offers")),
+		Wants:         util.ToSearchTags(q.Get("wants")),
+		TaggedSince:   util.ParseTime(q.Get("tagged_since")),
+		Statuses:      statuses,
 		Category:      q.Get("category"),
 		EntityName:    q.Get("entity_name"),
 		AccountNumber: q.Get("account_number"),
@@ -1120,10 +1117,10 @@ type AdminSearchEntityReqBody struct {
 	MaxNegBal     *float64
 }
 
-func (query *AdminSearchEntityReqBody) validate() []error {
+func (req *AdminSearchEntityReqBody) validate() []error {
 	errs := []error{}
 
-	if !query.TaggedSince.IsZero() && len(query.Wants) == 0 && len(query.Offers) == 0 {
+	if !req.TaggedSince.IsZero() && len(req.Wants) == 0 && len(req.Offers) == 0 {
 		errs = append(errs, errors.New("Please specify an offer or want tag."))
 	}
 

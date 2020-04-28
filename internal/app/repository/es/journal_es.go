@@ -3,7 +3,6 @@ package es
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
@@ -117,7 +116,6 @@ func (es *journal) seachByStatus(q *elastic.BoolQuery, status []string) {
 	if len(status) != 0 {
 		qq := elastic.NewBoolQuery()
 		for _, status := range status {
-			fmt.Println("constant.MapTransferType(status) " + constant.MapTransferType(status))
 			qq.Should(elastic.NewMatchQuery("status", constant.MapTransferType(status)))
 		}
 		q.Must(qq)
