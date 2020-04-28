@@ -2,11 +2,9 @@ package template
 
 import (
 	"html/template"
-	"path/filepath"
 )
 
 var (
-	layoutDir   = "web/template/layout/"
 	templateExt = ".html"
 )
 
@@ -16,7 +14,7 @@ type View struct {
 }
 
 func NewEmailView(templateName string) (*template.Template, error) {
-	templates := "web/template/email/" + templateName + ".html"
+	templates := "template/email/" + templateName + ".html"
 
 	t, err := template.New("").
 		Funcs(template.FuncMap{
@@ -37,13 +35,4 @@ func NewEmailView(templateName string) (*template.Template, error) {
 	}
 
 	return t, nil
-}
-
-// the layout files used in our application.
-func layoutFiles() []string {
-	files, err := filepath.Glob(layoutDir + "*" + templateExt)
-	if err != nil {
-		panic(err)
-	}
-	return files
 }

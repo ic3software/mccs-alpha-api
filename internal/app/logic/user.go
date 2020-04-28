@@ -7,8 +7,8 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
 	"github.com/ic3network/mccs-alpha-api/util"
+	"github.com/ic3network/mccs-alpha-api/util/bcrypt"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

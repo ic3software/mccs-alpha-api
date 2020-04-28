@@ -15,8 +15,8 @@ import (
 	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
 	"github.com/ic3network/mccs-alpha-api/util"
+	"github.com/ic3network/mccs-alpha-api/util/bcrypt"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -61,7 +61,7 @@ type SignupReqBody struct {
 func (req *SignupReqBody) validate() []error {
 	errs := []error{}
 
-	errs = append(errs, validateEmail(req.Email)...)
+	errs = append(errs, util.ValidateEmail(req.Email)...)
 	errs = append(errs, validatePassword(req.Password)...)
 
 	user := User{
@@ -625,7 +625,9 @@ func NewSearchEntityReqBody(q url.Values) (*SearchEntityReqBody, error) {
 		FavoritesOnly:    q.Get("favorites_only") == "true",
 		Statuses: []string{
 			constant.Entity.Accepted,
+			constant.Trading.Pending,
 			constant.Trading.Accepted,
+			constant.Trading.Rejected,
 		},
 	}, nil
 }
@@ -1059,37 +1061,63 @@ func NewAdminSearchEntityReqBody(r *http.Request) (*AdminSearchEntityReqBody, []
 	if err != nil {
 		return nil, []error{err}
 	}
+	balance, err := util.ToFloat64(q.Get("balance"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	maxPosBal, err := util.ToFloat64(q.Get("max_pos_val"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	maxNegBal, err := util.ToFloat64(q.Get("max_neg_val"))
+	if err != nil {
+		return nil, []error{err}
+	}
 
 	req := &AdminSearchEntityReqBody{
 		Page:        page,
 		PageSize:    pageSize,
-		EntityName:  q.Get("entity_name"),
-		Category:    q.Get("category"),
 		Offers:      util.ToSearchTags(q.Get("offers")),
 		Wants:       util.ToSearchTags(q.Get("wants")),
 		TaggedSince: util.ParseTime(q.Get("tagged_since")),
 		Statuses: []string{
+			constant.Entity.Pending,
 			constant.Entity.Accepted,
+			constant.Entity.Rejected,
 			constant.Trading.Pending,
 			constant.Trading.Accepted,
 			constant.Trading.Rejected,
 		},
+		Category:      q.Get("category"),
+		EntityName:    q.Get("entity_name"),
+		AccountNumber: q.Get("account_number"),
+		City:          q.Get("city"),
+		Region:        q.Get("region"),
+		Country:       q.Get("country"),
+		Balance:       balance,
+		MaxPosBal:     maxPosBal,
+		MaxNegBal:     maxNegBal,
 	}
 
 	return req, req.validate()
 }
 
 type AdminSearchEntityReqBody struct {
-	Page            int
-	PageSize        int
-	EntityName      string
-	Wants           []string
-	Offers          []string
-	Category        string
-	TaggedSince     time.Time
-	LocationCountry string
-	LocationCity    string
-	Statuses        []string
+	Page          int
+	PageSize      int
+	Offers        []string
+	Wants         []string
+	TaggedSince   time.Time
+	Statuses      []string
+	Category      string
+	EntityName    string
+	AccountNumber string
+	City          string
+	Region        string
+	Country       string
+	Balance       *float64
+	MaxPosBal     *float64
+	MaxNegBal     *float64
 }
 
 func (query *AdminSearchEntityReqBody) validate() []error {
@@ -1141,24 +1169,26 @@ func NewAdminUpdateEntityReqBody(r *http.Request, originEntity *Entity) (*AdminU
 }
 
 type AdminUpdateEntityReqBody struct {
-	OriginEntity       *Entity
-	Status             string   `json:"status"`
-	EntityName         string   `json:"entityName"`
-	Email              string   `json:"email"`
-	EntityPhone        string   `json:"entityPhone"`
-	IncType            string   `json:"incType"`
-	CompanyNumber      string   `json:"companyNumber"`
-	Website            string   `json:"website"`
-	Turnover           int      `json:"turnover"`
-	Description        string   `json:"description"`
-	LocationAddress    string   `json:"locationAddress"`
-	LocationCity       string   `json:"locationCity"`
-	LocationRegion     string   `json:"locationRegion"`
-	LocationPostalCode string   `json:"locationPostalCode"`
-	LocationCountry    string   `json:"locationCountry"`
-	Offers             []string `json:"offers"`
-	Wants              []string `json:"wants"`
-	Categories         []string `json:"categories"`
+	OriginEntity  *Entity
+	Status        string `json:"status"`
+	EntityName    string `json:"entityName"`
+	Email         string `json:"email"`
+	EntityPhone   string `json:"entityPhone"`
+	IncType       string `json:"incType"`
+	CompanyNumber string `json:"companyNumber"`
+	Website       string `json:"website"`
+	Turnover      int    `json:"turnover"`
+	Description   string `json:"description"`
+	// Tags
+	Offers     []string `json:"offers"`
+	Wants      []string `json:"wants"`
+	Categories []string `json:"categories"`
+	// Address
+	LocationAddress    string `json:"locationAddress"`
+	LocationCity       string `json:"locationCity"`
+	LocationRegion     string `json:"locationRegion"`
+	LocationPostalCode string `json:"locationPostalCode"`
+	LocationCountry    string `json:"locationCountry"`
 	// Account
 	MaxPosBal *float64 `json:"max_pos_bal"`
 	MaxNegBal *float64 `json:"max_neg_bal"`

@@ -22,7 +22,9 @@ func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransf
 	return transfers, nil
 }
 
-func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
+// PATCH /transfers/{transferID}
+
+func (t *transfer) FindByID(transferID string) (*types.Journal, error) {
 	journal, err := pg.Journal.FindByID(transferID)
 	if err != nil {
 		return nil, err
@@ -30,29 +32,8 @@ func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
 	return journal, nil
 }
 
-func (t *transfer) Create(req *types.TransferReqBody) (*types.Journal, error) {
-	journal, err := pg.Journal.Create(req)
-	if err != nil {
-		return nil, err
-	}
-	err = es.Journal.Create(journal)
-	if err != nil {
-		return nil, err
-	}
-	return journal, nil
-}
-
-func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
-	journal, err := pg.Journal.Propose(req)
-	if err != nil {
-		return nil, err
-	}
-	err = es.Journal.Create(journal)
-	if err != nil {
-		return nil, err
-	}
-	return journal, nil
-}
+// POST /transfers
+// POST /admin/transfers
 
 func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
 	from, err := pg.Account.FindByAccountNumber(req.FromAccountNumber)
@@ -91,6 +72,20 @@ func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
 	return nil
 }
 
+// POST /transfers
+
+func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
+	journal, err := pg.Journal.Propose(req)
+	if err != nil {
+		return nil, err
+	}
+	err = es.Journal.Create(journal)
+	if err != nil {
+		return nil, err
+	}
+	return journal, nil
+}
+
 func (t *transfer) maxPositiveBalanceCanBeTransferred(a *types.Account) (float64, error) {
 	maxPosBal, err := BalanceLimit.GetMaxPosBalance(a.AccountNumber)
 	if err != nil {
@@ -124,10 +119,32 @@ func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = t.updateESEntityBalances(updated)
+	if err != nil {
+		return nil, err
+	}
 	return updated, nil
 }
 
-// PATCH /transfers/{transferID}
+func (t *transfer) updateESEntityBalances(j *types.Journal) error {
+	from, err := pg.Account.FindByAccountNumber(j.FromAccountNumber)
+	if err != nil {
+		return err
+	}
+	err = es.Entity.UpdateBalance(from.AccountNumber, from.Balance)
+	if err != nil {
+		return err
+	}
+	to, err := pg.Account.FindByAccountNumber(j.ToAccountNumber)
+	if err != nil {
+		return err
+	}
+	err = es.Entity.UpdateBalance(to.AccountNumber, to.Balance)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, error) {
 	canceled, err := pg.Journal.Cancel(transferID, reason)
@@ -149,6 +166,24 @@ func (t *transfer) AdminGetTransfer(transferID string) (*types.Journal, error) {
 		return nil, err
 	}
 	return journal, nil
+}
+
+// POST /admin/transfers
+
+func (t *transfer) Create(req *types.TransferReqBody) (*types.Journal, error) {
+	created, err := pg.Journal.Create(req)
+	if err != nil {
+		return nil, err
+	}
+	err = es.Journal.Create(created)
+	if err != nil {
+		return nil, err
+	}
+	err = t.updateESEntityBalances(created)
+	if err != nil {
+		return nil, err
+	}
+	return created, nil
 }
 
 // GET /admin/transfers

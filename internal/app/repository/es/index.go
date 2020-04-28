@@ -59,16 +59,6 @@ var indexMappings = map[string]string{
 		},
 		"mappings": {
 			"properties": {
-				"categories": {
-					"type": "text",
-					"analyzer": "tag_analyzer",
-					"fields": {
-						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
-						}
-					}
-				},
 				"entityID": {
 					"type": "text",
 					"fields": {
@@ -88,6 +78,15 @@ var indexMappings = map[string]string{
 					}
 				},
 				"locationCity": {
+					"type": "text",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"locationRegion": {
 					"type": "text",
 					"fields": {
 						"keyword": {
@@ -141,6 +140,16 @@ var indexMappings = map[string]string{
 									"ignore_above": 256
 								}
 							}
+						}
+					}
+				},
+				"categories": {
+					"type": "text",
+					"analyzer": "tag_analyzer",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
 						}
 					}
 				},

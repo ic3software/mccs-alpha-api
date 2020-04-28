@@ -11,16 +11,28 @@ var ElasticSearch = elasticSearch{}
 
 type elasticSearch struct{}
 
-func (_ *elasticSearch) CreateEntity(entity *types.Entity) error {
+func (_ *elasticSearch) CreateEntity(
+	entity *types.Entity,
+	accountNumber string,
+	balanceLimit types.BalanceLimit,
+) error {
+	balance := 0.0
 	record := types.EntityESRecord{
-		EntityID:        entity.ID.Hex(),
-		EntityName:      entity.EntityName,
-		Offers:          entity.Offers,
-		Wants:           entity.Wants,
+		EntityID:   entity.ID.Hex(),
+		EntityName: entity.EntityName,
+		Offers:     entity.Offers,
+		Wants:      entity.Wants,
+		Status:     entity.Status,
+		Categories: entity.Categories,
+		// Address
 		LocationCity:    entity.LocationCity,
+		LocationRegion:  entity.LocationRegion,
 		LocationCountry: entity.LocationCountry,
-		Status:          entity.Status,
-		Categories:      entity.Categories,
+		// Account
+		AccountNumber: accountNumber,
+		Balance:       &balance,
+		MaxPosBal:     &balanceLimit.MaxPosBal,
+		MaxNegBal:     &balanceLimit.MaxNegBal,
 	}
 
 	_, err := es.Client().Index().

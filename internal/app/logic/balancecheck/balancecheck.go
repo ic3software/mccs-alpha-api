@@ -5,7 +5,7 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/pg"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
+	"github.com/ic3network/mccs-alpha-api/util/l"
 	"go.uber.org/zap"
 )
 

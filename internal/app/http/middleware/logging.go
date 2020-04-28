@@ -9,8 +9,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
+	"github.com/ic3network/mccs-alpha-api/util/l"
 )
 
 // Logging middleware logs messages.

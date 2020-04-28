@@ -13,8 +13,8 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
+	"github.com/ic3network/mccs-alpha-api/util/l"
 
 	"go.uber.org/zap"
 )
@@ -246,7 +246,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 
 func (handler *transferHandler) newUpdateTransferReqBody(r *http.Request) (*types.UpdateTransferReqBody, []error) {
 	transferID := mux.Vars(r)["transferID"]
-	journal, err := logic.Transfer.FindJournal(transferID)
+	journal, err := logic.Transfer.FindByID(transferID)
 	if err != nil {
 		return nil, []error{err}
 	}

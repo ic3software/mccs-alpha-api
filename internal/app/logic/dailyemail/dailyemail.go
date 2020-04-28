@@ -4,7 +4,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
+	"github.com/ic3network/mccs-alpha-api/util/l"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

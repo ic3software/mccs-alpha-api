@@ -45,7 +45,7 @@ func (entity *Entity) Validate() []error {
 	errs := []error{}
 
 	if len(entity.Email) != 0 {
-		errs = append(errs, validateEmail(entity.Email)...)
+		errs = append(errs, util.ValidateEmail(entity.Email)...)
 	}
 	if len(entity.Status) != 0 && !util.IsValidStatus(entity.Status) {
 		errs = append(errs, errors.New("Please specify a valid status."))

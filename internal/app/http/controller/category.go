@@ -10,8 +10,8 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/utils"
+	"github.com/ic3network/mccs-alpha-api/util/l"
 	"go.uber.org/zap"
 )
 

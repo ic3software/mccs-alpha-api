@@ -68,12 +68,15 @@ func (es *entity) Update(update *types.Entity) error {
 
 func (es *entity) AdminUpdate(req *types.AdminUpdateEntityReqBody) error {
 	doc := types.EntityESRecord{
+		Status: req.Status,
+		// Address
 		EntityName:      req.EntityName,
-		LocationCountry: req.LocationCity,
-		LocationCity:    req.LocationCountry,
-		Status:          req.Status,
-		MaxNegBal:       req.MaxNegBal,
-		MaxPosBal:       req.MaxPosBal,
+		LocationCity:    req.LocationCity,
+		LocationRegion:  req.LocationRegion,
+		LocationCountry: req.LocationCountry,
+		// Account
+		MaxNegBal: req.MaxNegBal,
+		MaxPosBal: req.MaxPosBal,
 	}
 	_, err := es.c.Update().
 		Index(es.index).
@@ -143,68 +146,7 @@ func (es *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDiffere
 	return nil
 }
 
-func seachByStatus(q *elastic.BoolQuery, status []string) *elastic.BoolQuery {
-	if len(status) != 0 {
-		qq := elastic.NewBoolQuery()
-		for _, status := range status {
-			qq.Should(elastic.NewMatchQuery("status", status))
-		}
-		q.Must(qq)
-	}
-	return q
-}
-
-type byNameAndAddress struct {
-	EntityName      string
-	LocationCountry string
-	LocationCity    string
-}
-
-func seachbyNameAndAddress(q *elastic.BoolQuery, req *byNameAndAddress) {
-	if req.EntityName != "" {
-		q.Must(newFuzzyWildcardQuery("entityName", req.EntityName))
-	}
-	if req.LocationCountry != "" {
-		q.Must(elastic.NewMatchQuery("locationCountry", req.LocationCountry))
-	}
-	if req.LocationCity != "" {
-		q.Must(newFuzzyWildcardQuery("locationCity", req.LocationCity))
-	}
-}
-
-type byTag struct {
-	Offers      []string
-	Wants       []string
-	TaggedSince time.Time
-}
-
-func seachByTags(q *elastic.BoolQuery, query *byTag) {
-	// "Tag Added After" will associate with "tags".
-	if len(query.Offers) != 0 {
-		qq := elastic.NewBoolQuery()
-		// weighted is used to make sure the tags are shown in order.
-		weighted := 2.0
-		for _, offer := range query.Offers {
-			qq.Should(newFuzzyWildcardTimeQueryForTag("offers", offer, query.TaggedSince).
-				Boost(weighted))
-			weighted *= 0.9
-		}
-		// Must match one of the "Should" queries.
-		q.Must(qq)
-	}
-	if len(query.Wants) != 0 {
-		qq := elastic.NewBoolQuery()
-		// weighted is used to make sure the tags are shown in order.
-		weighted := 2.0
-		for _, want := range query.Wants {
-			qq.Should(newFuzzyWildcardTimeQueryForTag("wants", want, query.TaggedSince).
-				Boost(weighted))
-			weighted *= 0.9
-		}
-		// Must match one of the "Should" queries.
-		q.Must(qq)
-	}
-}
+// GET /entities
 
 func (es *entity) Search(req *types.SearchEntityReqBody) (*types.ESSearchEntityResult, error) {
 	var ids []string
@@ -221,9 +163,9 @@ func (es *entity) Search(req *types.SearchEntityReqBody) (*types.ESSearchEntityR
 
 	seachByStatus(q, req.Statuses)
 	seachbyNameAndAddress(q, &byNameAndAddress{
-		EntityName:      req.EntityName,
-		LocationCity:    req.LocationCity,
-		LocationCountry: req.LocationCountry,
+		EntityName: req.EntityName,
+		City:       req.LocationCity,
+		Country:    req.LocationCountry,
 	})
 	seachByTags(q, &byTag{
 		Offers:      req.Offers,
@@ -261,6 +203,97 @@ func (es *entity) Search(req *types.SearchEntityReqBody) (*types.ESSearchEntityR
 	}, nil
 }
 
+func seachByStatus(q *elastic.BoolQuery, status []string) *elastic.BoolQuery {
+	if len(status) != 0 {
+		qq := elastic.NewBoolQuery()
+		for _, status := range status {
+			qq.Should(elastic.NewMatchQuery("status", status))
+		}
+		q.Must(qq)
+	}
+	return q
+}
+
+type byNameAndAddress struct {
+	EntityName string
+	City       string
+	Region     string
+	Country    string
+}
+
+func seachbyNameAndAddress(q *elastic.BoolQuery, req *byNameAndAddress) {
+	if req.EntityName != "" {
+		q.Must(newFuzzyWildcardQuery("entityName", req.EntityName))
+	}
+	if req.City != "" {
+		q.Must(newFuzzyWildcardQuery("locationCity", req.City))
+	}
+	if req.Region != "" {
+		q.Must(newFuzzyWildcardQuery("locationRegion", req.Region))
+	}
+	if req.Country != "" {
+		q.Must(elastic.NewMatchQuery("locationCountry", req.Country))
+	}
+}
+
+type byTag struct {
+	Offers      []string
+	Wants       []string
+	TaggedSince time.Time
+}
+
+func seachByTags(q *elastic.BoolQuery, query *byTag) {
+	// "Tag Added After" will associate with "tags".
+	if len(query.Offers) != 0 {
+		qq := elastic.NewBoolQuery()
+		// weighted is used to make sure the tags are shown in order.
+		weighted := 2.0
+		for _, offer := range query.Offers {
+			qq.Should(newFuzzyWildcardTimeQueryForTag("offers", offer, query.TaggedSince).
+				Boost(weighted))
+			weighted *= 0.9
+		}
+		// Must match one of the "Should" queries.
+		q.Must(qq)
+	}
+	if len(query.Wants) != 0 {
+		qq := elastic.NewBoolQuery()
+		// weighted is used to make sure the tags are shown in order.
+		weighted := 2.0
+		for _, want := range query.Wants {
+			qq.Should(newFuzzyWildcardTimeQueryForTag("wants", want, query.TaggedSince).
+				Boost(weighted))
+			weighted *= 0.9
+		}
+		// Must match one of the "Should" queries.
+		q.Must(qq)
+	}
+}
+
+// GET /admin/entities
+
+func seachByAccount(q *elastic.BoolQuery, req *byAccount) {
+	if req.AccountNumber != "" {
+		q.Must(elastic.NewMatchQuery("accountNumber", req.AccountNumber))
+	}
+	if req.Balance != nil {
+		q.Must(elastic.NewRangeQuery("balance").Gte(*req.Balance).Lte(*req.Balance))
+	}
+	if req.MaxPosBal != nil {
+		q.Must(elastic.NewRangeQuery("maxPosBal").Gte(*req.MaxPosBal))
+	}
+	if req.MaxNegBal != nil {
+		q.Must(elastic.NewRangeQuery("maxNegBal").Lte(*req.MaxNegBal))
+	}
+}
+
+type byAccount struct {
+	AccountNumber string
+	Balance       *float64
+	MaxNegBal     *float64
+	MaxPosBal     *float64
+}
+
 func (es *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.ESSearchEntityResult, error) {
 	var ids []string
 
@@ -272,14 +305,21 @@ func (es *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.ESSea
 
 	seachByStatus(q, req.Statuses)
 	seachbyNameAndAddress(q, &byNameAndAddress{
-		EntityName:      req.EntityName,
-		LocationCity:    req.LocationCity,
-		LocationCountry: req.LocationCountry,
+		EntityName: req.EntityName,
+		City:       req.City,
+		Region:     req.Region,
+		Country:    req.Country,
 	})
 	seachByTags(q, &byTag{
 		Offers:      req.Offers,
 		Wants:       req.Wants,
 		TaggedSince: req.TaggedSince,
+	})
+	seachByAccount(q, &byAccount{
+		AccountNumber: req.AccountNumber,
+		Balance:       req.Balance,
+		MaxPosBal:     req.MaxPosBal,
+		MaxNegBal:     req.MaxNegBal,
 	})
 
 	from := req.PageSize * (req.Page - 1)
@@ -454,22 +494,19 @@ func (es *entity) Delete(id string) error {
 	return nil
 }
 
-// // TO BE REMOVED
+// PATCH /transfers/{transferID}
 
-// func (es *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
-// 	doc := map[string]interface{}{
-// 		"entityName":      data.EntityName,
-// 		"locationCity":    data.LocationCity,
-// 		"locationCountry": data.LocationCountry,
-// 		"status":          constant.Trading.Pending,
-// 	}
-// 	_, err := es.c.Update().
-// 		Index(es.index).
-// 		Id(id.Hex()).
-// 		Doc(doc).
-// 		Do(context.Background())
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+func (es *entity) UpdateBalance(accountNumber string, balance float64) error {
+	query := elastic.NewMatchQuery("accountNumber", accountNumber)
+	script := elastic.
+		NewScript(`ctx._source.balance= params.balance`).
+		Params(map[string]interface{}{"balance": balance})
+	_, err := es.c.UpdateByQuery(es.index).
+		Query(query).
+		Script(script).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}

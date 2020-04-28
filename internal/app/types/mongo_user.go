@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -38,7 +39,7 @@ func (user *User) Validate() []error {
 	errs := []error{}
 
 	if len(user.Email) != 0 {
-		errs = append(errs, validateEmail(user.Email)...)
+		errs = append(errs, util.ValidateEmail(user.Email)...)
 	}
 
 	if len(user.FirstName) > 100 {

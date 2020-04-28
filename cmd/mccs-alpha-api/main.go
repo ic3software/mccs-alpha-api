@@ -1,16 +1,11 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
-
 	"github.com/ic3network/mccs-alpha-api/global"
 	"github.com/ic3network/mccs-alpha-api/internal/app/http"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic/balancecheck"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic/dailyemail"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/version"
+	"github.com/ic3network/mccs-alpha-api/util/l"
 	"github.com/robfig/cron"
 	"github.com/spf13/viper"
 )
@@ -22,18 +17,6 @@ func init() {
 func main() {
 	// Flushes log buffer, if any.
 	defer l.Logger.Sync()
-
-	if *global.ShowVersionInfo {
-		versionInfo := version.Get()
-		marshalled, err := json.MarshalIndent(&versionInfo, "", "  ")
-		if err != nil {
-			fmt.Printf("%v\n", err)
-			os.Exit(1)
-		}
-		fmt.Println(string(marshalled))
-		return
-	}
-
 	go ServeBackGround()
 	go RunMigration()
 
