@@ -116,21 +116,3 @@ func (es *user) AdminSearchUser(req *types.AdminSearchUserReqBody) (*types.ESSea
 		TotalPages:      totalPages,
 	}, nil
 }
-
-// // TO BE REMOVED
-
-// func (es *user) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
-// 	doc := map[string]interface{}{
-// 		"firstName": data.FirstName,
-// 		"lastName":  data.LastName,
-// 	}
-// 	_, err := es.c.Update().
-// 		Index(es.index).
-// 		Id(id.Hex()).
-// 		Doc(doc).
-// 		Do(context.Background())
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }

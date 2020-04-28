@@ -10,6 +10,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/olivere/elastic/v7"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -25,16 +26,28 @@ func (es *entity) Register(client *elastic.Client) {
 	es.index = "entities"
 }
 
-func (es *entity) Create(id primitive.ObjectID, data *types.Entity) error {
+func (es *entity) Create(id primitive.ObjectID, entity *types.Entity) error {
+	balance := 0.0
+	maxPosBal := viper.GetFloat64("transaction.maxPosBal")
+	maxNegBal := viper.GetFloat64("transaction.maxNegBal")
+
 	body := types.EntityESRecord{
-		EntityID:        id.Hex(),
-		EntityName:      data.EntityName,
-		Offers:          data.Offers,
-		Wants:           data.Wants,
-		LocationCity:    data.LocationCity,
-		LocationCountry: data.LocationCountry,
-		Status:          constant.Entity.Pending,
-		Categories:      data.Categories,
+		EntityID:   id.Hex(),
+		EntityName: entity.EntityName,
+		Status:     constant.Entity.Pending,
+		// Tags
+		Offers:     entity.Offers,
+		Wants:      entity.Wants,
+		Categories: entity.Categories,
+		// Address
+		LocationCity:    entity.LocationCity,
+		LocationRegion:  entity.LocationRegion,
+		LocationCountry: entity.LocationCountry,
+		// Account
+		AccountNumber: entity.AccountNumber,
+		Balance:       &balance,
+		MaxPosBal:     &maxPosBal,
+		MaxNegBal:     &maxNegBal,
 	}
 	_, err := es.c.Index().
 		Index(es.index).
@@ -282,8 +295,9 @@ func seachByAccount(q *elastic.BoolQuery, req *byAccount) {
 	if req.MaxPosBal != nil {
 		q.Must(elastic.NewRangeQuery("maxPosBal").Gte(*req.MaxPosBal))
 	}
+
 	if req.MaxNegBal != nil {
-		q.Must(elastic.NewRangeQuery("maxNegBal").Lte(*req.MaxNegBal))
+		q.Must(elastic.NewRangeQuery("maxNegBal").Gte(*req.MaxNegBal))
 	}
 }
 
