@@ -641,6 +641,7 @@ type AdminTransferRespond struct {
 	Amount            float64    `json:"amount"`
 	Description       string     `json:"description"`
 	Status            string     `json:"status"`
+	Type              string     `json:"type,omitempty"`
 	CreatedAt         *time.Time `json:"dateProposed,omitempty"`
 	CompletedAt       *time.Time `json:"dateCompleted,omitempty"`
 }
@@ -660,6 +661,7 @@ func NewJournalsToAdminTransfersRespond(journals []*Journal) []*AdminTransferRes
 			ToEntityName:      j.ToEntityName,
 			Amount:            j.Amount,
 			Description:       j.Description,
+			Type:              j.Type,
 			Status:            j.Status,
 			CreatedAt:         &j.CreatedAt,
 		}
@@ -679,6 +681,7 @@ type AdminSearchTransferRespond struct {
 	TotalPages      int
 }
 
+// POST /admin/transfers
 // GET /admin/transfers/{transferID}
 
 func NewJournalToAdminTransferRespond(j *Journal) *AdminTransferRespond {
@@ -691,6 +694,7 @@ func NewJournalToAdminTransferRespond(j *Journal) *AdminTransferRespond {
 		Amount:            j.Amount,
 		Description:       j.Description,
 		Status:            j.Status,
+		Type:              j.Type,
 		CreatedAt:         &j.CreatedAt,
 	}
 	if j.Status == constant.Transfer.Completed {

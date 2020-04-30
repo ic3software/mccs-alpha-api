@@ -18,8 +18,9 @@ func (_ *elasticSearch) CreateEntity(
 ) error {
 	balance := 0.0
 	record := types.EntityESRecord{
-		EntityID:   entity.ID.Hex(),
-		EntityName: entity.EntityName,
+		ID:         entity.ID.Hex(),
+		Name:       entity.EntityName,
+		Email:      entity.Email,
 		Offers:     entity.Offers,
 		Wants:      entity.Wants,
 		Status:     entity.Status,

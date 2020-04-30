@@ -86,6 +86,9 @@ func (e *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
 	}
 	err := e.c.FindOne(ctx, filter).Decode(&entity)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("Please enter valid entity id.")
+		}
 		return nil, err
 	}
 	return &entity, nil

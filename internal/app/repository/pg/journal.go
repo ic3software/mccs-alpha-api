@@ -31,14 +31,12 @@ func (t *journal) propose(tx *gorm.DB, req *types.TransferReqBody) (*types.Journ
 		TransferID:        ksuid.New().String(),
 		InitiatedBy:       req.InitiatorAccountNumber,
 		FromAccountNumber: req.FromAccountNumber,
-		FromEmail:         req.FromEmail,
 		FromEntityName:    req.FromEntityName,
 		ToAccountNumber:   req.ToAccountNumber,
-		ToEmail:           req.ToEmail,
 		ToEntityName:      req.ToEntityName,
 		Amount:            req.Amount,
 		Description:       req.Description,
-		Type:              constant.Journal.Transfer,
+		Type:              req.TransferType,
 		Status:            constant.Transfer.Initiated,
 	}
 	err := tx.Create(journalRecord).Error
@@ -206,9 +204,17 @@ func (t *journal) accept(tx *gorm.DB, j *types.Journal) (*types.Journal, error) 
 
 // POST /admin/transfers
 
-func (t *journal) Create(req *types.TransferReqBody) (*types.Journal, error) {
+func (t *journal) Create(req *types.AdminTransferReqBody) (*types.Journal, error) {
 	tx := db.Begin()
-	journal, err := t.propose(tx, req)
+	journal, err := t.propose(tx, &types.TransferReqBody{
+		FromAccountNumber: req.PayerEntity.AccountNumber,
+		FromEntityName:    req.PayerEntity.EntityName,
+		ToAccountNumber:   req.PayeeEntity.AccountNumber,
+		ToEntityName:      req.PayeeEntity.EntityName,
+		Amount:            req.Amount,
+		Description:       req.Description,
+		TransferType:      constant.TransferType.AdminTransfer,
+	})
 	if err != nil {
 		tx.Rollback()
 		return nil, err

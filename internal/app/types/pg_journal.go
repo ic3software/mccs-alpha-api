@@ -16,11 +16,9 @@ type Journal struct {
 	InitiatedBy string `gorm:"varchar(16);not null;default:''"`
 
 	FromAccountNumber string `gorm:"varchar(16);not null;default:''"`
-	FromEmail         string `gorm:"type:varchar(120);not null;default:''"`
 	FromEntityName    string `gorm:"type:varchar(120);not null;default:''"`
 
 	ToAccountNumber string `gorm:"varchar(16);not null;default:''"`
-	ToEmail         string `gorm:"type:varchar(120);not null;default:''"`
 	ToEntityName    string `gorm:"type:varchar(120);not null;default:''"`
 
 	Amount      float64 `gorm:"not null;default:0"`

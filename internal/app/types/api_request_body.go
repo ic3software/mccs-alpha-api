@@ -367,11 +367,11 @@ func (req *EmailReqBody) validate() []error {
 }
 
 // POST /transfers
-// POST /admin/transfers
 
 func NewTransferReqBody(userReq *TransferUserReqBody, initiatorEntity *Entity, receiverEntity *Entity) (*TransferReqBody, []error) {
 	req := &TransferReqBody{
-		TransferType:           userReq.Transfer,
+		TransferDirection:      userReq.TransferDirection,
+		TransferType:           constant.TransferType.Transfer,
 		Amount:                 userReq.Amount,
 		Description:            userReq.Description,
 		InitiatorAccountNumber: initiatorEntity.AccountNumber,
@@ -384,7 +384,7 @@ func NewTransferReqBody(userReq *TransferUserReqBody, initiatorEntity *Entity, r
 		ReceiverEntity:         receiverEntity,
 	}
 
-	if req.TransferType == constant.TransferType.Out {
+	if req.TransferDirection == constant.TransferDirection.Out {
 		req.FromAccountNumber = initiatorEntity.AccountNumber
 		req.FromEmail = initiatorEntity.Email
 		req.FromEntityName = initiatorEntity.EntityName
@@ -396,7 +396,7 @@ func NewTransferReqBody(userReq *TransferUserReqBody, initiatorEntity *Entity, r
 		req.ToStatus = receiverEntity.Status
 	}
 
-	if req.TransferType == constant.TransferType.In {
+	if req.TransferDirection == constant.TransferDirection.In {
 		req.FromAccountNumber = receiverEntity.AccountNumber
 		req.FromEmail = receiverEntity.Email
 		req.FromEntityName = receiverEntity.EntityName
@@ -412,7 +412,7 @@ func NewTransferReqBody(userReq *TransferUserReqBody, initiatorEntity *Entity, r
 }
 
 type TransferUserReqBody struct {
-	Transfer               string  `json:"transfer"`
+	TransferDirection      string  `json:"transfer"`
 	InitiatorAccountNumber string  `json:"initiator"`
 	ReceiverAccountNumber  string  `json:"receiver"`
 	Amount                 float64 `json:"amount"`
@@ -420,8 +420,9 @@ type TransferUserReqBody struct {
 }
 
 type TransferReqBody struct {
-	// User Inputs
-	TransferType           string
+	TransferDirection string // "in" or "out"
+	TransferType      string // "Transfer" / "AdminTranser"
+
 	InitiatorAccountNumber string
 	ReceiverAccountNumber  string
 	Amount                 float64
@@ -450,7 +451,7 @@ type TransferReqBody struct {
 func (req *TransferReqBody) Validate() []error {
 	errs := []error{}
 
-	if req.TransferType != constant.TransferType.In && req.TransferType != constant.TransferType.Out {
+	if req.TransferDirection != constant.TransferDirection.In && req.TransferDirection != constant.TransferDirection.Out {
 		errs = append(errs, errors.New("Transfer can be only 'in' or 'out'."))
 	}
 
@@ -1081,12 +1082,13 @@ func NewAdminSearchEntityReqBody(r *http.Request) (*AdminSearchEntityReqBody, []
 	req := &AdminSearchEntityReqBody{
 		Page:          page,
 		PageSize:      pageSize,
+		EntityName:    q.Get("entity_name"),
+		EntityEmail:   q.Get("entity_email"),
+		Statuses:      statuses,
 		Offers:        util.ToSearchTags(q.Get("offers")),
 		Wants:         util.ToSearchTags(q.Get("wants")),
 		TaggedSince:   util.ParseTime(q.Get("tagged_since")),
-		Statuses:      statuses,
 		Category:      q.Get("category"),
-		EntityName:    q.Get("entity_name"),
 		AccountNumber: q.Get("account_number"),
 		City:          q.Get("city"),
 		Region:        q.Get("region"),
@@ -1102,16 +1104,17 @@ func NewAdminSearchEntityReqBody(r *http.Request) (*AdminSearchEntityReqBody, []
 type AdminSearchEntityReqBody struct {
 	Page          int
 	PageSize      int
+	EntityName    string
+	EntityEmail   string
+	Statuses      []string
 	Offers        []string
 	Wants         []string
 	TaggedSince   time.Time
-	Statuses      []string
 	Category      string
-	EntityName    string
-	AccountNumber string
 	City          string
 	Region        string
 	Country       string
+	AccountNumber string
 	Balance       *float64
 	MaxPosBal     *float64
 	MaxNegBal     *float64
@@ -1130,20 +1133,12 @@ func (req *AdminSearchEntityReqBody) validate() []error {
 // GET /admin/entities/{entityID}
 
 type AdminGetEntity struct {
-	EntityID primitive.ObjectID
+	EntityID string
 }
 
 func NewAdminGetEntityReqBody(r *http.Request) (*AdminGetEntity, []error) {
-	entityID := mux.Vars(r)["entityID"]
-	if entityID == "" {
-		return nil, []error{errors.New("Please enter entity id.")}
-	}
-	objectID, err := primitive.ObjectIDFromHex(entityID)
-	if err != nil {
-		return nil, []error{errors.New("Please enter valid entity id.")}
-	}
 	return &AdminGetEntity{
-		EntityID: objectID,
+		EntityID: mux.Vars(r)["entityID"],
 	}, nil
 }
 
@@ -1187,10 +1182,11 @@ type AdminUpdateEntityReqBody struct {
 	LocationPostalCode string `json:"locationPostalCode"`
 	LocationCountry    string `json:"locationCountry"`
 	// Account
-	MaxPosBal *float64 `json:"max_pos_bal"`
-	MaxNegBal *float64 `json:"max_neg_bal"`
+	MaxPosBal *float64 `json:"maxPositiveBalance"`
+	MaxNegBal *float64 `json:"maxNegativeBalance"`
 	// Useless (Do not use it)
-	ID string `json:"id"`
+	ID            string `json:"id"`
+	AccountNumber string `json:"accountNumber"`
 }
 
 func (req *AdminUpdateEntityReqBody) validate() []error {
@@ -1198,6 +1194,9 @@ func (req *AdminUpdateEntityReqBody) validate() []error {
 
 	if req.ID != "" {
 		errs = append(errs, errors.New("The entity ID cannot be changed."))
+	}
+	if req.AccountNumber != "" {
+		errs = append(errs, errors.New("The account number cannot be changed."))
 	}
 	if req.MaxPosBal != nil && *req.MaxPosBal < 0 {
 		errs = append(errs, errors.New("The max positive balance should be positive."))
@@ -1249,6 +1248,57 @@ func NewAdminDeleteEntity(r *http.Request) (*AdminDeleteEntity, []error) {
 	return &AdminDeleteEntity{
 		EntityID: objectID,
 	}, nil
+}
+
+// POST /admin/transfers
+
+func NewAdminTransferReqBody(userReq *AdminTransferUserReqBody, payerEntity *Entity, payeeEntity *Entity) (*AdminTransferReqBody, []error) {
+	req := &AdminTransferReqBody{
+		PayerEntity:  payerEntity,
+		PayeeEntity:  payeeEntity,
+		TransferType: constant.TransferType.AdminTransfer,
+		Amount:       userReq.Amount,
+		Description:  userReq.Description,
+	}
+	return req, req.Validate()
+}
+
+type AdminTransferUserReqBody struct {
+	Payer       string  `json:"payer"`
+	Payee       string  `json:"payee"`
+	Amount      float64 `json:"amount"`
+	Description string  `json:"description"`
+}
+
+type AdminTransferReqBody struct {
+	PayerEntity  *Entity
+	PayeeEntity  *Entity
+	TransferType string // "Transfer" / "AdminTranser"
+	Amount       float64
+	Description  string
+}
+
+func (req *AdminTransferReqBody) Validate() []error {
+	errs := []error{}
+
+	// Amount should be positive value and with up to two decimal places.
+	if req.Amount <= 0 || !util.IsDecimalValid(req.Amount) {
+		errs = append(errs, errors.New("Please enter a valid numeric amount to send with up to two decimal places."))
+	}
+
+	// Only allow transfers with accounts that also have "trading-accepted" status
+	if req.PayerEntity.Status != constant.Trading.Accepted {
+		errs = append(errs, errors.New("Sender is not a trading member. Transfers can only be made when both entities have trading member status."))
+	} else if req.PayeeEntity.Status != constant.Trading.Accepted {
+		errs = append(errs, errors.New("Recipient is not a trading member. Transfers can only be made when both entities have trading member status."))
+	}
+
+	// Check if the user is doing the transaction to himself.
+	if req.PayerEntity.AccountNumber == req.PayeeEntity.AccountNumber {
+		errs = append(errs, errors.New("You cannot create a transaction with yourself."))
+	}
+
+	return errs
 }
 
 // GET /admin/transfers/{transferID}

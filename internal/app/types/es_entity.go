@@ -2,9 +2,10 @@ package types
 
 // EntityESRecord is the data that will store into the elastic search.
 type EntityESRecord struct {
-	EntityID   string `json:"entityID,omitempty"`
-	EntityName string `json:"entityName,omitempty"`
-	Status     string `json:"status,omitempty"`
+	ID     string `json:"id,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Email  string `json:"email,omitempty"`
+	Status string `json:"status,omitempty"`
 	// Tags
 	Offers     []*TagField `json:"offers,omitempty"`
 	Wants      []*TagField `json:"wants,omitempty"`

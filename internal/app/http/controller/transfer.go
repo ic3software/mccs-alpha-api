@@ -66,7 +66,7 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 			return
 		}
 
-		err := logic.Transfer.CheckBalance(req)
+		err := logic.Transfer.CheckBalance(req.FromAccountNumber, req.ToAccountNumber, req.Amount)
 		if err != nil {
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
@@ -421,7 +421,7 @@ func (handler *transferHandler) adminSearchTransfer() func(http.ResponseWriter, 
 
 func (handler *transferHandler) adminCreateTransfer() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.ProposeTransferRespond `json:"data"`
+		Data *types.AdminTransferRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := handler.newAdminTransferReqBody(r)
@@ -430,7 +430,7 @@ func (handler *transferHandler) adminCreateTransfer() func(http.ResponseWriter, 
 			return
 		}
 
-		err := logic.Transfer.CheckBalance(req)
+		err := logic.Transfer.CheckBalance(req.PayerEntity.AccountNumber, req.PayeeEntity.AccountNumber, req.Amount)
 		if err != nil {
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
@@ -443,12 +443,12 @@ func (handler *transferHandler) adminCreateTransfer() func(http.ResponseWriter, 
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewProposeTransferRespond(journal)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewJournalToAdminTransferRespond(journal)})
 	}
 }
 
-func (handler *transferHandler) newAdminTransferReqBody(r *http.Request) (*types.TransferReqBody, []error) {
-	var body types.TransferUserReqBody
+func (handler *transferHandler) newAdminTransferReqBody(r *http.Request) (*types.AdminTransferReqBody, []error) {
+	var body types.AdminTransferUserReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&body)
 	if err != nil {
@@ -457,15 +457,15 @@ func (handler *transferHandler) newAdminTransferReqBody(r *http.Request) (*types
 		}
 		return nil, []error{err}
 	}
-	initiatorEntity, err := logic.Entity.FindByAccountNumber(body.InitiatorAccountNumber)
+	payerEntity, err := logic.Entity.FindByAccountNumber(body.Payer)
 	if err != nil {
 		return nil, []error{err}
 	}
-	receiverEntity, err := logic.Entity.FindByAccountNumber(body.ReceiverAccountNumber)
+	payeeEntity, err := logic.Entity.FindByAccountNumber(body.Payee)
 	if err != nil {
 		return nil, []error{err}
 	}
-	return types.NewTransferReqBody(&body, initiatorEntity, receiverEntity)
+	return types.NewAdminTransferReqBody(&body, payerEntity, payeeEntity)
 }
 
 // GET /admin/transfers/{transferID}

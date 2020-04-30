@@ -77,25 +77,7 @@ var indexMappings = map[string]string{
 						}
 					}
 				},
-				"locationCity": {
-					"type": "text",
-					"fields": {
-						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
-						}
-					}
-				},
-				"locationRegion": {
-					"type": "text",
-					"fields": {
-						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
-						}
-					}
-				},
-				"locationCountry": {
+				"entityEmail": {
 					"type": "text",
 					"fields": {
 						"keyword": {
@@ -146,6 +128,33 @@ var indexMappings = map[string]string{
 				"categories": {
 					"type": "text",
 					"analyzer": "tag_analyzer",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"locationCity": {
+					"type": "text",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"locationRegion": {
+					"type": "text",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"locationCountry": {
+					"type": "text",
 					"fields": {
 						"keyword": {
 							"type": "keyword",

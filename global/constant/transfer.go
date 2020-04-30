@@ -21,10 +21,18 @@ var Transfer = struct {
 	Cancelled: "transferCancelled",
 }
 
-var TransferType = struct {
+var TransferDirection = struct {
 	In  string
 	Out string
 }{
 	In:  "in",
 	Out: "out",
+}
+
+var TransferType = struct {
+	Transfer      string
+	AdminTransfer string
+}{
+	Transfer:      "transfer",
+	AdminTransfer: "adminTransfer",
 }

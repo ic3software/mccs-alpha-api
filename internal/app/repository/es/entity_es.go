@@ -32,9 +32,10 @@ func (es *entity) Create(id primitive.ObjectID, entity *types.Entity) error {
 	maxNegBal := viper.GetFloat64("transaction.maxNegBal")
 
 	body := types.EntityESRecord{
-		EntityID:   id.Hex(),
-		EntityName: entity.EntityName,
-		Status:     constant.Entity.Pending,
+		ID:     id.Hex(),
+		Name:   entity.EntityName,
+		Email:  entity.Email,
+		Status: constant.Entity.Pending,
 		// Tags
 		Offers:     entity.Offers,
 		Wants:      entity.Wants,
@@ -62,7 +63,8 @@ func (es *entity) Create(id primitive.ObjectID, entity *types.Entity) error {
 
 func (es *entity) Update(update *types.Entity) error {
 	doc := types.EntityESRecord{
-		EntityName:      update.EntityName,
+		Name:            update.EntityName,
+		Email:           update.Email,
 		LocationCountry: update.LocationCity,
 		LocationCity:    update.LocationCountry,
 	}
@@ -81,9 +83,10 @@ func (es *entity) Update(update *types.Entity) error {
 
 func (es *entity) AdminUpdate(req *types.AdminUpdateEntityReqBody) error {
 	doc := types.EntityESRecord{
+		Name:   req.EntityName,
+		Email:  req.Email,
 		Status: req.Status,
 		// Address
-		EntityName:      req.EntityName,
 		LocationCity:    req.LocationCity,
 		LocationRegion:  req.LocationRegion,
 		LocationCountry: req.LocationCountry,
@@ -175,10 +178,10 @@ func (es *entity) Search(req *types.SearchEntityReqBody) (*types.ESSearchEntityR
 	}
 
 	seachByStatus(q, req.Statuses)
-	seachbyNameAndAddress(q, &byNameAndAddress{
-		EntityName: req.EntityName,
-		City:       req.LocationCity,
-		Country:    req.LocationCountry,
+	seachbyNameEmailAndAddress(q, &byNameAndAddress{
+		Name:    req.EntityName,
+		City:    req.LocationCity,
+		Country: req.LocationCountry,
 	})
 	seachByTags(q, &byTag{
 		Offers:      req.Offers,
@@ -203,7 +206,7 @@ func (es *entity) Search(req *types.SearchEntityReqBody) (*types.ESSearchEntityR
 		if err != nil {
 			return nil, err
 		}
-		ids = append(ids, record.EntityID)
+		ids = append(ids, record.ID)
 	}
 
 	numberOfResults := int(res.Hits.TotalHits.Value)
@@ -228,15 +231,19 @@ func seachByStatus(q *elastic.BoolQuery, status []string) *elastic.BoolQuery {
 }
 
 type byNameAndAddress struct {
-	EntityName string
-	City       string
-	Region     string
-	Country    string
+	Name    string
+	Email   string
+	City    string
+	Region  string
+	Country string
 }
 
-func seachbyNameAndAddress(q *elastic.BoolQuery, req *byNameAndAddress) {
-	if req.EntityName != "" {
-		q.Must(newFuzzyWildcardQuery("entityName", req.EntityName))
+func seachbyNameEmailAndAddress(q *elastic.BoolQuery, req *byNameAndAddress) {
+	if req.Name != "" {
+		q.Must(newFuzzyWildcardQuery("name", req.Name))
+	}
+	if req.Email != "" {
+		q.Must(newWildcardQuery("email", req.Email))
 	}
 	if req.City != "" {
 		q.Must(newFuzzyWildcardQuery("locationCity", req.City))
@@ -318,11 +325,12 @@ func (es *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.ESSea
 	}
 
 	seachByStatus(q, req.Statuses)
-	seachbyNameAndAddress(q, &byNameAndAddress{
-		EntityName: req.EntityName,
-		City:       req.City,
-		Region:     req.Region,
-		Country:    req.Country,
+	seachbyNameEmailAndAddress(q, &byNameAndAddress{
+		Name:    req.EntityName,
+		Email:   req.EntityEmail,
+		City:    req.City,
+		Region:  req.Region,
+		Country: req.Country,
 	})
 	seachByTags(q, &byTag{
 		Offers:      req.Offers,
@@ -353,7 +361,7 @@ func (es *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.ESSea
 		if err != nil {
 			return nil, err
 		}
-		ids = append(ids, record.EntityID)
+		ids = append(ids, record.ID)
 	}
 
 	numberOfResults := int(res.Hits.TotalHits.Value)

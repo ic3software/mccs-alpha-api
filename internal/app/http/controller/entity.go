@@ -441,7 +441,7 @@ func (handler *entityHandler) adminGetEntity() func(http.ResponseWriter, *http.R
 			return
 		}
 
-		entity, err := logic.Entity.FindByID(req.EntityID)
+		entity, err := logic.Entity.FindByStringID(req.EntityID)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.adminGetEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)

@@ -22,30 +22,20 @@ func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransf
 	return transfers, nil
 }
 
-// PATCH /transfers/{transferID}
-
-func (t *transfer) FindByID(transferID string) (*types.Journal, error) {
-	journal, err := pg.Journal.FindByID(transferID)
-	if err != nil {
-		return nil, err
-	}
-	return journal, nil
-}
-
 // POST /transfers
 // POST /admin/transfers
 
-func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
-	from, err := pg.Account.FindByAccountNumber(req.FromAccountNumber)
+func (t *transfer) CheckBalance(payer, payee string, amount float64) error {
+	from, err := pg.Account.FindByAccountNumber(payer)
 	if err != nil {
 		return err
 	}
-	to, err := pg.Account.FindByAccountNumber(req.ToAccountNumber)
+	to, err := pg.Account.FindByAccountNumber(payee)
 	if err != nil {
 		return err
 	}
 
-	exceed, err := BalanceLimit.IsExceedLimit(from.AccountNumber, from.Balance-req.Amount)
+	exceed, err := BalanceLimit.IsExceedLimit(from.AccountNumber, from.Balance-amount)
 	if err != nil {
 		return err
 	}
@@ -57,7 +47,7 @@ func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
 		return errors.New("Sender will exceed its credit limit." + " The maximum amount that can be sent is: " + fmt.Sprintf("%.2f", amount))
 	}
 
-	exceed, err = BalanceLimit.IsExceedLimit(to.AccountNumber, to.Balance+req.Amount)
+	exceed, err = BalanceLimit.IsExceedLimit(to.AccountNumber, to.Balance+amount)
 	if err != nil {
 		return err
 	}
@@ -70,6 +60,16 @@ func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
 	}
 
 	return nil
+}
+
+// PATCH /transfers/{transferID}
+
+func (t *transfer) FindByID(transferID string) (*types.Journal, error) {
+	journal, err := pg.Journal.FindByID(transferID)
+	if err != nil {
+		return nil, err
+	}
+	return journal, nil
 }
 
 // POST /transfers
@@ -170,7 +170,7 @@ func (t *transfer) AdminGetTransfer(transferID string) (*types.Journal, error) {
 
 // POST /admin/transfers
 
-func (t *transfer) Create(req *types.TransferReqBody) (*types.Journal, error) {
+func (t *transfer) Create(req *types.AdminTransferReqBody) (*types.Journal, error) {
 	created, err := pg.Journal.Create(req)
 	if err != nil {
 		return nil, err
