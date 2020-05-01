@@ -200,7 +200,7 @@ func (t *transfer) AdminSearch(req *types.AdminSearchTransferReqBody) (*types.Ad
 	return &types.AdminSearchTransferRespond{
 		Transfers:       types.NewJournalsToAdminTransfersRespond(journals),
 		NumberOfResults: result.NumberOfResults,
-		TotalPages:      result.NumberOfResults,
+		TotalPages:      result.TotalPages,
 	}, nil
 }
 
