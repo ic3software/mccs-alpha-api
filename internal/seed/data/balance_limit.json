@@ -4,16 +4,16 @@
         "maxNegBal": 10
     },
     {
-        "maxPosBal": 20,
-        "maxNegBal": 4
+        "maxPosBal": 5,
+        "maxNegBal": 5
     },
     {
         "maxPosBal": 20,
         "maxNegBal": 10
     },
     {
-        "maxPosBal": 20,
-        "maxNegBal": 10
+        "maxPosBal": 5,
+        "maxNegBal": 5
     },
     {
         "maxPosBal": 20,
