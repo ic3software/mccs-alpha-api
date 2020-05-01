@@ -2,11 +2,11 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -35,14 +35,14 @@ func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
 func (u *user) FindByEmail(email string) (*types.User, error) {
 	email = strings.ToLower(email)
 	if email == "" {
-		return &types.User{}, e.New(e.UserNotFound, "Please specify an email address.")
+		return &types.User{}, errors.New("Please specify an email address.")
 	}
 
 	user := types.User{}
 	filter := bson.M{"email": email, "deletedAt": bson.M{"$exists": false}}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
-		return nil, e.New(e.UserNotFound, "The specified user could not be found.")
+		return nil, errors.New("The specified user could not be found.")
 	}
 
 	return &user, nil
@@ -81,6 +81,19 @@ func (u *user) FindByIDs(objectIDs []primitive.ObjectID) ([]*types.User, error) 
 	cur.Close(context.TODO())
 
 	return results, nil
+}
+
+func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
+	user := types.User{}
+	filter := bson.M{
+		"companyID": id,
+		"deletedAt": bson.M{"$exists": false},
+	}
+	err := u.c.FindOne(context.Background(), filter).Decode(&user)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+	return &user, nil
 }
 
 func (u *user) FindByStringIDs(ids []string) ([]*types.User, error) {
@@ -297,19 +310,6 @@ func (u *user) RemoveAssociatedEntities(userIDs []primitive.ObjectID, entityID p
 }
 
 // TO BE REMOVED
-
-func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
-	user := types.User{}
-	filter := bson.M{
-		"companyID": id,
-		"deletedAt": bson.M{"$exists": false},
-	}
-	err := u.c.FindOne(context.Background(), filter).Decode(&user)
-	if err != nil {
-		return nil, e.New(e.UserNotFound, "user not found")
-	}
-	return &user, nil
-}
 
 func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	filter := bson.M{

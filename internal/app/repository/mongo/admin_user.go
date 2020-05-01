@@ -2,11 +2,11 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,7 +27,7 @@ func (u *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 	email = strings.ToLower(email)
 
 	if email == "" {
-		return &types.AdminUser{}, e.New(e.UserNotFound, "Please specify an email address.")
+		return &types.AdminUser{}, errors.New("Please specify an email address.")
 	}
 	user := types.AdminUser{}
 	filter := bson.M{
@@ -36,7 +36,7 @@ func (u *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 	}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
-		return nil, e.New(e.UserNotFound, "The specified admin could not be found.")
+		return nil, errors.New("The specified admin could not be found.")
 	}
 	return &user, nil
 }
@@ -128,7 +128,7 @@ func (u *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
 	}
 	err := u.c.FindOne(context.Background(), filter).Decode(&adminUser)
 	if err != nil {
-		return nil, e.New(e.UserNotFound, "The specified admin could not be found.")
+		return nil, errors.New("Email address not found.")
 	}
 	return &adminUser, nil
 }

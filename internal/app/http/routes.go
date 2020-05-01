@@ -23,6 +23,5 @@ func RegisterRoutes(r *mux.Router) {
 	controller.TagHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.CategoryHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.TransferHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
-	controller.HistoryHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 	controller.LogHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
 }

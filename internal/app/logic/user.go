@@ -108,6 +108,14 @@ func (u *user) FindByIDs(ids []primitive.ObjectID) ([]*types.User, error) {
 	return users, nil
 }
 
+func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
+	user, err := mongo.User.FindByEntityID(id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 func (a *user) UpdateLoginInfo(id primitive.ObjectID, ip string) (*types.LoginInfo, error) {
 	info, err := mongo.User.UpdateLoginInfo(id, ip)
 	if err != nil {
@@ -238,14 +246,6 @@ func (u *user) AdminSearchUser(req *types.AdminSearchUserReqBody) (*types.Search
 
 func (u *user) FindByEmail(email string) (*types.User, error) {
 	user, err := mongo.User.FindByEmail(email)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
-	user, err := mongo.User.FindByEntityID(id)
 	if err != nil {
 		return nil, err
 	}
