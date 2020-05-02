@@ -212,6 +212,11 @@ func (e *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, er
 		return nil, result.Err()
 	}
 
+	err = User.RemoveAssociatedEntities(entity.Users, entity.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &entity, nil
 }
 

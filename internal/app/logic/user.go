@@ -219,10 +219,6 @@ func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error)
 	if err != nil {
 		return nil, err
 	}
-	err = mongo.Entity.RemoveAssociatedUsers(deleted.Entities, deleted.ID)
-	if err != nil {
-		return nil, err
-	}
 	return deleted, nil
 }
 

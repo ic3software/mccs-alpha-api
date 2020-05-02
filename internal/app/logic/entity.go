@@ -113,10 +113,6 @@ func (_ *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, er
 	if err != nil {
 		return nil, err
 	}
-	err = mongo.User.RemoveAssociatedEntities(deleted.Users, deleted.ID)
-	if err != nil {
-		return nil, err
-	}
 	err = pg.Account.Delete(deleted.AccountNumber)
 	if err != nil {
 		return nil, err
