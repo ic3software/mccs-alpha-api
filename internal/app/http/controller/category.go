@@ -60,7 +60,7 @@ func (handler *categoryHandler) search() func(http.ResponseWriter, *http.Request
 		Meta meta     `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewSearchCategoryReqBody(r.URL.Query())
+		req, err := types.NewSearchCategoryReq(r.URL.Query())
 		if err != nil {
 			l.Logger.Info("[Info] CategoryHandler.search failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -105,7 +105,7 @@ func (handler *categoryHandler) create() func(http.ResponseWriter, *http.Request
 		Data *types.AdminCategoryRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminCreateCategoryReqBody(r)
+		req, errs := types.NewAdminCreateCategoryReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -135,7 +135,7 @@ func (handler *categoryHandler) update() func(http.ResponseWriter, *http.Request
 		Data *types.AdminCategoryRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminUpdateCategoryReqBody(r)
+		req, errs := types.NewAdminUpdateCategoryReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -180,7 +180,7 @@ func (handler *categoryHandler) delete() func(http.ResponseWriter, *http.Request
 		Data *types.AdminCategoryRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminDeleteCategoryReqBody(r)
+		req, errs := types.NewAdminDeleteCategoryReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return

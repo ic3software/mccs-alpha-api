@@ -43,7 +43,7 @@ func (t *tag) Create(name string) (*types.Tag, error) {
 	return &tag, nil
 }
 
-func (t *tag) Search(req *types.SearchTagReqBody) (*types.FindTagResult, error) {
+func (t *tag) Search(req *types.SearchTagReq) (*types.FindTagResult, error) {
 	var results []*types.Tag
 
 	findOptions := options.Find()

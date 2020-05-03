@@ -73,7 +73,7 @@ func (es *user) Delete(id string) error {
 	return nil
 }
 
-func (es *user) AdminSearchUser(req *types.AdminSearchUserReqBody) (*types.ESSearchUserResult, error) {
+func (es *user) AdminSearchUser(req *types.AdminSearchUserReq) (*types.ESSearchUserResult, error) {
 	var ids []string
 	pageSize := req.PageSize
 	from := pageSize * (req.Page - 1)

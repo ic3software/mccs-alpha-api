@@ -42,7 +42,10 @@ func (u *user) FindByEmail(email string) (*types.User, error) {
 	filter := bson.M{"email": email, "deletedAt": bson.M{"$exists": false}}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
-		return nil, errors.New("The specified user could not be found.")
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("The specified user could not be found.")
+		}
+		return nil, err
 	}
 
 	return &user, nil
@@ -53,6 +56,9 @@ func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 	filter := bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("The specified user could not be found.")
+		}
 		return nil, err
 	}
 	return &user, nil
@@ -91,7 +97,10 @@ func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
 	}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
-		return nil, errors.New("user not found")
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("The specified user could not be found.")
+		}
+		return nil, err
 	}
 	return &user, nil
 }
@@ -171,6 +180,20 @@ func (u *user) FindOneAndUpdate(userID primitive.ObjectID, update *types.User) (
 	}
 
 	return &user, nil
+}
+
+func (u *user) UpdatePassword(user *types.User) error {
+	filter := bson.M{"_id": user.ID}
+	update := bson.M{"$set": bson.M{"password": user.Password, "updatedAt": time.Now()}}
+	_, err := u.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u *user) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types.LoginInfo, error) {
@@ -265,6 +288,8 @@ func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.Us
 	return &user, nil
 }
 
+// DELETE /admin/users/{userID}
+
 func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error) {
 	filter := bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
 
@@ -272,6 +297,7 @@ func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error)
 		context.Background(),
 		filter,
 		bson.M{"$set": bson.M{
+			"entities":  []primitive.ObjectID{},
 			"deletedAt": time.Now(),
 			"updatedAt": time.Now(),
 		}},
@@ -284,7 +310,7 @@ func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error)
 		return nil, result.Err()
 	}
 
-	err = Entity.RemoveAssociatedUsers(user.Entities, user.ID)
+	err = Entity.removeAssociatedUsers(user.Entities, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -292,9 +318,32 @@ func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error)
 	return &user, nil
 }
 
-// DELETE /admin/entities/{entityID}
+// PATCH /admin/entities/{entityID}
 
-func (u *user) RemoveAssociatedEntities(userIDs []primitive.ObjectID, entityID primitive.ObjectID) error {
+func (u *user) associateEntities(userIDs []primitive.ObjectID, entityID primitive.ObjectID) error {
+	filter := bson.M{"_id": bson.M{"$in": userIDs}}
+	updates := []bson.M{
+		bson.M{"$push": bson.M{"entities": entityID}},
+		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
+	}
+
+	var writes []mongo.WriteModel
+	for _, update := range updates {
+		model := mongo.NewUpdateManyModel().SetFilter(filter).SetUpdate(update)
+		writes = append(writes, model)
+	}
+
+	_, err := u.c.BulkWrite(context.Background(), writes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// PATCH /admin/entities/{entityID}
+// PATCH /admin/entities/{entityID}
+
+func (u *user) removeAssociatedEntities(userIDs []primitive.ObjectID, entityID primitive.ObjectID) error {
 	filter := bson.M{"_id": bson.M{"$in": userIDs}}
 	updates := []bson.M{
 		bson.M{"$pull": bson.M{"entities": entityID}},
@@ -313,8 +362,6 @@ func (u *user) RemoveAssociatedEntities(userIDs []primitive.ObjectID, entityID p
 	}
 	return nil
 }
-
-// TO BE REMOVED
 
 func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	filter := bson.M{
@@ -350,20 +397,6 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	cur.Close(context.TODO())
 
 	return users, nil
-}
-
-func (u *user) UpdatePassword(user *types.User) error {
-	filter := bson.M{"_id": user.ID}
-	update := bson.M{"$set": bson.M{"password": user.Password, "updatedAt": time.Now()}}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (u *user) UpdateUserInfo(user *types.User) error {

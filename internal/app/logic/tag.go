@@ -25,7 +25,7 @@ func (t *tag) Create(name string) (*types.Tag, error) {
 	return created, nil
 }
 
-func (t *tag) Search(req *types.SearchTagReqBody) (*types.FindTagResult, error) {
+func (t *tag) Search(req *types.SearchTagReq) (*types.FindTagResult, error) {
 	found, err := mongo.Tag.Search(req)
 	if err != nil {
 		return nil, err

@@ -2,6 +2,15 @@ package util
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
+func ToObjectIDs(ids []string) []primitive.ObjectID {
+	objectIDs := []primitive.ObjectID{}
+	for _, id := range ids {
+		objectID, _ := primitive.ObjectIDFromHex(id)
+		objectIDs = append(objectIDs, objectID)
+	}
+	return objectIDs
+}
+
 func ToIDStrings(ids []primitive.ObjectID) []string {
 	idStrings := []string{}
 	for _, objID := range ids {

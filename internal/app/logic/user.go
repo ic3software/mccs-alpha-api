@@ -222,7 +222,7 @@ func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error)
 	return deleted, nil
 }
 
-func (u *user) AdminSearchUser(req *types.AdminSearchUserReqBody) (*types.SearchUserResult, error) {
+func (u *user) AdminSearchUser(req *types.AdminSearchUserReq) (*types.SearchUserResult, error) {
 	result, err := es.User.AdminSearchUser(req)
 	if err != nil {
 		return nil, err

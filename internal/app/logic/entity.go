@@ -86,7 +86,7 @@ func (_ *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 
 // PATCH /admin/entities/{entityID}
 
-func (_ *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReqBody) (*types.Entity, error) {
+func (_ *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.Entity, error) {
 	err := es.Entity.AdminUpdate(req)
 	if err != nil {
 		return nil, err
@@ -117,10 +117,6 @@ func (_ *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, er
 	if err != nil {
 		return nil, err
 	}
-	err = pg.BalanceLimit.Delete(deleted.AccountNumber)
-	if err != nil {
-		return nil, err
-	}
 	return deleted, nil
 }
 
@@ -136,7 +132,7 @@ func (_ *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 	return nil
 }
 
-func (_ *entity) Search(req *types.SearchEntityReqBody) (*types.SearchEntityResult, error) {
+func (_ *entity) Search(req *types.SearchEntityReq) (*types.SearchEntityResult, error) {
 	result, err := es.Entity.Search(req)
 	if err != nil {
 		return nil, err
@@ -152,7 +148,7 @@ func (_ *entity) Search(req *types.SearchEntityReqBody) (*types.SearchEntityResu
 	}, nil
 }
 
-func (_ *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.SearchEntityResult, error) {
+func (_ *entity) AdminSearch(req *types.AdminSearchEntityReq) (*types.SearchEntityResult, error) {
 	result, err := es.Entity.AdminSearch(req)
 	if err != nil {
 		return nil, err
@@ -168,7 +164,7 @@ func (_ *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.Search
 	}, nil
 }
 
-func (_ *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
+func (_ *entity) AddToFavoriteEntities(req *types.AddToFavoriteReq) error {
 	err := mongo.Entity.AddToFavoriteEntities(req)
 	if err != nil {
 		return err

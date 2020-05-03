@@ -14,7 +14,7 @@ type transfer struct{}
 
 var Transfer = &transfer{}
 
-func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransferRespond, error) {
+func (t *transfer) Search(req *types.SearchTransferReq) (*types.SearchTransferRespond, error) {
 	transfers, err := pg.Journal.Search(req)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (t *transfer) FindByID(transferID string) (*types.Journal, error) {
 
 // POST /transfers
 
-func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
+func (t *transfer) Propose(req *types.TransferReq) (*types.Journal, error) {
 	journal, err := pg.Journal.Propose(req)
 	if err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func (t *transfer) AdminGetTransfer(transferID string) (*types.Journal, error) {
 
 // POST /admin/transfers
 
-func (t *transfer) Create(req *types.AdminTransferReqBody) (*types.Journal, error) {
+func (t *transfer) Create(req *types.AdminTransferReq) (*types.Journal, error) {
 	created, err := pg.Journal.Create(req)
 	if err != nil {
 		return nil, err
@@ -188,7 +188,7 @@ func (t *transfer) Create(req *types.AdminTransferReqBody) (*types.Journal, erro
 
 // GET /admin/transfers
 
-func (t *transfer) AdminSearch(req *types.AdminSearchTransferReqBody) (*types.AdminSearchTransferRespond, error) {
+func (t *transfer) AdminSearch(req *types.AdminSearchTransferReq) (*types.AdminSearchTransferRespond, error) {
 	result, err := es.Journal.AdminSearch(req)
 	if err != nil {
 		return nil, err

@@ -16,7 +16,7 @@ var Journal = &journal{}
 
 // POST /transfers
 
-func (t *journal) Propose(req *types.TransferReqBody) (*types.Journal, error) {
+func (t *journal) Propose(req *types.TransferReq) (*types.Journal, error) {
 	tx := db.Begin()
 	journal, err := t.propose(tx, req)
 	if err != nil {
@@ -26,7 +26,7 @@ func (t *journal) Propose(req *types.TransferReqBody) (*types.Journal, error) {
 	return journal, tx.Commit().Error
 }
 
-func (t *journal) propose(tx *gorm.DB, req *types.TransferReqBody) (*types.Journal, error) {
+func (t *journal) propose(tx *gorm.DB, req *types.TransferReq) (*types.Journal, error) {
 	journalRecord := &types.Journal{
 		TransferID:        ksuid.New().String(),
 		InitiatedBy:       req.InitiatorAccountNumber,
@@ -48,7 +48,7 @@ func (t *journal) propose(tx *gorm.DB, req *types.TransferReqBody) (*types.Journ
 
 // GET /transfers
 
-func (t *journal) Search(req *types.SearchTransferReqBody) (*types.SearchTransferRespond, error) {
+func (t *journal) Search(req *types.SearchTransferReq) (*types.SearchTransferRespond, error) {
 	var journals []*types.Journal
 	var numberOfResults int
 	var err error
@@ -204,9 +204,9 @@ func (t *journal) accept(tx *gorm.DB, j *types.Journal) (*types.Journal, error) 
 
 // POST /admin/transfers
 
-func (t *journal) Create(req *types.AdminTransferReqBody) (*types.Journal, error) {
+func (t *journal) Create(req *types.AdminTransferReq) (*types.Journal, error) {
 	tx := db.Begin()
-	journal, err := t.propose(tx, &types.TransferReqBody{
+	journal, err := t.propose(tx, &types.TransferReq{
 		FromAccountNumber: req.PayerEntity.AccountNumber,
 		FromEntityName:    req.PayerEntity.EntityName,
 		ToAccountNumber:   req.PayeeEntity.AccountNumber,

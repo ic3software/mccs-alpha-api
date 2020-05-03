@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -116,8 +117,8 @@ func (handler *entityHandler) UpdateOffersAndWants(old *types.Entity, offers, wa
 	}
 }
 
-func (handler *entityHandler) getSearchEntityQueryParams(q url.Values) (*types.SearchEntityReqBody, error) {
-	query, err := types.NewSearchEntityReqBody(q)
+func (handler *entityHandler) getSearchEntityQueryParams(q url.Values) (*types.SearchEntityReq, error) {
+	query, err := types.NewSearchEntityReq(q)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +145,7 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 		Data []*types.SearchEntityRespond `json:"data"`
 		Meta meta                         `json:"meta"`
 	}
-	toData := func(query *types.SearchEntityReqBody, entities []*types.Entity) []*types.SearchEntityRespond {
+	toData := func(query *types.SearchEntityReq, entities []*types.Entity) []*types.SearchEntityRespond {
 		result := []*types.SearchEntityRespond{}
 		queryingEntityStatus := handler.getQueryingEntityStatus(query.QueryingEntityID)
 		for _, entity := range entities {
@@ -209,7 +210,7 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 		Data *types.SearchEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewGetEntityReqBody(r)
+		req, errs := types.NewGetEntityReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -243,7 +244,7 @@ func (handler *entityHandler) getEntity() func(http.ResponseWriter, *http.Reques
 
 func (handler *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAddToFavoriteReqBody(r)
+		req, errs := types.NewAddToFavoriteReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -275,7 +276,7 @@ func (handler *entityHandler) checkEntityStatus(SenderEntity, ReceiverEntity *ty
 
 func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewEmailReqBody(r)
+		req, errs := types.NewEmailReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -378,7 +379,7 @@ func (handler *entityHandler) adminSearchEntity() func(http.ResponseWriter, *htt
 		Meta meta                              `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminSearchEntityReqBody(r)
+		req, errs := types.NewAdminSearchEntityReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -435,7 +436,7 @@ func (handler *entityHandler) adminGetEntity() func(http.ResponseWriter, *http.R
 		Data *types.AdminGetEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminGetEntityReqBody(r)
+		req, errs := types.NewAdminGetEntityReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -486,7 +487,7 @@ func (handler *entityHandler) adminUpdateEntity() func(http.ResponseWriter, *htt
 		Data *types.AdminUpdateEntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := handler.newAdminUpdateEntityReqBody(r)
+		req, errs := handler.newAdminUpdateEntityReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -502,7 +503,9 @@ func (handler *entityHandler) adminUpdateEntity() func(http.ResponseWriter, *htt
 		// Update offers and wants are seperate processes.
 		go handler.updateOfferAndWants(req.OriginEntity, req.Status, req.Offers, req.Wants)
 		go handler.updateEntityMemberStartedAt(req.OriginEntity, req.Status)
-		go CategoryHandler.Update(req.Categories)
+		if req.Categories != nil {
+			go CategoryHandler.Update(*req.Categories)
+		}
 
 		res, err := handler.newAdminUpdateEntityRespond(req, newEntity)
 		if err != nil {
@@ -515,20 +518,41 @@ func (handler *entityHandler) adminUpdateEntity() func(http.ResponseWriter, *htt
 	}
 }
 
-func (handler *entityHandler) newAdminUpdateEntityReqBody(r *http.Request) (*types.AdminUpdateEntityReqBody, []error) {
+func (handler *entityHandler) newAdminUpdateEntityReq(r *http.Request) (*types.AdminUpdateEntityReq, []error) {
 	originEntity, err := logic.Entity.FindByStringID(mux.Vars(r)["entityID"])
 	if err != nil {
 		return nil, []error{err}
 	}
-	return types.NewAdminUpdateEntityReqBody(r, originEntity)
+
+	var j types.AdminUpdateEntityJSON
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&j)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	if j.Users != nil {
+		for _, userID := range *j.Users {
+			_, err := logic.User.FindByStringID(userID)
+			if err != nil {
+				return nil, []error{err}
+			}
+		}
+	}
+
+	return types.NewAdminUpdateEntityReq(j, originEntity)
 }
 
-func (handler *entityHandler) newAdminUpdateEntityRespond(req *types.AdminUpdateEntityReqBody, entity *types.Entity) (*types.AdminUpdateEntityRespond, error) {
+func (handler *entityHandler) newAdminUpdateEntityRespond(req *types.AdminUpdateEntityReq, entity *types.Entity) (*types.AdminUpdateEntityRespond, error) {
+	users, err := logic.User.FindByIDs(entity.Users)
+	if err != nil {
+		return nil, err
+	}
 	balanceLimit, err := logic.BalanceLimit.FindByAccountNumber(entity.AccountNumber)
 	if err != nil {
 		return nil, err
 	}
-	return types.NewAdminUpdateEntityRespond(req, entity, balanceLimit), nil
+	return types.NewAdminUpdateEntityRespond(req, users, entity, balanceLimit), nil
 }
 
 func (handler *entityHandler) updateEntityMemberStartedAt(oldEntity *types.Entity, newStatus string) {

@@ -94,5 +94,11 @@ func (a *account) Delete(accountNumber string) error {
 		return err
 	}
 
+	err = BalanceLimit.delete(tx, accountNumber)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return tx.Commit().Error
 }

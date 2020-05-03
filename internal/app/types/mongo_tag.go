@@ -41,13 +41,13 @@ func NewTagDifference(oldOffers, updateOffers, oldWants, updateWants []string) *
 
 	if len(updateOffers) != 0 {
 		offers = updateOffers
-		newAddedOffers, offersRemoved = util.TagDifference(updateOffers, oldOffers)
+		newAddedOffers, offersRemoved = util.StringDiff(updateOffers, oldOffers)
 	} else {
 		offers = oldOffers
 	}
 	if len(updateWants) != 0 {
 		wants = updateWants
-		newAddedWants, wantsRemoved = util.TagDifference(updateWants, oldWants)
+		newAddedWants, wantsRemoved = util.StringDiff(updateWants, oldWants)
 	} else {
 		wants = oldWants
 	}

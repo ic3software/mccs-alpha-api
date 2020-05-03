@@ -64,7 +64,7 @@ func (es *journal) Update(j *types.Journal) error {
 
 // GET /admin/transfers
 
-func (es *journal) AdminSearch(req *types.AdminSearchTransferReqBody) (*types.ESSearchJournalResult, error) {
+func (es *journal) AdminSearch(req *types.AdminSearchTransferReq) (*types.ESSearchJournalResult, error) {
 	var ids []string
 
 	q := elastic.NewBoolQuery()

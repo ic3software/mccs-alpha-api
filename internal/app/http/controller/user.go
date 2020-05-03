@@ -117,7 +117,7 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 		return d
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewLoginReqBody(r)
+		req, errs := types.NewLoginReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -160,7 +160,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewSignupReqBody(r)
+		req, errs := types.NewSignupReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -307,7 +307,7 @@ func (handler *userHandler) requestPasswordReset() func(http.ResponseWriter, *ht
 func (handler *userHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		var req types.ResetPasswordReqBody
+		var req types.ResetPasswordReq
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {
@@ -414,7 +414,7 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 		Data *types.UserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewUpdateUserReqBody(r)
+		req, errs := types.NewUpdateUserReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -470,7 +470,7 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 		Data *types.EntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewUpdateUserEntityReqBody(r)
+		req, errs := types.NewUpdateUserEntityReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -531,7 +531,7 @@ func (handler *userHandler) adminGetUser() func(http.ResponseWriter, *http.Reque
 		Data *types.AdminGetUserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminGetUserReqBody(r)
+		req, errs := types.NewAdminGetUserReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -565,7 +565,7 @@ func (handler *userHandler) adminSearchUser() func(http.ResponseWriter, *http.Re
 		Meta meta                         `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminSearchUserReqBody(r)
+		req, errs := types.NewAdminSearchUserReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -612,7 +612,7 @@ func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Re
 		Data *types.AdminGetUserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminUpdateUserReqBody(r)
+		req, errs := types.NewAdminUpdateUserReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -651,7 +651,7 @@ func (handler *userHandler) adminDeleteUser() func(http.ResponseWriter, *http.Re
 		Data *types.AdminDeleteUserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminDeleteUserReqBody(r)
+		req, errs := types.NewAdminDeleteUserReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
