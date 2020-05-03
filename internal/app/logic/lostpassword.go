@@ -5,7 +5,6 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/spf13/viper"
 )
 
@@ -16,7 +15,7 @@ var Lostpassword = &lostpassword{}
 func (s *lostpassword) Create(l *types.LostPassword) error {
 	err := mongo.LostPassword.Create(l)
 	if err != nil {
-		return e.Wrap(err, "Create failed")
+		return err
 	}
 	return nil
 }
@@ -32,7 +31,7 @@ func (s *lostpassword) FindByToken(token string) (*types.LostPassword, error) {
 func (s *lostpassword) FindByEmail(email string) (*types.LostPassword, error) {
 	lostPassword, err := mongo.LostPassword.FindByEmail(email)
 	if err != nil {
-		return nil, e.Wrap(err, "FindByEmail failed")
+		return nil, err
 	}
 	return lostPassword, nil
 }
@@ -40,7 +39,7 @@ func (s *lostpassword) FindByEmail(email string) (*types.LostPassword, error) {
 func (s *lostpassword) SetTokenUsed(token string) error {
 	err := mongo.LostPassword.SetTokenUsed(token)
 	if err != nil {
-		return e.Wrap(err, "SetTokenUsed failed")
+		return err
 	}
 	return nil
 }

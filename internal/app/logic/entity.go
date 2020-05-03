@@ -7,7 +7,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/pg"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -85,16 +84,44 @@ func (_ *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 	return entity, nil
 }
 
-func (_ *entity) AdminFindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
-	err := es.Entity.AdminUpdate(update)
+// PATCH /admin/entities/{entityID}
+
+func (_ *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReqBody) (*types.Entity, error) {
+	err := es.Entity.AdminUpdate(req)
 	if err != nil {
 		return nil, err
 	}
-	entity, err := mongo.Entity.FindOneAndUpdate(update)
+	err = pg.BalanceLimit.AdminUpdate(req)
+	if err != nil {
+		return nil, err
+	}
+	entity, err := mongo.Entity.AdminFindOneAndUpdate(req)
 	if err != nil {
 		return nil, err
 	}
 	return entity, nil
+}
+
+// DELETE /admin/entities/{entityID}
+
+func (_ *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, error) {
+	err := es.Entity.Delete(id.Hex())
+	if err != nil {
+		return nil, err
+	}
+	deleted, err := mongo.Entity.AdminFindOneAndDelete(id)
+	if err != nil {
+		return nil, err
+	}
+	err = pg.Account.Delete(deleted.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	err = pg.BalanceLimit.Delete(deleted.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return deleted, nil
 }
 
 func (_ *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
@@ -109,8 +136,8 @@ func (_ *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 	return nil
 }
 
-func (_ *entity) Find(req *types.SearchEntityReqBody) (*types.FindEntityResult, error) {
-	result, err := es.Entity.Find(req)
+func (_ *entity) Search(req *types.SearchEntityReqBody) (*types.SearchEntityResult, error) {
+	result, err := es.Entity.Search(req)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +145,23 @@ func (_ *entity) Find(req *types.SearchEntityReqBody) (*types.FindEntityResult, 
 	if err != nil {
 		return nil, err
 	}
-	return &types.FindEntityResult{
+	return &types.SearchEntityResult{
+		Entities:        entities,
+		NumberOfResults: result.NumberOfResults,
+		TotalPages:      result.TotalPages,
+	}, nil
+}
+
+func (_ *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.SearchEntityResult, error) {
+	result, err := es.Entity.AdminSearch(req)
+	if err != nil {
+		return nil, err
+	}
+	entities, err := mongo.Entity.FindByStringIDs(result.IDs)
+	if err != nil {
+		return nil, err
+	}
+	return &types.SearchEntityResult{
 		Entities:        entities,
 		NumberOfResults: result.NumberOfResults,
 		TotalPages:      result.TotalPages,
@@ -197,24 +240,6 @@ func (b *entity) DeleteTag(name string) error {
 	err = mongo.Entity.DeleteTag(name)
 	if err != nil {
 		return err
-	}
-	return nil
-}
-
-// TO BE REMOVED
-
-func (b *entity) UpdateEntity(id primitive.ObjectID, difference *types.EntityData, isAdmin bool) error {
-	return nil
-}
-
-func (b *entity) DeleteByID(id primitive.ObjectID) error {
-	err := es.Entity.Delete(id.Hex())
-	if err != nil {
-		return e.Wrap(err, "delete entity by id failed")
-	}
-	err = mongo.Entity.DeleteByID(id)
-	if err != nil {
-		return e.Wrap(err, "delete entity by id failed")
 	}
 	return nil
 }

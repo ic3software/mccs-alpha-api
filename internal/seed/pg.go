@@ -18,16 +18,14 @@ func (_ *postgresSQL) CreateAccount() (string, error) {
 	return account.AccountNumber, nil
 }
 
-func (_ *postgresSQL) UpdateBalanceLimits(balanceLimits []types.BalanceLimit) error {
-	for _, balanceLimit := range balanceLimits {
-		err := pg.DB().Exec(`
-			UPDATE balance_limits
-			SET max_pos_bal = ?, max_neg_bal = ?
-			WHERE id = ?
-		`, balanceLimit.MaxPosBal, balanceLimit.MaxNegBal, balanceLimit.AccountID).Error
-		if err != nil {
-			return err
-		}
+func (_ *postgresSQL) UpdateBalanceLimits(accountNumber string, balanceLimit types.BalanceLimit) error {
+	err := pg.DB().Exec(`
+		UPDATE balance_limits
+		SET max_pos_bal = ?, max_neg_bal = ?
+		WHERE account_number = ?
+		`, balanceLimit.MaxPosBal, balanceLimit.MaxNegBal, accountNumber).Error
+	if err != nil {
+		return err
 	}
 	return nil
 }

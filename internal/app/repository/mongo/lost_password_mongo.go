@@ -2,9 +2,8 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"time"
-
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -42,24 +41,24 @@ func (l *lostPassword) Create(lostPassword *types.LostPassword) error {
 
 func (l *lostPassword) FindByToken(token string) (*types.LostPassword, error) {
 	if token == "" {
-		return nil, e.New(e.TokenInvalid, "token not found")
+		return nil, errors.New("Invalid token.")
 	}
 	lostPassword := types.LostPassword{}
 	err := l.c.FindOne(context.Background(), types.LostPassword{Token: token}).Decode(&lostPassword)
 	if err != nil {
-		return nil, e.New(e.TokenInvalid, "token not found")
+		return nil, errors.New("Invalid token.")
 	}
 	return &lostPassword, nil
 }
 
 func (l *lostPassword) FindByEmail(email string) (*types.LostPassword, error) {
 	if email == "" {
-		return nil, e.New(e.TokenInvalid, "token not found")
+		return nil, errors.New("Invalid token.")
 	}
 	lostPassword := types.LostPassword{}
 	err := l.c.FindOne(context.Background(), types.LostPassword{Email: email}).Decode(&lostPassword)
 	if err != nil {
-		return nil, e.New(e.TokenInvalid, "token not found")
+		return nil, errors.New("Invalid token.")
 	}
 	return &lostPassword, nil
 }

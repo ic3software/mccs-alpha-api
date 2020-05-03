@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/olivere/elastic/v7"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -170,7 +169,7 @@ func (es *tag) MatchOffer(offer string, lastLoginDate time.Time) ([]string, erro
 		Do(context.Background())
 
 	if err != nil {
-		return nil, e.Wrap(err, "TagES MatchOffer failed")
+		return nil, err
 	}
 
 	matchTags := make([]string, 0, 8)
@@ -178,7 +177,7 @@ func (es *tag) MatchOffer(offer string, lastLoginDate time.Time) ([]string, erro
 		var record types.TagESRecord
 		err := json.Unmarshal(hit.Source, &record)
 		if err != nil {
-			return nil, e.Wrap(err, "TagES MatchOffer failed")
+			return nil, err
 		}
 		matchTags = append(matchTags, record.Name)
 	}
@@ -195,7 +194,7 @@ func (es *tag) MatchWant(want string, lastLoginDate time.Time) ([]string, error)
 		Do(context.Background())
 
 	if err != nil {
-		return nil, e.Wrap(err, "TagES MatchWant failed")
+		return nil, err
 	}
 
 	matchTags := make([]string, 0, 8)
@@ -203,7 +202,7 @@ func (es *tag) MatchWant(want string, lastLoginDate time.Time) ([]string, error)
 		var record types.TagESRecord
 		err := json.Unmarshal(hit.Source, &record)
 		if err != nil {
-			return nil, e.Wrap(err, "TagES MatchWant failed")
+			return nil, err
 		}
 		matchTags = append(matchTags, record.Name)
 	}

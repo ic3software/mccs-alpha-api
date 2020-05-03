@@ -6,8 +6,8 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/global"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/template"
+	"github.com/ic3network/mccs-alpha-api/util/l"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/spf13/viper"

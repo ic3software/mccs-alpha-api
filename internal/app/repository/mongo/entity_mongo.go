@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
@@ -85,6 +86,9 @@ func (e *entity) FindByID(id primitive.ObjectID) (*types.Entity, error) {
 	}
 	err := e.c.FindOne(ctx, filter).Decode(&entity)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("Please enter valid entity id.")
+		}
 		return nil, err
 	}
 	return &entity, nil
@@ -99,6 +103,9 @@ func (e *entity) FindByAccountNumber(accountNumber string) (*types.Entity, error
 	}
 	err := e.c.FindOne(ctx, filter).Decode(&entity)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("Entity not found.")
+		}
 		return nil, err
 	}
 	return &entity, nil
@@ -131,6 +138,89 @@ func (e *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 
 	return &entity, nil
 }
+
+// PATCH /admin/entities/{entityID}
+
+func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReqBody) (*types.Entity, error) {
+	filter := bson.M{"_id": req.OriginEntity.ID}
+	update := &types.Entity{
+		EntityName:         req.EntityName,
+		Email:              req.Email,
+		EntityPhone:        req.EntityPhone,
+		IncType:            req.IncType,
+		CompanyNumber:      req.CompanyNumber,
+		Website:            req.Website,
+		Turnover:           req.Turnover,
+		Description:        req.Description,
+		LocationAddress:    req.LocationAddress,
+		LocationCity:       req.LocationCity,
+		LocationRegion:     req.LocationRegion,
+		LocationPostalCode: req.LocationPostalCode,
+		LocationCountry:    req.LocationCountry,
+		Categories:         req.Categories,
+		Status:             req.Status,
+	}
+
+	// FIXME
+	// This is a trick to prevent setting nothing for the entity.
+	// If we don't do this then it will throw this error:
+	// (FailedToParse) '$set' is empty. You must specify a field like so: {$set: {<field>: ...}}
+	if req.EntityName == "" {
+		update.EntityName = req.OriginEntity.EntityName
+	}
+
+	doc, err := toDoc(update)
+	if err != nil {
+		return nil, err
+	}
+
+	result := e.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{"$set": doc},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	entity := types.Entity{}
+	err = result.Decode(&entity)
+	if err != nil {
+		return nil, result.Err()
+	}
+
+	return &entity, nil
+}
+
+func (e *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, error) {
+	filter := bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
+
+	result := e.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{"$set": bson.M{
+			"deletedAt": time.Now(),
+			"updatedAt": time.Now(),
+		}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	)
+
+	entity := types.Entity{}
+	err := result.Decode(&entity)
+	if err != nil {
+		return nil, result.Err()
+	}
+
+	err = User.RemoveAssociatedEntities(entity.Users, entity.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entity, nil
+}
+
+// PATCH /admin/entities/{entityID}
 
 func (e *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
 	updates := []bson.M{
@@ -244,6 +334,8 @@ func (e *entity) FindByIDs(ids []primitive.ObjectID) ([]*types.Entity, error) {
 
 	return results, nil
 }
+
+// PATCH /admin/entities/{entityID}
 
 func (e *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
 	filter := bson.M{"_id": id}
@@ -362,37 +454,6 @@ func (e *entity) DeleteTag(name string) error {
 	return nil
 }
 
-// TO BE REMOVED
-
-func (e *entity) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"entityName":         data.EntityName,
-		"incType":            data.IncType,
-		"companyNumber":      data.CompanyNumber,
-		"entityPhone":        data.EntityPhone,
-		"website":            data.Website,
-		"turnover":           data.Turnover,
-		"description":        data.Description,
-		"locationAddress":    data.LocationAddress,
-		"locationCity":       data.LocationCity,
-		"locationRegion":     data.LocationRegion,
-		"locationPostalCode": data.LocationPostalCode,
-		"locationCountry":    data.LocationCountry,
-		"status":             constant.Trading.Pending,
-		"updatedAt":          time.Now(),
-	}}
-	_, err := e.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (e *entity) DeleteByID(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{"deletedAt": time.Now()}}
@@ -431,6 +492,28 @@ func (e *entity) updateWants(old string, new string) error {
 		},
 	}
 	_, err := e.c.UpdateMany(context.Background(), filter, update)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DELETE /admin/users/{userID}
+
+func (e *entity) RemoveAssociatedUsers(entityIDs []primitive.ObjectID, userID primitive.ObjectID) error {
+	filter := bson.M{"_id": bson.M{"$in": entityIDs}}
+	updates := []bson.M{
+		bson.M{"$pull": bson.M{"users": userID}},
+		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
+	}
+
+	var writes []mongo.WriteModel
+	for _, update := range updates {
+		model := mongo.NewUpdateManyModel().SetFilter(filter).SetUpdate(update)
+		writes = append(writes, model)
+	}
+
+	_, err := e.c.BulkWrite(context.Background(), writes)
 	if err != nil {
 		return err
 	}

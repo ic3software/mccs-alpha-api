@@ -3,9 +3,11 @@ package types
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"unicode"
@@ -13,20 +15,22 @@ import (
 	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/global/constant"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
 	"github.com/ic3network/mccs-alpha-api/util"
+	"github.com/ic3network/mccs-alpha-api/util/bcrypt"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func NewSignupReqBody(r *http.Request) (*SignupReqBody, error) {
+// POST /signup
+
+func NewSignupReqBody(r *http.Request) (*SignupReqBody, []error) {
 	var req SignupReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
-	return &req, nil
+	return &req, req.validate()
 }
 
 type SignupReqBody struct {
@@ -54,10 +58,10 @@ type SignupReqBody struct {
 	Wants              []string `json:"wants"`
 }
 
-func (req *SignupReqBody) Validate() []error {
+func (req *SignupReqBody) validate() []error {
 	errs := []error{}
 
-	errs = append(errs, validateEmail(req.Email)...)
+	errs = append(errs, util.ValidateEmail(req.Email)...)
 	errs = append(errs, validatePassword(req.Password)...)
 
 	user := User{
@@ -90,6 +94,8 @@ func (req *SignupReqBody) Validate() []error {
 	return errs
 }
 
+// POST /login
+
 func NewLoginReqBody(r *http.Request) (*LoginReqBody, []error) {
 	var req LoginReqBody
 	decoder := json.NewDecoder(r.Body)
@@ -97,7 +103,7 @@ func NewLoginReqBody(r *http.Request) (*LoginReqBody, []error) {
 	if err != nil {
 		return nil, []error{err}
 	}
-	return &req, req.Validate()
+	return &req, req.validate()
 }
 
 type LoginReqBody struct {
@@ -105,7 +111,7 @@ type LoginReqBody struct {
 	Password string `json:"password"`
 }
 
-func (req *LoginReqBody) Validate() []error {
+func (req *LoginReqBody) validate() []error {
 	errs := []error{}
 	if req.Email == "" {
 		errs = append(errs, errors.New("Please specify an email address."))
@@ -136,6 +142,8 @@ func (req *PasswordChange) Validate() []error {
 	return errs
 }
 
+// PATCH /user
+
 func NewUpdateUserReqBody(r *http.Request) (*UpdateUserReqBody, []error) {
 	var req UpdateUserReqBody
 	decoder := json.NewDecoder(r.Body)
@@ -143,7 +151,7 @@ func NewUpdateUserReqBody(r *http.Request) (*UpdateUserReqBody, []error) {
 	if err != nil {
 		return nil, []error{err}
 	}
-	return &req, req.Validate()
+	return &req, req.validate()
 }
 
 type UpdateUserReqBody struct {
@@ -156,7 +164,7 @@ type UpdateUserReqBody struct {
 	ShowTagsMatchedSinceLastLogin *bool  `json:"showTagsMatchedSinceLastLogin"`
 }
 
-func (req *UpdateUserReqBody) Validate() []error {
+func (req *UpdateUserReqBody) validate() []error {
 	errs := []error{}
 
 	if req.ID != "" {
@@ -176,15 +184,15 @@ func (req *UpdateUserReqBody) Validate() []error {
 	return errs
 }
 
-func NewUpdateUserEntityReqBody(r *http.Request) (*UpdateUserEntityReqBody, error) {
+func NewUpdateUserEntityReqBody(r *http.Request) (*UpdateUserEntityReqBody, []error) {
 	var req UpdateUserEntityReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 	req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
-	return &req, nil
+	return &req, req.validate()
 }
 
 type UpdateUserEntityReqBody struct {
@@ -208,7 +216,7 @@ type UpdateUserEntityReqBody struct {
 	Status string `json:"status"`
 }
 
-func (req *UpdateUserEntityReqBody) Validate() []error {
+func (req *UpdateUserEntityReqBody) validate() []error {
 	errs := []error{}
 
 	if req.ID != "" {
@@ -240,14 +248,14 @@ func (req *UpdateUserEntityReqBody) Validate() []error {
 	return errs
 }
 
-func NewAddToFavoriteReqBody(r *http.Request) (*AddToFavoriteReqBody, error) {
+func NewAddToFavoriteReqBody(r *http.Request) (*AddToFavoriteReqBody, []error) {
 	var req AddToFavoriteReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
-	return &req, nil
+	return &req, req.validate()
 }
 
 type AddToFavoriteReqBody struct {
@@ -256,7 +264,7 @@ type AddToFavoriteReqBody struct {
 	Favorite         *bool  `json:"favorite"`
 }
 
-func (req *AddToFavoriteReqBody) Validate() []error {
+func (req *AddToFavoriteReqBody) validate() []error {
 	errs := []error{}
 
 	_, err := primitive.ObjectIDFromHex(req.AddToEntityID)
@@ -324,14 +332,14 @@ func validatePassword(password string) []error {
 	return errs
 }
 
-func NewEmailReqBody(r *http.Request) (*EmailReqBody, error) {
+func NewEmailReqBody(r *http.Request) (*EmailReqBody, []error) {
 	var req EmailReqBody
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
-	return &req, nil
+	return &req, req.validate()
 }
 
 type EmailReqBody struct {
@@ -340,7 +348,7 @@ type EmailReqBody struct {
 	Body             string `json:"body"`
 }
 
-func (req *EmailReqBody) Validate() []error {
+func (req *EmailReqBody) validate() []error {
 	errs := []error{}
 
 	_, err := primitive.ObjectIDFromHex(req.SenderEntityID)
@@ -358,9 +366,63 @@ func (req *EmailReqBody) Validate() []error {
 	return errs
 }
 
+// POST /transfers
+
+func NewTransferReqBody(userReq *TransferUserReqBody, initiatorEntity *Entity, receiverEntity *Entity) (*TransferReqBody, []error) {
+	req := &TransferReqBody{
+		TransferDirection:      userReq.TransferDirection,
+		TransferType:           constant.TransferType.Transfer,
+		Amount:                 userReq.Amount,
+		Description:            userReq.Description,
+		InitiatorAccountNumber: initiatorEntity.AccountNumber,
+		InitiatorEmail:         initiatorEntity.Email,
+		InitiatorEntityName:    initiatorEntity.EntityName,
+		ReceiverAccountNumber:  receiverEntity.AccountNumber,
+		ReceiverEmail:          receiverEntity.Email,
+		ReceiverEntityName:     receiverEntity.EntityName,
+		InitiatorEntity:        initiatorEntity,
+		ReceiverEntity:         receiverEntity,
+	}
+
+	if req.TransferDirection == constant.TransferDirection.Out {
+		req.FromAccountNumber = initiatorEntity.AccountNumber
+		req.FromEmail = initiatorEntity.Email
+		req.FromEntityName = initiatorEntity.EntityName
+		req.FromStatus = initiatorEntity.Status
+
+		req.ToAccountNumber = receiverEntity.AccountNumber
+		req.ToEmail = receiverEntity.Email
+		req.ToEntityName = receiverEntity.EntityName
+		req.ToStatus = receiverEntity.Status
+	}
+
+	if req.TransferDirection == constant.TransferDirection.In {
+		req.FromAccountNumber = receiverEntity.AccountNumber
+		req.FromEmail = receiverEntity.Email
+		req.FromEntityName = receiverEntity.EntityName
+		req.FromStatus = receiverEntity.Status
+
+		req.ToAccountNumber = initiatorEntity.AccountNumber
+		req.ToEmail = initiatorEntity.Email
+		req.ToEntityName = initiatorEntity.EntityName
+		req.ToStatus = initiatorEntity.Status
+	}
+
+	return req, req.Validate()
+}
+
+type TransferUserReqBody struct {
+	TransferDirection      string  `json:"transfer"`
+	InitiatorAccountNumber string  `json:"initiator"`
+	ReceiverAccountNumber  string  `json:"receiver"`
+	Amount                 float64 `json:"amount"`
+	Description            string  `json:"description"`
+}
+
 type TransferReqBody struct {
-	// User Inputs
-	TransferType           string
+	TransferDirection string // "in" or "out"
+	TransferType      string // "Transfer" / "AdminTranser"
+
 	InitiatorAccountNumber string
 	ReceiverAccountNumber  string
 	Amount                 float64
@@ -389,7 +451,7 @@ type TransferReqBody struct {
 func (req *TransferReqBody) Validate() []error {
 	errs := []error{}
 
-	if req.TransferType != constant.TransferType.In && req.TransferType != constant.TransferType.Out {
+	if req.TransferDirection != constant.TransferDirection.In && req.TransferDirection != constant.TransferDirection.Out {
 		errs = append(errs, errors.New("Transfer can be only 'in' or 'out'."))
 	}
 
@@ -431,6 +493,88 @@ func (req *TransferReqBody) Validate() []error {
 	return errs
 }
 
+// GET /transfers
+
+func NewSearchTransferQuery(r *http.Request, entity *Entity) (*SearchTransferReqBody, []error) {
+	q := r.URL.Query()
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, []error{err}
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	query := &SearchTransferReqBody{
+		Page:                  page,
+		PageSize:              pageSize,
+		Status:                q.Get("status"),
+		QueryingEntityID:      q.Get("querying_entity_id"),
+		QueryingAccountNumber: entity.AccountNumber,
+		Offset:                (page - 1) * pageSize,
+	}
+
+	return query, query.validate()
+}
+
+type SearchTransferReqBody struct {
+	Page                  int
+	PageSize              int
+	Status                string
+	QueryingEntityID      string
+	QueryingAccountNumber string
+	Offset                int
+}
+
+func (req *SearchTransferReqBody) validate() []error {
+	errs := []error{}
+
+	if req.QueryingEntityID == "" {
+		errs = append(errs, errors.New("Please specify the querying_entity_id."))
+	}
+	if req.Status != "all" && req.Status != "initiated" && req.Status != "completed" && req.Status != "cancelled" {
+		errs = append(errs, errors.New("Please specify valid status."))
+	}
+
+	return errs
+}
+
+// PATCH /transfers
+
+func NewUpdateTransferReqBody(
+	r *http.Request,
+	journal *Journal,
+	initiateEntity *Entity,
+	fromEntity *Entity,
+	toEntity *Entity,
+) (*UpdateTransferReqBody, []error) {
+	var body struct {
+		Action string `json:"action"`
+		Reason string `json:"reason"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&body)
+	if err != nil {
+		if err == io.EOF {
+			return nil, []error{errors.New("Please provide valid inputs.")}
+		}
+		return nil, []error{err}
+	}
+
+	req := UpdateTransferReqBody{
+		TransferID:     mux.Vars(r)["transferID"],
+		LoggedInUserID: r.Header.Get("userID"),
+		Action:         body.Action,
+		Reason:         body.Reason,
+		Journal:        journal,
+		InitiateEntity: initiateEntity,
+		FromEntity:     fromEntity,
+		ToEntity:       toEntity,
+	}
+
+	return &req, req.Validate()
+}
+
 type UpdateTransferReqBody struct {
 	TransferID string
 	Action     string
@@ -458,6 +602,8 @@ func (req *UpdateTransferReqBody) Validate() []error {
 
 	return errs
 }
+
+// GET /entities
 
 func NewSearchEntityReqBody(q url.Values) (*SearchEntityReqBody, error) {
 	page, err := util.ToInt(q.Get("page"), 1)
@@ -498,7 +644,7 @@ type SearchEntityReqBody struct {
 	FavoriteEntities []primitive.ObjectID
 	FavoritesOnly    bool
 	TaggedSince      time.Time
-	Statuses         []string // accepted", "pending", rejected", "tradingPending", "tradingAccepted", "tradingRejected"
+	Statuses         []string
 
 	LocationCountry string
 	LocationCity    string
@@ -515,6 +661,26 @@ func (query *SearchEntityReqBody) Validate() []error {
 		errs = append(errs, errors.New("Please specify an offer or want tag."))
 	}
 
+	return errs
+}
+
+// GET /entities/{entityID}
+
+func NewGetEntityReqBody(r *http.Request) (*GetEntity, []error) {
+	req := &GetEntity{
+		SearchEntityID:   mux.Vars(r)["searchEntityID"],
+		QueryingEntityID: r.URL.Query().Get("querying_entity_id"),
+	}
+	return req, req.validate()
+}
+
+type GetEntity struct {
+	SearchEntityID   string
+	QueryingEntityID string
+}
+
+func (q *GetEntity) validate() []error {
+	errs := []error{}
 	return errs
 }
 
@@ -574,27 +740,13 @@ func (query *SearchCategoryReqBody) Validate() []error {
 	return errs
 }
 
-type SearchTransferReqBody struct {
-	Page             int
-	PageSize         int
-	Status           string
-	QueryingEntityID string
+// GET /balance
 
-	QueryingAccountNumber string
-	Offset                int
-}
-
-func (req *SearchTransferReqBody) Validate() []error {
-	errs := []error{}
-
-	if req.QueryingEntityID == "" {
-		errs = append(errs, errors.New("Please specify the querying_entity_id."))
+func NewBalanceQuery(r *http.Request) (*BalanceReqBody, []error) {
+	req := BalanceReqBody{
+		QueryingEntityID: r.URL.Query().Get("querying_entity_id"),
 	}
-	if req.Status != "all" && req.Status != "initiated" && req.Status != "completed" && req.Status != "cancelled" {
-		errs = append(errs, errors.New("Please specify valid status."))
-	}
-
-	return errs
+	return &req, req.Validate()
 }
 
 type BalanceReqBody struct {
@@ -612,79 +764,6 @@ func (query *BalanceReqBody) Validate() []error {
 }
 
 // Admin
-
-func NewAdminUpdateEntityReqBody(r *http.Request) (*AdminUpdateEntityReqBody, error) {
-	var req AdminUpdateEntityReqBody
-
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&req)
-	if err != nil {
-		return nil, err
-	}
-
-	vars := mux.Vars(r)
-	entityID, err := primitive.ObjectIDFromHex(vars["entityID"])
-	if err != nil {
-		return nil, err
-	}
-	req.EntityID = entityID
-	req.Offers, req.Wants, req.Categories = util.FormatTags(req.Offers), util.FormatTags(req.Wants), util.FormatTags(req.Categories)
-
-	return &req, nil
-}
-
-type AdminUpdateEntityReqBody struct {
-	EntityID           primitive.ObjectID `json:"entityID"`
-	ID                 string             `json:"id"`
-	Status             string             `json:"status"`
-	EntityName         string             `json:"entityName"`
-	Email              string             `json:"email"`
-	EntityPhone        string             `json:"entityPhone"`
-	IncType            string             `json:"incType"`
-	CompanyNumber      string             `json:"companyNumber"`
-	Website            string             `json:"website"`
-	Turnover           int                `json:"turnover"`
-	Description        string             `json:"description"`
-	LocationAddress    string             `json:"locationAddress"`
-	LocationCity       string             `json:"locationCity"`
-	LocationRegion     string             `json:"locationRegion"`
-	LocationPostalCode string             `json:"locationPostalCode"`
-	LocationCountry    string             `json:"locationCountry"`
-	Offers             []string           `json:"offers"`
-	Wants              []string           `json:"wants"`
-	Categories         []string           `json:"categories"`
-}
-
-func (req *AdminUpdateEntityReqBody) Validate() []error {
-	errs := []error{}
-
-	if req.ID != "" {
-		errs = append(errs, errors.New("The entity ID cannot be changed."))
-	}
-
-	entity := Entity{
-		Email:              req.Email,
-		EntityName:         req.EntityName,
-		EntityPhone:        req.EntityPhone,
-		IncType:            req.IncType,
-		CompanyNumber:      req.CompanyNumber,
-		Website:            req.Website,
-		Turnover:           req.Turnover,
-		Description:        req.Description,
-		LocationCity:       req.LocationCity,
-		LocationCountry:    req.LocationCountry,
-		LocationAddress:    req.LocationAddress,
-		LocationRegion:     req.LocationRegion,
-		LocationPostalCode: req.LocationPostalCode,
-		Categories:         req.Categories,
-		Status:             req.Status,
-	}
-	errs = append(errs, entity.Validate()...)
-	errs = append(errs, validateTags(req.Offers)...)
-	errs = append(errs, validateTags(req.Wants)...)
-
-	return errs
-}
 
 type AdminUpdateCategoryReqBody struct {
 	ID   string `json:"id"`
@@ -968,4 +1047,329 @@ func NewAdminSearchUserReqBody(r *http.Request) (*AdminSearchUserReqBody, []erro
 func (req *AdminSearchUserReqBody) validate() []error {
 	errs := []error{}
 	return errs
+}
+
+// GET /admin/entities
+
+func NewAdminSearchEntityReqBody(r *http.Request) (*AdminSearchEntityReqBody, []error) {
+	q := r.URL.Query()
+
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, []error{err}
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	balance, err := util.ToFloat64(q.Get("balance"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	maxPosBal, err := util.ToFloat64(q.Get("max_pos_bal"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	maxNegBal, err := util.ToFloat64(q.Get("max_neg_bal"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	statuses, err := util.AdminMapEntityStatus(q.Get("status"))
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	req := &AdminSearchEntityReqBody{
+		Page:          page,
+		PageSize:      pageSize,
+		EntityName:    q.Get("entity_name"),
+		EntityEmail:   q.Get("entity_email"),
+		Statuses:      statuses,
+		Offers:        util.ToSearchTags(q.Get("offers")),
+		Wants:         util.ToSearchTags(q.Get("wants")),
+		TaggedSince:   util.ParseTime(q.Get("tagged_since")),
+		Category:      q.Get("category"),
+		AccountNumber: q.Get("account_number"),
+		City:          q.Get("city"),
+		Region:        q.Get("region"),
+		Country:       q.Get("country"),
+		Balance:       balance,
+		MaxPosBal:     maxPosBal,
+		MaxNegBal:     maxNegBal,
+	}
+
+	return req, req.validate()
+}
+
+type AdminSearchEntityReqBody struct {
+	Page          int
+	PageSize      int
+	EntityName    string
+	EntityEmail   string
+	Statuses      []string
+	Offers        []string
+	Wants         []string
+	TaggedSince   time.Time
+	Category      string
+	City          string
+	Region        string
+	Country       string
+	AccountNumber string
+	Balance       *float64
+	MaxPosBal     *float64
+	MaxNegBal     *float64
+}
+
+func (req *AdminSearchEntityReqBody) validate() []error {
+	errs := []error{}
+
+	if !req.TaggedSince.IsZero() && len(req.Wants) == 0 && len(req.Offers) == 0 {
+		errs = append(errs, errors.New("Please specify an offer or want tag."))
+	}
+
+	return errs
+}
+
+// GET /admin/entities/{entityID}
+
+type AdminGetEntity struct {
+	EntityID string
+}
+
+func NewAdminGetEntityReqBody(r *http.Request) (*AdminGetEntity, []error) {
+	return &AdminGetEntity{
+		EntityID: mux.Vars(r)["entityID"],
+	}, nil
+}
+
+// PATCH /admin/entities/{entityID}
+
+func NewAdminUpdateEntityReqBody(r *http.Request, originEntity *Entity) (*AdminUpdateEntityReqBody, []error) {
+	var req AdminUpdateEntityReqBody
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	req.OriginEntity = originEntity
+	req.Offers = util.FormatTags(req.Offers)
+	req.Wants = util.FormatTags(req.Wants)
+	req.Categories = util.FormatTags(req.Categories)
+
+	return &req, req.validate()
+}
+
+type AdminUpdateEntityReqBody struct {
+	OriginEntity  *Entity
+	Status        string `json:"status"`
+	EntityName    string `json:"entityName"`
+	Email         string `json:"email"`
+	EntityPhone   string `json:"entityPhone"`
+	IncType       string `json:"incType"`
+	CompanyNumber string `json:"companyNumber"`
+	Website       string `json:"website"`
+	Turnover      int    `json:"turnover"`
+	Description   string `json:"description"`
+	// Tags
+	Offers     []string `json:"offers"`
+	Wants      []string `json:"wants"`
+	Categories []string `json:"categories"`
+	// Address
+	LocationAddress    string `json:"locationAddress"`
+	LocationCity       string `json:"locationCity"`
+	LocationRegion     string `json:"locationRegion"`
+	LocationPostalCode string `json:"locationPostalCode"`
+	LocationCountry    string `json:"locationCountry"`
+	// Account
+	MaxPosBal *float64 `json:"maxPositiveBalance"`
+	MaxNegBal *float64 `json:"maxNegativeBalance"`
+	// Useless (Do not use it)
+	ID            string `json:"id"`
+	AccountNumber string `json:"accountNumber"`
+}
+
+func (req *AdminUpdateEntityReqBody) validate() []error {
+	errs := []error{}
+
+	if req.ID != "" {
+		errs = append(errs, errors.New("The entity ID cannot be changed."))
+	}
+	if req.AccountNumber != "" {
+		errs = append(errs, errors.New("The account number cannot be changed."))
+	}
+	if req.MaxPosBal != nil && *req.MaxPosBal < 0 {
+		errs = append(errs, errors.New("The max positive balance should be positive."))
+	}
+	if req.MaxNegBal != nil && *req.MaxNegBal < 0 {
+		errs = append(errs, errors.New("The max negative balance should be positive."))
+	}
+
+	entity := Entity{
+		Email:              req.Email,
+		EntityName:         req.EntityName,
+		EntityPhone:        req.EntityPhone,
+		IncType:            req.IncType,
+		CompanyNumber:      req.CompanyNumber,
+		Website:            req.Website,
+		Turnover:           req.Turnover,
+		Description:        req.Description,
+		LocationCity:       req.LocationCity,
+		LocationCountry:    req.LocationCountry,
+		LocationAddress:    req.LocationAddress,
+		LocationRegion:     req.LocationRegion,
+		LocationPostalCode: req.LocationPostalCode,
+		Categories:         req.Categories,
+		Status:             req.Status,
+	}
+	errs = append(errs, entity.Validate()...)
+	errs = append(errs, validateTags(req.Offers)...)
+	errs = append(errs, validateTags(req.Wants)...)
+
+	return errs
+}
+
+// DELETE /admin/entities/{entityID}
+
+type AdminDeleteEntity struct {
+	EntityID primitive.ObjectID
+}
+
+func NewAdminDeleteEntity(r *http.Request) (*AdminDeleteEntity, []error) {
+	entityID := mux.Vars(r)["entityID"]
+	if entityID == "" {
+		return nil, []error{errors.New("Please enter entity id.")}
+	}
+	objectID, err := primitive.ObjectIDFromHex(entityID)
+	if err != nil {
+		return nil, []error{errors.New("Please enter valid entity id.")}
+	}
+
+	return &AdminDeleteEntity{
+		EntityID: objectID,
+	}, nil
+}
+
+// POST /admin/transfers
+
+func NewAdminTransferReqBody(userReq *AdminTransferUserReqBody, payerEntity *Entity, payeeEntity *Entity) (*AdminTransferReqBody, []error) {
+	req := &AdminTransferReqBody{
+		PayerEntity:  payerEntity,
+		PayeeEntity:  payeeEntity,
+		TransferType: constant.TransferType.AdminTransfer,
+		Amount:       userReq.Amount,
+		Description:  userReq.Description,
+	}
+	return req, req.Validate()
+}
+
+type AdminTransferUserReqBody struct {
+	Payer       string  `json:"payer"`
+	Payee       string  `json:"payee"`
+	Amount      float64 `json:"amount"`
+	Description string  `json:"description"`
+}
+
+type AdminTransferReqBody struct {
+	PayerEntity  *Entity
+	PayeeEntity  *Entity
+	TransferType string // "Transfer" / "AdminTranser"
+	Amount       float64
+	Description  string
+}
+
+func (req *AdminTransferReqBody) Validate() []error {
+	errs := []error{}
+
+	// Amount should be positive value and with up to two decimal places.
+	if req.Amount <= 0 || !util.IsDecimalValid(req.Amount) {
+		errs = append(errs, errors.New("Please enter a valid numeric amount to send with up to two decimal places."))
+	}
+
+	// Only allow transfers with accounts that also have "trading-accepted" status
+	if req.PayerEntity.Status != constant.Trading.Accepted {
+		errs = append(errs, errors.New("Sender is not a trading member. Transfers can only be made when both entities have trading member status."))
+	} else if req.PayeeEntity.Status != constant.Trading.Accepted {
+		errs = append(errs, errors.New("Recipient is not a trading member. Transfers can only be made when both entities have trading member status."))
+	}
+
+	// Check if the user is doing the transaction to himself.
+	if req.PayerEntity.AccountNumber == req.PayeeEntity.AccountNumber {
+		errs = append(errs, errors.New("You cannot create a transaction with yourself."))
+	}
+
+	return errs
+}
+
+// GET /admin/transfers/{transferID}
+
+func NewAdminGetTransfer(r *http.Request) (*AdminGetTransfer, []error) {
+	req := &AdminGetTransfer{
+		TransferID: mux.Vars(r)["transferID"],
+	}
+	return req, req.validate()
+}
+
+type AdminGetTransfer struct {
+	TransferID string
+}
+
+func (req *AdminGetTransfer) validate() []error {
+	errs := []error{}
+	return errs
+}
+
+// GET /admin/transfers
+
+func NewAdminSearchTransferQuery(r *http.Request) (*AdminSearchTransferReqBody, []error) {
+	q := r.URL.Query()
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, []error{err}
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	dateFrom := util.ParseTime(q.Get("date_from"))
+	dateTo := util.ParseTime(q.Get("date_to"))
+
+	query := &AdminSearchTransferReqBody{
+		Page:          page,
+		PageSize:      pageSize,
+		Offset:        (page - 1) * pageSize,
+		Status:        getStatus(q.Get("status")),
+		AccountNumber: q.Get("account_number"),
+		DateFrom:      dateFrom,
+		DateTo:        dateTo,
+	}
+
+	return query, query.validate()
+}
+
+type AdminSearchTransferReqBody struct {
+	Page          int
+	PageSize      int
+	Offset        int
+	Status        []string
+	AccountNumber string
+	DateFrom      time.Time
+	DateTo        time.Time
+}
+
+func (req *AdminSearchTransferReqBody) validate() []error {
+	errs := []error{}
+	for _, s := range req.Status {
+		if s != "initiated" && s != "completed" && s != "cancelled" {
+			errs = append(errs, errors.New("Please specify valid status."))
+		}
+	}
+	return errs
+}
+
+func getStatus(input string) []string {
+	splitFn := func(c rune) bool {
+		return c == ',' || c == ' '
+	}
+	return strings.FieldsFunc(strings.ToLower(input), splitFn)
 }

@@ -2,11 +2,11 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,17 +23,26 @@ func (u *user) Register(db *mongo.Database) {
 	u.c = db.Collection("users")
 }
 
+func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
+	user.CreatedAt = time.Now()
+	res, err := u.c.InsertOne(context.Background(), user)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	return res.InsertedID.(primitive.ObjectID), nil
+}
+
 func (u *user) FindByEmail(email string) (*types.User, error) {
 	email = strings.ToLower(email)
 	if email == "" {
-		return &types.User{}, e.New(e.UserNotFound, "Please specify an email address.")
+		return &types.User{}, errors.New("Please specify an email address.")
 	}
 
 	user := types.User{}
 	filter := bson.M{"email": email, "deletedAt": bson.M{"$exists": false}}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
-		return nil, e.New(e.UserNotFound, "The specified user could not be found.")
+		return nil, errors.New("The specified user could not be found.")
 	}
 
 	return &user, nil
@@ -45,6 +54,44 @@ func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
 		return nil, err
+	}
+	return &user, nil
+}
+
+func (u *user) FindByIDs(objectIDs []primitive.ObjectID) ([]*types.User, error) {
+	var results []*types.User
+
+	pipeline := newFindByIDsPipeline(objectIDs)
+	cur, err := u.c.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	for cur.Next(context.TODO()) {
+		var elem types.User
+		err := cur.Decode(&elem)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	cur.Close(context.TODO())
+
+	return results, nil
+}
+
+func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
+	user := types.User{}
+	filter := bson.M{
+		"companyID": id,
+		"deletedAt": bson.M{"$exists": false},
+	}
+	err := u.c.FindOne(context.Background(), filter).Decode(&user)
+	if err != nil {
+		return nil, errors.New("user not found")
 	}
 	return &user, nil
 }
@@ -77,15 +124,6 @@ func (u *user) FindByStringIDs(ids []string) ([]*types.User, error) {
 	cur.Close(context.TODO())
 
 	return results, nil
-}
-
-func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
-	user.CreatedAt = time.Now()
-	res, err := u.c.InsertOne(context.Background(), user)
-	if err != nil {
-		return primitive.ObjectID{}, err
-	}
-	return res.InsertedID.(primitive.ObjectID), nil
 }
 
 func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
@@ -246,42 +284,37 @@ func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error)
 		return nil, result.Err()
 	}
 
+	err = Entity.RemoveAssociatedUsers(user.Entities, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &user, nil
 }
 
-// TO BE REMOVED
+// DELETE /admin/entities/{entityID}
 
-func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
-	user := types.User{}
-	filter := bson.M{
-		"companyID": id,
-		"deletedAt": bson.M{"$exists": false},
+func (u *user) RemoveAssociatedEntities(userIDs []primitive.ObjectID, entityID primitive.ObjectID) error {
+	filter := bson.M{"_id": bson.M{"$in": userIDs}}
+	updates := []bson.M{
+		bson.M{"$pull": bson.M{"entities": entityID}},
+		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
 	}
-	err := u.c.FindOne(context.Background(), filter).Decode(&user)
-	if err != nil {
-		return nil, e.New(e.UserNotFound, "user not found")
-	}
-	return &user, nil
-}
 
-func (u *user) UpdateTradingInfo(id primitive.ObjectID, data *types.TradingRegisterData) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"firstName": data.FirstName,
-		"lastName":  data.LastName,
-		"telephone": data.Telephone,
-		"updatedAt": time.Now(),
-	}}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
+	var writes []mongo.WriteModel
+	for _, update := range updates {
+		model := mongo.NewUpdateManyModel().SetFilter(filter).SetUpdate(update)
+		writes = append(writes, model)
+	}
+
+	_, err := u.c.BulkWrite(context.Background(), writes)
 	if err != nil {
-		return e.Wrap(err, "UserMongo UpdateTradingInfo failed")
+		return err
 	}
 	return nil
 }
+
+// TO BE REMOVED
 
 func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	filter := bson.M{
@@ -299,7 +332,7 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	findOptions.SetProjection(projection)
 	cur, err := u.c.Find(context.TODO(), filter, findOptions)
 	if err != nil {
-		return nil, e.Wrap(err, "UserMongo FindByDailyNotification failed")
+		return nil, err
 	}
 
 	var users []*types.User
@@ -307,12 +340,12 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 		var elem types.User
 		err := cur.Decode(&elem)
 		if err != nil {
-			return nil, e.Wrap(err, "UserMongo FindByDailyNotification failed")
+			return nil, err
 		}
 		users = append(users, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		return nil, e.Wrap(err, "UserMongo FindByDailyNotification failed")
+		return nil, err
 	}
 	cur.Close(context.TODO())
 
@@ -369,7 +402,7 @@ func (u *user) GetLoginInfo(id primitive.ObjectID) (*types.LoginInfo, error) {
 	findOneOptions.SetProjection(projection)
 	err := u.c.FindOne(context.Background(), filter, findOneOptions).Decode(&loginInfo)
 	if err != nil {
-		return nil, e.Wrap(err, "UserMongo GetLoginInfo failed")
+		return nil, err
 	}
 	return loginInfo, nil
 }
@@ -386,7 +419,7 @@ func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
 		update,
 	)
 	if err != nil {
-		return e.Wrap(err, "UserMongo UpdateLastNotificationSentDate failed")
+		return err
 	}
 	return nil
 }

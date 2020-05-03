@@ -7,9 +7,8 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/util"
+	"github.com/ic3network/mccs-alpha-api/util/bcrypt"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -17,23 +16,6 @@ import (
 type user struct{}
 
 var User = &user{}
-
-func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
-	user, err := mongo.User.FindByID(id)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func (u *user) FindByStringID(id string) (*types.User, error) {
-	objectID, _ := primitive.ObjectIDFromHex(id)
-	user, err := mongo.User.FindByID(objectID)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
 
 func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
 	_, err := mongo.User.FindByEmail(user.Email)
@@ -98,6 +80,39 @@ func (u *user) Login(email string, password string) (*types.User, error) {
 		return nil, err
 	}
 
+	return user, nil
+}
+
+func (u *user) FindByID(id primitive.ObjectID) (*types.User, error) {
+	user, err := mongo.User.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (u *user) FindByStringID(id string) (*types.User, error) {
+	objectID, _ := primitive.ObjectIDFromHex(id)
+	user, err := mongo.User.FindByID(objectID)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (u *user) FindByIDs(ids []primitive.ObjectID) ([]*types.User, error) {
+	users, err := mongo.User.FindByIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
+	user, err := mongo.User.FindByEntityID(id)
+	if err != nil {
+		return nil, err
+	}
 	return user, nil
 }
 
@@ -193,16 +208,18 @@ func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.Us
 	return updated, nil
 }
 
+// DELETE /admin/users/{userID}
+
 func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error) {
 	err := es.User.Delete(id.Hex())
 	if err != nil {
 		return nil, err
 	}
-	user, err := mongo.User.AdminFindOneAndDelete(id)
+	deleted, err := mongo.User.AdminFindOneAndDelete(id)
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	return deleted, nil
 }
 
 func (u *user) AdminSearchUser(req *types.AdminSearchUserReqBody) (*types.SearchUserResult, error) {
@@ -231,14 +248,6 @@ func (u *user) FindByEmail(email string) (*types.User, error) {
 	return user, nil
 }
 
-func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
-	user, err := mongo.User.FindByEntityID(id)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
 // UserEmailExists checks if the email exists in the database.
 func (u *user) UserEmailExists(email string) bool {
 	_, err := mongo.User.FindByEmail(email)
@@ -251,7 +260,7 @@ func (u *user) UserEmailExists(email string) bool {
 func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	users, err := mongo.User.FindByDailyNotification()
 	if err != nil {
-		return nil, e.Wrap(err, "UserService FindByDailyNotification failed")
+		return nil, err
 	}
 	return users, nil
 }
@@ -259,7 +268,7 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
 	err := mongo.User.UpdateLastNotificationSentDate(id)
 	if err != nil {
-		return e.Wrap(err, "UserService UpdateLastNotificationSentDate failed")
+		return err
 	}
 	return nil
 }

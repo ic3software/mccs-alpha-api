@@ -12,12 +12,10 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/cookie"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/l"
 	"github.com/ic3network/mccs-alpha-api/util"
+	"github.com/ic3network/mccs-alpha-api/util/cookie"
+	"github.com/ic3network/mccs-alpha-api/util/l"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -74,11 +72,11 @@ func (handler *userHandler) FindByID(id string) (*types.User, error) {
 func (handler *userHandler) FindByEntityID(id string) (*types.User, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, e.Wrap(err, "controller.User.FindByEntityID failed")
+		return nil, err
 	}
 	user, err := logic.User.FindByEntityID(objID)
 	if err != nil {
-		return nil, e.Wrap(err, "controller.User.FindByEntityID failed")
+		return nil, err
 	}
 	return user, nil
 }
@@ -97,12 +95,7 @@ func (handler *userHandler) IsEntityBelongsToUser(entityID, userID string) bool 
 	return false
 }
 
-func (u *userHandler) updateLoginAttempts(email string) {
-	err := logic.User.UpdateLoginAttempts(email)
-	if err != nil {
-		l.Logger.Error("[Error] UserHandler.updateLoginAttempts failed:", zap.Error(err))
-	}
-}
+// POST /login
 
 func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 	type data struct {
@@ -142,11 +135,20 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 			l.Logger.Error("[Error] AdminUser.UpdateLoginInfo failed:", zap.Error(err))
 		}
 
-		token, err := jwt.GenerateToken(user.ID.Hex(), false)
+		token, err := util.GenerateToken(user.ID.Hex(), false)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: respondData(loginInfo, token)})
 	}
 }
+
+func (u *userHandler) updateLoginAttempts(email string) {
+	err := logic.User.UpdateLoginAttempts(email)
+	if err != nil {
+		l.Logger.Error("[Error] UserHandler.updateLoginAttempts failed:", zap.Error(err))
+	}
+}
+
+// POST /signup
 
 func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 	type data struct {
@@ -158,19 +160,14 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		Data data `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewSignupReqBody(r)
-		if err != nil {
-			l.Logger.Info("[INFO] UserHandler.signup failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
+		req, errs := types.NewSignupReqBody(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		errs := req.Validate()
 		if logic.User.UserEmailExists(req.Email) {
-			errs = append(errs, errors.New("Email address is already registered."))
-		}
-		if len(errs) > 0 {
-			api.Respond(w, r, http.StatusBadRequest, errs)
+			api.Respond(w, r, http.StatusBadRequest, errors.New("Email address is already registered."))
 			return
 		}
 
@@ -223,7 +220,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		token, err := jwt.GenerateToken(userID.Hex(), false)
+		token, err := util.GenerateToken(userID.Hex(), false)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
@@ -237,6 +234,8 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		}})
 	}
 }
+
+// POST /logout
 
 func (handler *userHandler) logout() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -391,6 +390,8 @@ func (handler *userHandler) passwordChange() func(http.ResponseWriter, *http.Req
 	}
 }
 
+// GET /user
+
 func (handler *userHandler) userProfile() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.UserRespond `json:"data"`
@@ -405,6 +406,8 @@ func (handler *userHandler) userProfile() func(http.ResponseWriter, *http.Reques
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
 	}
 }
+
+// PATCH /user
 
 func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
@@ -435,6 +438,8 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 	}
 }
 
+// GET /user/entities
+
 func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data []*types.EntityRespond `json:"data"`
@@ -458,19 +463,14 @@ func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.R
 	}
 }
 
+// PATCH /user/entities/{entityID}
+
 func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.EntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := types.NewUpdateUserEntityReqBody(r)
-		if err != nil {
-			l.Logger.Info("[INFO] UserHandler.updateUserEntity failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		errs := req.Validate()
+		req, errs := types.NewUpdateUserEntityReqBody(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -524,6 +524,8 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 	}
 }
 
+// Admin
+
 func (handler *userHandler) adminGetUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.AdminGetUserRespond `json:"data"`
@@ -554,8 +556,13 @@ func (handler *userHandler) adminGetUser() func(http.ResponseWriter, *http.Reque
 }
 
 func (handler *userHandler) adminSearchUser() func(http.ResponseWriter, *http.Request) {
+	type meta struct {
+		NumberOfResults int `json:"numberOfResults"`
+		TotalPages      int `json:"totalPages"`
+	}
 	type respond struct {
 		Data []*types.AdminGetUserRespond `json:"data"`
+		Meta meta                         `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminSearchUserReqBody(r)
@@ -578,7 +585,13 @@ func (handler *userHandler) adminSearchUser() func(http.ResponseWriter, *http.Re
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: res})
+		api.Respond(w, r, http.StatusOK, respond{
+			Data: res,
+			Meta: meta{
+				TotalPages:      searchUserResult.TotalPages,
+				NumberOfResults: searchUserResult.NumberOfResults,
+			},
+		})
 	}
 }
 
@@ -631,9 +644,11 @@ func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Re
 	}
 }
 
+// DELETE /admin/users/{userID}
+
 func (handler *userHandler) adminDeleteUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.AdminGetUserRespond `json:"data"`
+		Data *types.AdminDeleteUserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminDeleteUserReqBody(r)
@@ -649,13 +664,6 @@ func (handler *userHandler) adminDeleteUser() func(http.ResponseWriter, *http.Re
 			return
 		}
 
-		entities, err := logic.Entity.FindByIDs(deleted.Entities)
-		if err != nil {
-			l.Logger.Error("[Error] UserHandler.adminDeleteUser failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(deleted, entities)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminDeleteUserRespond(deleted)})
 	}
 }

@@ -2,10 +2,10 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
@@ -44,7 +44,7 @@ func (u *userAction) Log(a *types.UserAction) error {
 func (u *userAction) Find(c *types.UserActionSearchCriteria, page int64) ([]*types.UserAction, int, error) {
 	ctx := context.Background()
 	if page < 0 || page == 0 {
-		return nil, 0, e.New(e.InvalidPageNumber, "mongo.userAction.Find failed")
+		return nil, 0, errors.New("Invalid page number: should start with 1.")
 	}
 
 	var results []*types.UserAction
@@ -78,26 +78,26 @@ func (u *userAction) Find(c *types.UserActionSearchCriteria, page int64) ([]*typ
 
 	cur, err := u.c.Find(ctx, filter, findOptions)
 	if err != nil {
-		return nil, 0, e.Wrap(err, "mongo.userAction.Find failed")
+		return nil, 0, err
 	}
 
 	for cur.Next(ctx) {
 		var elem types.UserAction
 		err := cur.Decode(&elem)
 		if err != nil {
-			return nil, 0, e.Wrap(err, "mongo.userAction.Find failed")
+			return nil, 0, err
 		}
 		results = append(results, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		return nil, 0, e.Wrap(err, "mongo.userAction.Find failed")
+		return nil, 0, err
 	}
 	cur.Close(ctx)
 
 	// Calculate the total page.
 	totalCount, err := u.c.CountDocuments(ctx, filter)
 	if err != nil {
-		return nil, 0, e.Wrap(err, "mongo.userAction.Find failed")
+		return nil, 0, err
 	}
 	totalPages := util.GetNumberOfPages(int(totalCount), viper.GetInt("page_size"))
 

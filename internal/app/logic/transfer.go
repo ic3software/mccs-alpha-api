@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/pg"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 )
@@ -14,40 +15,27 @@ type transfer struct{}
 var Transfer = &transfer{}
 
 func (t *transfer) Search(req *types.SearchTransferReqBody) (*types.SearchTransferRespond, error) {
-	transactions, err := pg.Transfer.Search(req)
+	transfers, err := pg.Journal.Search(req)
 	if err != nil {
 		return nil, err
 	}
-	return transactions, nil
+	return transfers, nil
 }
 
-func (t *transfer) FindJournal(transferID string) (*types.Journal, error) {
-	journal, err := pg.Transfer.FindJournal(transferID)
-	if err != nil {
-		return nil, err
-	}
-	return journal, nil
-}
+// POST /transfers
+// POST /admin/transfers
 
-func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
-	journal, err := pg.Transfer.Propose(req)
-	if err != nil {
-		return nil, err
-	}
-	return journal, nil
-}
-
-func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
-	from, err := pg.Account.FindByAccountNumber(req.FromAccountNumber)
+func (t *transfer) CheckBalance(payer, payee string, amount float64) error {
+	from, err := pg.Account.FindByAccountNumber(payer)
 	if err != nil {
 		return err
 	}
-	to, err := pg.Account.FindByAccountNumber(req.ToAccountNumber)
+	to, err := pg.Account.FindByAccountNumber(payee)
 	if err != nil {
 		return err
 	}
 
-	exceed, err := BalanceLimit.IsExceedLimit(from.ID, from.Balance-req.Amount)
+	exceed, err := BalanceLimit.IsExceedLimit(from.AccountNumber, from.Balance-amount)
 	if err != nil {
 		return err
 	}
@@ -59,7 +47,7 @@ func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
 		return errors.New("Sender will exceed its credit limit." + " The maximum amount that can be sent is: " + fmt.Sprintf("%.2f", amount))
 	}
 
-	exceed, err = BalanceLimit.IsExceedLimit(to.ID, to.Balance+req.Amount)
+	exceed, err = BalanceLimit.IsExceedLimit(to.AccountNumber, to.Balance+amount)
 	if err != nil {
 		return err
 	}
@@ -74,8 +62,32 @@ func (t *transfer) CheckBalance(req *types.TransferReqBody) error {
 	return nil
 }
 
+// PATCH /transfers/{transferID}
+
+func (t *transfer) FindByID(transferID string) (*types.Journal, error) {
+	journal, err := pg.Journal.FindByID(transferID)
+	if err != nil {
+		return nil, err
+	}
+	return journal, nil
+}
+
+// POST /transfers
+
+func (t *transfer) Propose(req *types.TransferReqBody) (*types.Journal, error) {
+	journal, err := pg.Journal.Propose(req)
+	if err != nil {
+		return nil, err
+	}
+	err = es.Journal.Create(journal)
+	if err != nil {
+		return nil, err
+	}
+	return journal, nil
+}
+
 func (t *transfer) maxPositiveBalanceCanBeTransferred(a *types.Account) (float64, error) {
-	maxPosBal, err := BalanceLimit.GetMaxPosBalance(a.ID)
+	maxPosBal, err := BalanceLimit.GetMaxPosBalance(a.AccountNumber)
 	if err != nil {
 		return 0, err
 	}
@@ -86,7 +98,7 @@ func (t *transfer) maxPositiveBalanceCanBeTransferred(a *types.Account) (float64
 }
 
 func (t *transfer) maxNegativeBalanceCanBeTransferred(a *types.Account) (float64, error) {
-	maxNegBal, err := BalanceLimit.GetMaxNegBalance(a.ID)
+	maxNegBal, err := BalanceLimit.GetMaxNegBalance(a.AccountNumber)
 	if err != nil {
 		return 0, err
 	}
@@ -96,52 +108,108 @@ func (t *transfer) maxNegativeBalanceCanBeTransferred(a *types.Account) (float64
 	return maxNegBal - math.Abs(a.Balance), nil
 }
 
-func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, error) {
-	j, err := pg.Transfer.Cancel(transferID, reason)
+// PATCH /transfers/{transferID}
+
+func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
+	updated, err := pg.Journal.Accept(j)
 	if err != nil {
 		return nil, err
 	}
-	return j, nil
-}
-
-func (t *transfer) Accept(j *types.Journal) (*types.Journal, error) {
-	updated, err := pg.Transfer.Accept(j)
+	err = es.Journal.Update(updated)
+	if err != nil {
+		return nil, err
+	}
+	err = t.updateESEntityBalances(updated)
 	if err != nil {
 		return nil, err
 	}
 	return updated, nil
 }
 
-// TO BE REMOVED
+func (t *transfer) updateESEntityBalances(j *types.Journal) error {
+	from, err := pg.Account.FindByAccountNumber(j.FromAccountNumber)
+	if err != nil {
+		return err
+	}
+	err = es.Entity.UpdateBalance(from.AccountNumber, from.Balance)
+	if err != nil {
+		return err
+	}
+	to, err := pg.Account.FindByAccountNumber(j.ToAccountNumber)
+	if err != nil {
+		return err
+	}
+	err = es.Entity.UpdateBalance(to.AccountNumber, to.Balance)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
-// func (t *transfer) Find(transactionID uint) (*types.Transfer, error) {
-// 	transaction, err := pg.Transfer.Find(transactionID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return transaction, nil
-// }
+func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, error) {
+	canceled, err := pg.Journal.Cancel(transferID, reason)
+	if err != nil {
+		return nil, err
+	}
+	err = es.Journal.Update(canceled)
+	if err != nil {
+		return nil, err
+	}
+	return canceled, nil
+}
 
-// func (t *transfer) FindPendings(accountID uint) ([]*types.Transfer, error) {
-// 	transactions, err := pg.Transfer.FindPendings(accountID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return transactions, nil
-// }
+// GET /admin/transfers/{transferID}
 
-// func (t *transfer) FindRecent(accountID uint) ([]*types.Transfer, error) {
-// 	transactions, err := pg.Transfer.FindRecent(accountID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return transactions, nil
-// }
+func (t *transfer) AdminGetTransfer(transferID string) (*types.Journal, error) {
+	journal, err := pg.Journal.FindByID(transferID)
+	if err != nil {
+		return nil, err
+	}
+	return journal, nil
+}
 
-// func (t *transfer) FindInRange(accountID uint, dateFrom time.Time, dateTo time.Time, page int) ([]*types.Transfer, int, error) {
-// 	transactions, totalPages, err := pg.Transfer.FindInRange(accountID, dateFrom, dateTo, page)
-// 	if err != nil {
-// 		return nil, 0, err
-// 	}
-// 	return transactions, totalPages, nil
-// }
+// POST /admin/transfers
+
+func (t *transfer) Create(req *types.AdminTransferReqBody) (*types.Journal, error) {
+	created, err := pg.Journal.Create(req)
+	if err != nil {
+		return nil, err
+	}
+	err = es.Journal.Create(created)
+	if err != nil {
+		return nil, err
+	}
+	err = t.updateESEntityBalances(created)
+	if err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
+// GET /admin/transfers
+
+func (t *transfer) AdminSearch(req *types.AdminSearchTransferReqBody) (*types.AdminSearchTransferRespond, error) {
+	result, err := es.Journal.AdminSearch(req)
+	if err != nil {
+		return nil, err
+	}
+	journals, err := pg.Journal.FindByIDs(result.IDs)
+	if err != nil {
+		return nil, err
+	}
+	return &types.AdminSearchTransferRespond{
+		Transfers:       types.NewJournalsToAdminTransfersRespond(journals),
+		NumberOfResults: result.NumberOfResults,
+		TotalPages:      result.TotalPages,
+	}, nil
+}
+
+// GET /admin/entities/{entityID}
+
+func (t *transfer) AdminGetPendingTransfers(accountNumber string) ([]*types.AdminTransferRespond, error) {
+	transfers, err := pg.Journal.AdminGetPendingTransfers(accountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return transfers, nil
+}

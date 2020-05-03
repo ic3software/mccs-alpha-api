@@ -7,6 +7,13 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
+func newWildcardQuery(name, text string) *elastic.BoolQuery {
+	q := elastic.NewBoolQuery()
+	q.Should(elastic.NewWildcardQuery(name, strings.ToLower(text)+"*").Boost(2))
+	q.Should(elastic.NewRegexpQuery(name, ".*"+strings.ToLower(text)+".*"))
+	return q
+}
+
 func newFuzzyWildcardQuery(name, text string) *elastic.BoolQuery {
 	q := elastic.NewBoolQuery()
 	q.Should(elastic.NewMatchQuery(name, text).Fuzziness("auto").Boost(3))

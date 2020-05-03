@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 )
 
 type posting struct{}
@@ -20,7 +19,7 @@ func (t *posting) FindInRange(from time.Time, to time.Time) ([]*types.Posting, e
 	ORDER BY P.created_at DESC
 	`, from, to).Scan(&result).Error
 	if err != nil {
-		return nil, e.Wrap(err, "pg.Posting.FindInRange failed")
+		return nil, err
 	}
 	return result, nil
 }

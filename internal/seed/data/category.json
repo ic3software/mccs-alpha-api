@@ -1,28 +1,28 @@
 [
     {
-        "name": "Carpentry",
+        "name": "carpentry",
         "createdAt": "2020-02-16T08:47:56.145Z"
     },
     {
-        "name": "Painting",
+        "name": "painting",
         "createdAt": "2020-02-16T08:40:10.255Z"
     },
     {
-        "name": "Car Repair"
+        "name": "car-repair"
     },
     {
-        "name": "Brewery"
+        "name": "brewery"
     },
     {
-        "name": "Restaurant"
+        "name": "restaurant"
     },
     {
-        "name": "Transport"
+        "name": "transport"
     },
     {
-        "name": "Organic Produce"
+        "name": "organic-produce"
     },
     {
-        "name": "Bakery"
+        "name": "bakery"
     }
 ]

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/bcrypt"
+	"github.com/ic3network/mccs-alpha-api/util/bcrypt"
 )
 
 var (
@@ -30,7 +30,7 @@ func LoadData() {
 	entityData = entities
 
 	// Load balance limit data.
-	data, err = ioutil.ReadFile("internal/seed/data/balance_limits.json")
+	data, err = ioutil.ReadFile("internal/seed/data/balance_limit.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,7 +93,12 @@ func Run() {
 		}
 		b.ID = entityID
 
-		err = ElasticSearch.CreateEntity(&b)
+		err = PostgresSQL.UpdateBalanceLimits(accountNumber, balanceLimitData[i])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = ElasticSearch.CreateEntity(&b, accountNumber, balanceLimitData[i])
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -120,12 +125,7 @@ func Run() {
 		}
 	}
 
-	err := PostgresSQL.UpdateBalanceLimits(balanceLimitData)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = MongoDB.CreateAdminUsers(adminUserData)
+	err := MongoDB.CreateAdminUsers(adminUserData)
 	if err != nil {
 		log.Fatal(err)
 	}

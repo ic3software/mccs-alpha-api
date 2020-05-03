@@ -1,9 +1,10 @@
 package pg
 
 import (
+	"time"
+
 	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"github.com/jinzhu/gorm"
 )
 
@@ -14,9 +15,9 @@ var Account = &account{}
 func (a *account) FindByID(accountID uint) (*types.Account, error) {
 	var result types.Account
 	err := db.Raw(`
-		SELECT A.id, A.balance
-		FROM accounts AS A
-		WHERE A.id = ?
+		SELECT id, account_number, balance
+		FROM accounts
+		WHERE deleted_at IS NULL AND id = ?
 		LIMIT 1
 	`, accountID).Scan(&result).Error
 	if err != nil {
@@ -28,9 +29,9 @@ func (a *account) FindByID(accountID uint) (*types.Account, error) {
 func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, error) {
 	var result types.Account
 	err := db.Raw(`
-		SELECT id, balance
+		SELECT id, account_number, balance
 		FROM accounts
-		WHERE accounts.account_number = ?
+		WHERE deleted_at IS NULL AND account_number = ?
 		LIMIT 1
 	`, accountNumber).Scan(&result).Error
 	if err != nil {
@@ -42,9 +43,9 @@ func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, err
 func (a *account) ifAccountExisted(db *gorm.DB, accountNumber string) bool {
 	var result types.Account
 	return !db.Raw(`
-		SELECT account_number
+		SELECT id, account_number, balance
 		FROM accounts
-		WHERE accounts.account_number = ?
+		WHERE deleted_at IS NULL AND account_number = ?
 		LIMIT 1
 	`, accountNumber).Scan(&result).RecordNotFound()
 }
@@ -69,7 +70,7 @@ func (a *account) Create() (*types.Account, error) {
 		tx.Rollback()
 		return nil, err
 	}
-	err = BalanceLimit.Create(tx, account.ID)
+	err = BalanceLimit.Create(tx, accountNumber)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -78,13 +79,20 @@ func (a *account) Create() (*types.Account, error) {
 	return &result, tx.Commit().Error
 }
 
-// TO BE REMOVED
+// DELETE /admin/entities/{entityID}
 
-func (a *account) FindByEntityID(entityID string) (*types.Account, error) {
-	account := new(types.Account)
-	err := db.Where("entity_id = ?", entityID).First(account).Error
+func (a *account) Delete(accountNumber string) error {
+	tx := db.Begin()
+
+	err := tx.Exec(`
+		UPDATE accounts
+		SET deleted_at = ?, updated_at = ?
+		WHERE deleted_at IS NULL AND account_number = ?
+	`, time.Now(), time.Now(), accountNumber).Error
 	if err != nil {
-		return nil, e.New(e.UserNotFound, "user not found")
+		tx.Rollback()
+		return err
 	}
-	return account, nil
+
+	return tx.Commit().Error
 }

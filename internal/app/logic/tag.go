@@ -6,7 +6,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/e"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -120,7 +119,7 @@ func (t *tag) MatchOffers(offers []string, lastLoginDate time.Time) (map[string]
 	for _, offer := range offers {
 		matches, err := es.Tag.MatchOffer(offer, lastLoginDate)
 		if err != nil {
-			return nil, e.Wrap(err, "TagService MatchOffers failed")
+			return nil, err
 		}
 		if len(matches) > 0 {
 			resultMap[offer] = matches
@@ -138,7 +137,7 @@ func (t *tag) MatchWants(wants []string, lastLoginDate time.Time) (map[string][]
 	for _, want := range wants {
 		matches, err := es.Tag.MatchWant(want, lastLoginDate)
 		if err != nil {
-			return nil, e.Wrap(err, "TagService MatchWants failed")
+			return nil, err
 		}
 		if len(matches) > 0 {
 			resultMap[want] = matches

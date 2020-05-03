@@ -9,18 +9,6 @@ RUN go get -v -t -d ./...
 
 COPY . .
 
-# Build with version information
-ARG APP=mccs
-ARG VERSION_DIR="github.com/ic3network/mccs-alpha-api/internal/pkg/version"
-ARG GIT_TAG
-ARG BUILD_DATE
-ARG GIT_COMMIT
-ARG GIT_TREE_STATUS
-ARG ldflags="-w -X $VERSION_DIR.gitTag=$GIT_TAG -X $VERSION_DIR.buildDate=$BUILD_DATE -X $VERSION_DIR.gitCommit=$GIT_COMMIT -X $VERSION_DIR.gitTreeState=$GIT_TREE_STATUS"
-
-# * CGO_ENABLED=0 to build a statically-linked executable
-RUN CGO_ENABLED=0 GOOS=linux go build -a -v -ldflags "$ldflags" -o "$APP" ./cmd/mccs-alpha-api
-
 ######## Start a new stage from scratch #######
 FROM alpine:latest
 RUN apk --no-cache --update upgrade && apk --no-cache add ca-certificates

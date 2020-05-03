@@ -36,7 +36,7 @@ func checkIndex(client *elastic.Client, index string) {
 	}
 }
 
-var indexes = []string{"entities", "users", "tags"}
+var indexes = []string{"entities", "users", "tags", "journals"}
 
 // Notes:
 // 1. Using nested fields for arrays of objects.
@@ -59,16 +59,6 @@ var indexMappings = map[string]string{
 		},
 		"mappings": {
 			"properties": {
-				"categories": {
-					"type": "text",
-					"analyzer": "tag_analyzer",
-					"fields": {
-						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
-						}
-					}
-				},
 				"entityID": {
 					"type": "text",
 					"fields": {
@@ -87,16 +77,7 @@ var indexMappings = map[string]string{
 						}
 					}
 				},
-				"locationCity": {
-					"type": "text",
-					"fields": {
-						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
-						}
-					}
-				},
-				"locationCountry": {
+				"entityEmail": {
 					"type": "text",
 					"fields": {
 						"keyword": {
@@ -106,13 +87,7 @@ var indexMappings = map[string]string{
 					}
 				},
 				"status": {
-					"type": "text",
-					"fields": {
-						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
-						}
-					}
+					"type": "keyword"
 				},
 				"offers": {
 					"type" : "nested",
@@ -149,6 +124,55 @@ var indexMappings = map[string]string{
 							}
 						}
 					}
+				},
+				"categories": {
+					"type": "text",
+					"analyzer": "tag_analyzer",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"locationCity": {
+					"type": "text",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"locationRegion": {
+					"type": "text",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"locationCountry": {
+					"type": "text",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"accountNumber": {
+					"type": "keyword"
+				},
+				"balance": {
+					"type" : "float"
+				},
+				"maxNegBal": {
+					"type" : "float"
+				},
+				"maxPosBal": {
+					"type" : "float"
 				}
 			}
 		}
@@ -237,6 +261,28 @@ var indexMappings = map[string]string{
 					}
 				},
 				"wantAddedAt": {
+					"type": "date"
+				}
+			}
+		}
+	}`,
+	"journals": `
+	{
+		"mappings": {
+			"properties": {
+				"transferID": {
+					"type": "keyword"
+				},
+				"fromAccountNumber": {
+					"type": "keyword"
+				},
+				"toAccountNumber": {
+					"type": "keyword"
+				},
+				"status": {
+					"type": "keyword"
+				},
+				"createdAt": {
 					"type": "date"
 				}
 			}

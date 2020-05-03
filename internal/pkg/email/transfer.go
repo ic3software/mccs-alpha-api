@@ -16,10 +16,10 @@ func (tr *transfer) Initiate(req *types.TransferReqBody) error {
 	url := viper.GetString("url") + "/pending_transactions"
 
 	var body string
-	if req.TransferType == constant.TransferType.Out {
+	if req.TransferDirection == constant.TransferDirection.Out {
 		body = req.InitiatorEntityName + " wants to send " + fmt.Sprintf("%.2f", req.Amount) + " Credits to you. <a href=" + url + ">Click here to review this pending transaction</a>."
 	}
-	if req.TransferType == constant.TransferType.In {
+	if req.TransferDirection == constant.TransferDirection.In {
 		body = req.InitiatorEntityName + " wants to receive " + fmt.Sprintf("%.2f", req.Amount) + " Credits from you. <a href=" + url + ">Click here to review this pending transaction</a>."
 	}
 
@@ -146,14 +146,10 @@ func (tr *transfer) getEmailInfo(j *types.Journal) *emailInfo {
 	var initiatorEmail, initiatorEntityName, receiverEmail, receiverEntityName string
 	if j.InitiatedBy == j.FromAccountNumber {
 		initiatorEntityName = j.FromEntityName
-		initiatorEmail = j.FromEmail
 		receiverEntityName = j.ToEntityName
-		receiverEmail = j.ToEmail
 	} else {
 		initiatorEntityName = j.ToEntityName
-		initiatorEmail = j.ToEmail
 		receiverEntityName = j.FromEntityName
-		receiverEmail = j.FromEmail
 	}
 	return &emailInfo{
 		initiatorEmail,

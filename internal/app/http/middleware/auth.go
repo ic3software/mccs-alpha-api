@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/jwt"
+	"github.com/ic3network/mccs-alpha-api/util"
 )
 
 const (
@@ -24,7 +24,7 @@ func GetLoggedInUser() mux.MiddlewareFunc {
 				next.ServeHTTP(w, r)
 				return
 			}
-			claims, err := jwt.ValidateToken(authHeader[len(BEARER_SCHEMA):])
+			claims, err := util.ValidateToken(authHeader[len(BEARER_SCHEMA):])
 			if err != nil {
 				next.ServeHTTP(w, r)
 				return
