@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -627,10 +626,6 @@ func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Re
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
-
-		fmt.Println("==========================================")
-		fmt.Printf("updated: %+v \n", updated)
-		fmt.Println("==========================================")
 
 		entities, err := logic.Entity.FindByIDs(updated.Entities)
 		if err != nil {
