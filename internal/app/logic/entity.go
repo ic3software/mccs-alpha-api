@@ -31,8 +31,10 @@ func (_ *entity) Create(entity *types.Entity) (primitive.ObjectID, error) {
 	return id, nil
 }
 
+// POST /signup
+
 func (_ *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
-	err := mongo.Entity.AssociateUser(entityID, userID)
+	err := mongo.Entity.AssociateUser([]primitive.ObjectID{entityID}, userID)
 	if err != nil {
 		return err
 	}

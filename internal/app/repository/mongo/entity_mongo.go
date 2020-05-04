@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
@@ -58,23 +57,6 @@ func (e *entity) setDefaultOffersAndWants(entityID primitive.ObjectID, offers []
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (en *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
-	filter := bson.M{"_id": entityID}
-	update := bson.M{
-		"$addToSet": bson.M{"users": userID},
-		"$set":      bson.M{"updatedAt": time.Now()},
-	}
-	_, err := en.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return err
 	}
 	return nil
 }
@@ -144,8 +126,8 @@ func (e *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 // PATCH /admin/entities/{entityID}
 
 func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.Entity, error) {
-	filter := bson.M{"_id": req.OriginEntity.ID}
-	update := bson.M{}
+	filter := bson.M{"_id": req.OriginEntity.ID, "deletedAt": bson.M{"$exists": false}}
+	update := bson.M{"updatedAt": time.Now()}
 
 	if req.EntityName != "" {
 		update["entityName"] = req.EntityName
@@ -184,7 +166,6 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 		update["categories"] = util.FormatTags(*req.Categories)
 	}
 	if req.Users != nil {
-		fmt.Printf("Users %+v \n", util.ToObjectIDs(*req.Users))
 		update["users"] = util.ToObjectIDs(*req.Users)
 	}
 	if req.Status != "" {
@@ -215,11 +196,11 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 		return nil, err
 	}
 
-	err = User.associateEntities(req.AddedUsers, req.OriginEntity.ID)
+	err = User.AssociateEntity(req.AddedUsers, req.OriginEntity.ID)
 	if err != nil {
 		return nil, err
 	}
-	err = User.removeAssociatedEntities(req.RemovedUsers, req.OriginEntity.ID)
+	err = User.removeAssociatedEntity(req.RemovedUsers, req.OriginEntity.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +230,7 @@ func (e *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, er
 		return nil, result.Err()
 	}
 
-	err = User.removeAssociatedEntities(entity.Users, entity.ID)
+	err = User.removeAssociatedEntity(entity.Users, entity.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -535,7 +516,31 @@ func (e *entity) updateWants(old string, new string) error {
 	return nil
 }
 
-func (e *entity) removeAssociatedUsers(entityIDs []primitive.ObjectID, userID primitive.ObjectID) error {
+// PATCH /admin/users/{userID}
+
+func (en *entity) AssociateUser(entityIDs []primitive.ObjectID, UserID primitive.ObjectID) error {
+	filter := bson.M{"_id": bson.M{"$in": entityIDs}}
+	updates := []bson.M{
+		bson.M{"$addToSet": bson.M{"users": UserID}},
+		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
+	}
+
+	var writes []mongo.WriteModel
+	for _, update := range updates {
+		model := mongo.NewUpdateManyModel().SetFilter(filter).SetUpdate(update)
+		writes = append(writes, model)
+	}
+
+	_, err := en.c.BulkWrite(context.Background(), writes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// PATCH /admin/users/{userID}
+
+func (e *entity) removeAssociatedUser(entityIDs []primitive.ObjectID, userID primitive.ObjectID) error {
 	filter := bson.M{"_id": bson.M{"$in": entityIDs}}
 	updates := []bson.M{
 		bson.M{"$pull": bson.M{"users": userID}},

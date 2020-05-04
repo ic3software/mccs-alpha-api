@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -135,23 +136,6 @@ func (u *user) FindByStringIDs(ids []string) ([]*types.User, error) {
 	return results, nil
 }
 
-func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
-	filter := bson.M{"_id": userID, "deletedAt": bson.M{"$exists": false}}
-	update := bson.M{
-		"$addToSet": bson.M{"entities": entityID},
-		"$set":      bson.M{"updatedAt": time.Now()},
-	}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (u *user) FindOneAndUpdate(userID primitive.ObjectID, update *types.User) (*types.User, error) {
 	update.Email = strings.ToLower(update.Email)
 	update.UpdatedAt = time.Now()
@@ -259,20 +243,41 @@ func (u *user) UpdateLoginAttempts(email string, attempts int, lockUser bool) er
 	return nil
 }
 
-func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.User) (*types.User, error) {
-	filter := bson.M{"_id": userID, "deletedAt": bson.M{"$exists": false}}
-	update.Email = strings.ToLower(update.Email)
-	update.UpdatedAt = time.Now()
+// PATCH /admin/users/{userID}
 
-	doc, err := toDoc(update)
-	if err != nil {
-		return nil, err
+func (u *user) AdminFindOneAndUpdate(req *types.AdminUpdateUserReq) (*types.User, error) {
+	filter := bson.M{"_id": req.OriginUser.ID, "deletedAt": bson.M{"$exists": false}}
+	update := bson.M{"updatedAt": time.Now()}
+
+	if req.Email != "" {
+		update["email"] = req.Email
+	}
+	if req.FirstName != "" {
+		update["firstName"] = req.FirstName
+	}
+	if req.LastName != "" {
+		update["lastName"] = req.LastName
+	}
+	if req.UserPhone != "" {
+		update["telephone"] = req.UserPhone
+	}
+	if req.Password != "" {
+		update["password"] = req.Password
+	}
+	if req.DailyEmailMatchNotification != nil {
+		update["dailyNotification"] = *req.DailyEmailMatchNotification
+	}
+	if req.ShowTagsMatchedSinceLastLogin != nil {
+		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
+	}
+	if req.Entity != nil {
+		update["entities"] = util.ToObjectIDs(*req.Entity)
 	}
 
 	result := u.c.FindOneAndUpdate(
 		context.Background(),
 		filter,
-		bson.M{"$set": doc},
+		bson.M{"$set": update},
 		options.FindOneAndUpdate().SetReturnDocument(options.After),
 	)
 	if result.Err() != nil {
@@ -280,9 +285,18 @@ func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.Us
 	}
 
 	user := types.User{}
-	err = result.Decode(&user)
+	err := result.Decode(&user)
 	if err != nil {
 		return nil, result.Err()
+	}
+
+	err = Entity.AssociateUser(req.AddedEntities, req.OriginUser.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = Entity.removeAssociatedUser(req.RemovedEntities, req.OriginUser.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	return &user, nil
@@ -310,7 +324,7 @@ func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error)
 		return nil, result.Err()
 	}
 
-	err = Entity.removeAssociatedUsers(user.Entities, user.ID)
+	err = Entity.removeAssociatedUser(user.Entities, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -318,12 +332,13 @@ func (u *user) AdminFindOneAndDelete(id primitive.ObjectID) (*types.User, error)
 	return &user, nil
 }
 
+// POST /signup
 // PATCH /admin/entities/{entityID}
 
-func (u *user) associateEntities(userIDs []primitive.ObjectID, entityID primitive.ObjectID) error {
-	filter := bson.M{"_id": bson.M{"$in": userIDs}}
+func (u *user) AssociateEntity(userIDs []primitive.ObjectID, entityID primitive.ObjectID) error {
+	filter := bson.M{"_id": bson.M{"$in": userIDs}, "deletedAt": bson.M{"$exists": false}}
 	updates := []bson.M{
-		bson.M{"$push": bson.M{"entities": entityID}},
+		bson.M{"$addToSet": bson.M{"entities": entityID}},
 		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
 	}
 
@@ -343,8 +358,8 @@ func (u *user) associateEntities(userIDs []primitive.ObjectID, entityID primitiv
 // PATCH /admin/entities/{entityID}
 // PATCH /admin/entities/{entityID}
 
-func (u *user) removeAssociatedEntities(userIDs []primitive.ObjectID, entityID primitive.ObjectID) error {
-	filter := bson.M{"_id": bson.M{"$in": userIDs}}
+func (u *user) removeAssociatedEntity(userIDs []primitive.ObjectID, entityID primitive.ObjectID) error {
+	filter := bson.M{"_id": bson.M{"$in": userIDs}, "deletedAt": bson.M{"$exists": false}}
 	updates := []bson.M{
 		bson.M{"$pull": bson.M{"entities": entityID}},
 		bson.M{"$set": bson.M{"updatedAt": time.Now()}},

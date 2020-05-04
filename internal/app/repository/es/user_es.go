@@ -116,3 +116,23 @@ func (es *user) AdminSearchUser(req *types.AdminSearchUserReq) (*types.ESSearchU
 		TotalPages:      totalPages,
 	}, nil
 }
+
+// PATCH /admin/entities/{entityID}
+
+func (es *user) AdminUpdate(req *types.AdminUpdateUserReq) error {
+	doc := map[string]interface{}{
+		"email":     req.Email,
+		"firstName": req.FirstName,
+		"lastName":  req.LastName,
+	}
+
+	_, err := es.c.Update().
+		Index(es.index).
+		Id(req.OriginUser.ID.Hex()).
+		Doc(doc).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}

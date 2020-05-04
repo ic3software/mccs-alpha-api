@@ -42,8 +42,10 @@ func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
 	return userID, nil
 }
 
+// POST /signup
+
 func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
-	err := mongo.User.AssociateEntity(userID, entityID)
+	err := mongo.User.AssociateEntity([]primitive.ObjectID{userID}, entityID)
 	if err != nil {
 		return err
 	}
@@ -196,12 +198,12 @@ func (u *user) FindEntities(userID primitive.ObjectID) ([]*types.Entity, error) 
 	return entities, nil
 }
 
-func (u *user) AdminFindOneAndUpdate(userID primitive.ObjectID, update *types.User) (*types.User, error) {
-	err := es.User.Update(userID, update)
+func (u *user) AdminFindOneAndUpdate(req *types.AdminUpdateUserReq) (*types.User, error) {
+	err := es.User.AdminUpdate(req)
 	if err != nil {
 		return nil, err
 	}
-	updated, err := mongo.User.AdminFindOneAndUpdate(userID, update)
+	updated, err := mongo.User.AdminFindOneAndUpdate(req)
 	if err != nil {
 		return nil, err
 	}

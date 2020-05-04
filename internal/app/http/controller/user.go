@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -607,31 +608,29 @@ func (handler *userHandler) newAdminSearchUserRespond(searchUserResult *types.Se
 	return respond, nil
 }
 
+// PATCH /admin/users/{userID}
+
 func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.AdminGetUserRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminUpdateUserReq(r)
+		req, errs := handler.newAdminUpdateUserReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		updated, err := logic.User.AdminFindOneAndUpdate(req.UserID, &types.User{
-			Email:                 req.Email,
-			FirstName:             req.FirstName,
-			LastName:              req.LastName,
-			Telephone:             req.UserPhone,
-			Password:              req.Password,
-			DailyNotification:     req.DailyEmailMatchNotification,
-			ShowRecentMatchedTags: req.ShowTagsMatchedSinceLastLogin,
-		})
+		updated, err := logic.User.AdminFindOneAndUpdate(req)
 		if err != nil {
 			l.Logger.Error("[Error] UserHandler.adminUpdateUser failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		fmt.Println("==========================================")
+		fmt.Printf("updated: %+v \n", updated)
+		fmt.Println("==========================================")
 
 		entities, err := logic.Entity.FindByIDs(updated.Entities)
 		if err != nil {
@@ -642,6 +641,31 @@ func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Re
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(updated, entities)})
 	}
+}
+
+func (handler *userHandler) newAdminUpdateUserReq(r *http.Request) (*types.AdminUpdateUserReq, []error) {
+	originUser, err := logic.User.FindByStringID(mux.Vars(r)["userID"])
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	var j types.AdminUpdateUserJSON
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&j)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	if j.Entities != nil {
+		for _, entityID := range *j.Entities {
+			_, err := logic.Entity.FindByStringID(entityID)
+			if err != nil {
+				return nil, []error{err}
+			}
+		}
+	}
+
+	return types.NewAdminUpdateUserReq(j, originUser)
 }
 
 // DELETE /admin/users/{userID}

@@ -915,47 +915,32 @@ func NewAdminGetUserReq(r *http.Request) (*AdminGetUser, []error) {
 	}, nil
 }
 
-type AdminUpdateUserReq struct {
-	UserID                        primitive.ObjectID
-	Email                         string
-	FirstName                     string
-	LastName                      string
-	UserPhone                     string
-	Password                      string
-	DailyEmailMatchNotification   *bool
-	ShowTagsMatchedSinceLastLogin *bool
-}
+// PATCH /admin/users/{userID}
 
-type adminUpdateUserJSON struct {
-	Email                         string `json:"email"`
-	FirstName                     string `json:"firstName"`
-	LastName                      string `json:"lastName"`
-	UserPhone                     string `json:"userPhone"`
-	Password                      string `json:"password"`
-	DailyEmailMatchNotification   *bool  `json:"dailyEmailMatchNotification"`
-	ShowTagsMatchedSinceLastLogin *bool  `json:"showTagsMatchedSinceLastLogin"`
-}
-
-func NewAdminUpdateUserReq(r *http.Request) (*AdminUpdateUserReq, []error) {
-	userID := mux.Vars(r)["userID"]
-	if userID == "" {
-		return nil, []error{errors.New("Please enter user id.")}
-	}
-	objectID, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return nil, []error{errors.New("Please enter valid user id.")}
-	}
-
-	req := adminUpdateUserJSON{}
-	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&req)
-	if err != nil {
-		return nil, []error{err}
-	}
-
-	errs := req.validate()
+func NewAdminUpdateUserReq(j AdminUpdateUserJSON, originUser *User) (*AdminUpdateUserReq, []error) {
+	errs := j.validate()
 	if len(errs) != 0 {
 		return nil, errs
+	}
+
+	addedEntities := []string{}
+	removedEntities := []string{}
+	if j.Entities != nil {
+		addedEntities, removedEntities = util.StringDiff(*j.Entities, util.ToIDStrings(originUser.Entities))
+	}
+
+	req := AdminUpdateUserReq{
+		OriginUser:                    originUser,
+		Email:                         j.Email,
+		FirstName:                     j.FirstName,
+		LastName:                      j.LastName,
+		UserPhone:                     j.UserPhone,
+		Password:                      j.Password,
+		DailyEmailMatchNotification:   j.DailyEmailMatchNotification,
+		ShowTagsMatchedSinceLastLogin: j.ShowTagsMatchedSinceLastLogin,
+		Entity:                        j.Entities,
+		AddedEntities:                 util.ToObjectIDs(addedEntities),
+		RemovedEntities:               util.ToObjectIDs(removedEntities),
 	}
 
 	if req.Password != "" {
@@ -966,19 +951,36 @@ func NewAdminUpdateUserReq(r *http.Request) (*AdminUpdateUserReq, []error) {
 		req.Password = hashedPassword
 	}
 
-	return &AdminUpdateUserReq{
-		UserID:                        objectID,
-		Email:                         req.Email,
-		FirstName:                     req.FirstName,
-		LastName:                      req.LastName,
-		UserPhone:                     req.UserPhone,
-		Password:                      req.Password,
-		DailyEmailMatchNotification:   req.DailyEmailMatchNotification,
-		ShowTagsMatchedSinceLastLogin: req.ShowTagsMatchedSinceLastLogin,
-	}, nil
+	return &req, nil
 }
 
-func (req *adminUpdateUserJSON) validate() []error {
+type AdminUpdateUserReq struct {
+	OriginUser                    *User
+	Email                         string
+	FirstName                     string
+	LastName                      string
+	UserPhone                     string
+	Password                      string
+	DailyEmailMatchNotification   *bool
+	ShowTagsMatchedSinceLastLogin *bool
+	// Entity
+	Entity          *[]string
+	AddedEntities   []primitive.ObjectID
+	RemovedEntities []primitive.ObjectID
+}
+
+type AdminUpdateUserJSON struct {
+	Email                         string    `json:"email"`
+	FirstName                     string    `json:"firstName"`
+	LastName                      string    `json:"lastName"`
+	UserPhone                     string    `json:"userPhone"`
+	Password                      string    `json:"password"`
+	DailyEmailMatchNotification   *bool     `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin *bool     `json:"showTagsMatchedSinceLastLogin"`
+	Entities                      *[]string `json:"entities"`
+}
+
+func (req *AdminUpdateUserJSON) validate() []error {
 	errs := []error{}
 
 	if req.Password != "" {
