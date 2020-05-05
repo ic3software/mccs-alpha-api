@@ -92,7 +92,7 @@ type EntityRespond struct {
 	IncType            string   `json:"incType"`
 	CompanyNumber      string   `json:"companyNumber"`
 	Website            string   `json:"website"`
-	Turnover           int      `json:"turnover"`
+	Turnover           *int     `json:"turnover"`
 	Description        string   `json:"description"`
 	LocationAddress    string   `json:"locationAddress"`
 	LocationCity       string   `json:"locationCity"`
@@ -143,7 +143,7 @@ type SearchEntityRespond struct {
 	IncType            string   `json:"incType"`
 	CompanyNumber      string   `json:"companyNumber"`
 	Website            string   `json:"website"`
-	Turnover           int      `json:"turnover"`
+	Turnover           *int     `json:"turnover"`
 	Description        string   `json:"description"`
 	LocationAddress    string   `json:"locationAddress"`
 	LocationCity       string   `json:"locationCity"`
@@ -267,7 +267,7 @@ type AdminEntityRespond struct {
 	IncType            string   `json:"incType"`
 	CompanyNumber      string   `json:"companyNumber"`
 	Website            string   `json:"website"`
-	Turnover           int      `json:"turnover"`
+	Turnover           *int     `json:"turnover"`
 	Description        string   `json:"description"`
 	LocationAddress    string   `json:"locationAddress"`
 	LocationCity       string   `json:"locationCity"`
@@ -433,7 +433,7 @@ type AdminSearchEntityRespond struct {
 	IncType            string              `json:"incType"`
 	CompanyNumber      string              `json:"companyNumber"`
 	Website            string              `json:"website"`
-	Turnover           int                 `json:"turnover"`
+	Turnover           *int                `json:"turnover"`
 	Description        string              `json:"description"`
 	LocationAddress    string              `json:"locationAddress"`
 	LocationCity       string              `json:"locationCity"`
@@ -484,11 +484,11 @@ func NewAdminGetEntityRespond(
 		Offers:             TagFieldToNames(entity.Offers),
 		Wants:              TagFieldToNames(entity.Wants),
 		Categories:         entity.Categories,
-		Users:              adminUserResponds,
 		Balance:            account.Balance,
 		MaxNegativeBalance: balanceLimit.MaxNegBal,
 		MaxPositiveBalance: balanceLimit.MaxPosBal,
 		PendingTransfers:   pendingTransfers,
+		Users:              adminUserResponds,
 	}
 }
 
@@ -501,7 +501,7 @@ type AdminGetEntityRespond struct {
 	IncType            string                  `json:"incType"`
 	CompanyNumber      string                  `json:"companyNumber"`
 	Website            string                  `json:"website"`
-	Turnover           int                     `json:"turnover"`
+	Turnover           *int                    `json:"turnover"`
 	Description        string                  `json:"description"`
 	LocationAddress    string                  `json:"locationAddress"`
 	LocationCity       string                  `json:"locationCity"`
@@ -512,20 +512,26 @@ type AdminGetEntityRespond struct {
 	Offers             []string                `json:"offers,omitempty"`
 	Wants              []string                `json:"wants,omitempty"`
 	Categories         []string                `json:"categories,omitempty"`
-	Users              []*AdminUserRespond     `json:"users"`
 	Balance            float64                 `json:"balance"`
 	MaxPositiveBalance float64                 `json:"maxPositiveBalance"`
 	MaxNegativeBalance float64                 `json:"maxNegativeBalance"`
 	PendingTransfers   []*AdminTransferRespond `json:"pendingTransfers"`
+	Users              []*AdminUserRespond     `json:"users"`
 }
 
 // PATCH /admin/entities/{entityID}
 
 func NewAdminUpdateEntityRespond(
-	req *AdminUpdateEntityReqBody,
+	req *AdminUpdateEntityReq,
+	users []*User,
 	entity *Entity,
 	balanceLimit *BalanceLimit,
 ) *AdminUpdateEntityRespond {
+	adminUserResponds := []*AdminUserRespond{}
+	for _, u := range users {
+		adminUserResponds = append(adminUserResponds, NewAdminUserRespond(u))
+	}
+
 	respond := &AdminUpdateEntityRespond{
 		ID:                 entity.ID.Hex(),
 		AccountNumber:      entity.AccountNumber,
@@ -548,6 +554,7 @@ func NewAdminUpdateEntityRespond(
 		Categories:         entity.Categories,
 		MaxPositiveBalance: balanceLimit.MaxPosBal,
 		MaxNegativeBalance: balanceLimit.MaxNegBal,
+		Users:              adminUserResponds,
 	}
 	if len(req.Offers) != 0 {
 		respond.Offers = req.Offers
@@ -559,27 +566,28 @@ func NewAdminUpdateEntityRespond(
 }
 
 type AdminUpdateEntityRespond struct {
-	ID                 string   `json:"id"`
-	AccountNumber      string   `json:"accountNumber"`
-	EntityName         string   `json:"entityName"`
-	Email              string   `json:"email,omitempty"`
-	EntityPhone        string   `json:"entityPhone"`
-	IncType            string   `json:"incType"`
-	CompanyNumber      string   `json:"companyNumber"`
-	Website            string   `json:"website"`
-	Turnover           int      `json:"turnover"`
-	Description        string   `json:"description"`
-	LocationAddress    string   `json:"locationAddress"`
-	LocationCity       string   `json:"locationCity"`
-	LocationRegion     string   `json:"locationRegion"`
-	LocationPostalCode string   `json:"locationPostalCode"`
-	LocationCountry    string   `json:"locationCountry"`
-	Status             string   `json:"status"`
-	Offers             []string `json:"offers,omitempty"`
-	Wants              []string `json:"wants,omitempty"`
-	Categories         []string `json:"categories,omitempty"`
-	MaxPositiveBalance float64  `json:"maxPositiveBalance"`
-	MaxNegativeBalance float64  `json:"maxNegativeBalance"`
+	ID                 string              `json:"id"`
+	AccountNumber      string              `json:"accountNumber"`
+	EntityName         string              `json:"entityName"`
+	Email              string              `json:"email,omitempty"`
+	EntityPhone        string              `json:"entityPhone"`
+	IncType            string              `json:"incType"`
+	CompanyNumber      string              `json:"companyNumber"`
+	Website            string              `json:"website"`
+	Turnover           *int                `json:"turnover"`
+	Description        string              `json:"description"`
+	LocationAddress    string              `json:"locationAddress"`
+	LocationCity       string              `json:"locationCity"`
+	LocationRegion     string              `json:"locationRegion"`
+	LocationPostalCode string              `json:"locationPostalCode"`
+	LocationCountry    string              `json:"locationCountry"`
+	Status             string              `json:"status"`
+	Offers             []string            `json:"offers,omitempty"`
+	Wants              []string            `json:"wants,omitempty"`
+	Categories         []string            `json:"categories,omitempty"`
+	MaxPositiveBalance float64             `json:"maxPositiveBalance"`
+	MaxNegativeBalance float64             `json:"maxNegativeBalance"`
+	Users              []*AdminUserRespond `json:"users"`
 }
 
 // DELETE /admin/entities/{entityID}
@@ -617,7 +625,7 @@ type AdminDeleteEntityRespond struct {
 	IncType            string   `json:"incType"`
 	CompanyNumber      string   `json:"companyNumber"`
 	Website            string   `json:"website"`
-	Turnover           int      `json:"turnover"`
+	Turnover           *int     `json:"turnover"`
 	Description        string   `json:"description"`
 	LocationAddress    string   `json:"locationAddress"`
 	LocationCity       string   `json:"locationCity"`

@@ -7,6 +7,7 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -56,23 +57,6 @@ func (e *entity) setDefaultOffersAndWants(entityID primitive.ObjectID, offers []
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (en *entity) AssociateUser(entityID, userID primitive.ObjectID) error {
-	filter := bson.M{"_id": entityID}
-	update := bson.M{
-		"$addToSet": bson.M{"users": userID},
-		"$set":      bson.M{"updatedAt": time.Now()},
-	}
-	_, err := en.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return err
 	}
 	return nil
 }
@@ -141,43 +125,65 @@ func (e *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
 
 // PATCH /admin/entities/{entityID}
 
-func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReqBody) (*types.Entity, error) {
-	filter := bson.M{"_id": req.OriginEntity.ID}
-	update := &types.Entity{
-		EntityName:         req.EntityName,
-		Email:              req.Email,
-		EntityPhone:        req.EntityPhone,
-		IncType:            req.IncType,
-		CompanyNumber:      req.CompanyNumber,
-		Website:            req.Website,
-		Turnover:           req.Turnover,
-		Description:        req.Description,
-		LocationAddress:    req.LocationAddress,
-		LocationCity:       req.LocationCity,
-		LocationRegion:     req.LocationRegion,
-		LocationPostalCode: req.LocationPostalCode,
-		LocationCountry:    req.LocationCountry,
-		Categories:         req.Categories,
-		Status:             req.Status,
+func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.Entity, error) {
+	filter := bson.M{"_id": req.OriginEntity.ID, "deletedAt": bson.M{"$exists": false}}
+	update := bson.M{"updatedAt": time.Now()}
+
+	if req.EntityName != "" {
+		update["entityName"] = req.EntityName
+	}
+	if req.EntityPhone != "" {
+		update["entityPhone"] = req.EntityPhone
+	}
+	if req.Email != "" {
+		update["email"] = req.Email
+	}
+	if req.IncType != "" {
+		update["incType"] = req.IncType
+	}
+	if req.CompanyNumber != "" {
+		update["companyNumber"] = req.CompanyNumber
+	}
+	if req.Turnover != nil {
+		update["turnover"] = *req.Turnover
+	}
+	if req.LocationAddress != "" {
+		update["locationAddress"] = req.LocationAddress
+	}
+	if req.LocationCity != "" {
+		update["locationCity"] = req.LocationCity
+	}
+	if req.LocationRegion != "" {
+		update["locationRegion"] = req.LocationRegion
+	}
+	if req.LocationCountry != "" {
+		update["locationCountry"] = req.LocationCountry
+	}
+	if req.LocationPostalCode != "" {
+		update["locationPostalCode"] = req.LocationPostalCode
+	}
+	if req.Categories != nil {
+		update["categories"] = util.FormatTags(*req.Categories)
+	}
+	if req.Users != nil {
+		update["users"] = util.ToObjectIDs(*req.Users)
+	}
+	if req.Status != "" {
+		update["status"] = req.Status
 	}
 
-	// FIXME
+	// TODO
 	// This is a trick to prevent setting nothing for the entity.
 	// If we don't do this then it will throw this error:
 	// (FailedToParse) '$set' is empty. You must specify a field like so: {$set: {<field>: ...}}
 	if req.EntityName == "" {
-		update.EntityName = req.OriginEntity.EntityName
-	}
-
-	doc, err := toDoc(update)
-	if err != nil {
-		return nil, err
+		update["entityName"] = req.OriginEntity.EntityName
 	}
 
 	result := e.c.FindOneAndUpdate(
 		context.Background(),
 		filter,
-		bson.M{"$set": doc},
+		bson.M{"$set": update},
 		options.FindOneAndUpdate().SetReturnDocument(options.After),
 	)
 	if result.Err() != nil {
@@ -185,13 +191,24 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReqBody) (*ty
 	}
 
 	entity := types.Entity{}
-	err = result.Decode(&entity)
+	err := result.Decode(&entity)
 	if err != nil {
-		return nil, result.Err()
+		return nil, err
+	}
+
+	err = User.AssociateEntity(req.AddedUsers, req.OriginEntity.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = User.removeAssociatedEntity(req.RemovedUsers, req.OriginEntity.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	return &entity, nil
 }
+
+// DELETE /admin/entities/{entityID}
 
 func (e *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, error) {
 	filter := bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
@@ -200,6 +217,7 @@ func (e *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, er
 		context.Background(),
 		filter,
 		bson.M{"$set": bson.M{
+			"users":     []primitive.ObjectID{},
 			"deletedAt": time.Now(),
 			"updatedAt": time.Now(),
 		}},
@@ -212,7 +230,7 @@ func (e *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, er
 		return nil, result.Err()
 	}
 
-	err = User.RemoveAssociatedEntities(entity.Users, entity.ID)
+	err = User.removeAssociatedEntity(entity.Users, entity.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +280,7 @@ func (e *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifferen
 	return nil
 }
 
-func (e *entity) AddToFavoriteEntities(req *types.AddToFavoriteReqBody) error {
+func (e *entity) AddToFavoriteEntities(req *types.AddToFavoriteReq) error {
 	addToEntityID, _ := primitive.ObjectIDFromHex(req.AddToEntityID)
 	favoriteEntityID, _ := primitive.ObjectIDFromHex(req.FavoriteEntityID)
 
@@ -498,9 +516,31 @@ func (e *entity) updateWants(old string, new string) error {
 	return nil
 }
 
-// DELETE /admin/users/{userID}
+// PATCH /admin/users/{userID}
 
-func (e *entity) RemoveAssociatedUsers(entityIDs []primitive.ObjectID, userID primitive.ObjectID) error {
+func (en *entity) AssociateUser(entityIDs []primitive.ObjectID, UserID primitive.ObjectID) error {
+	filter := bson.M{"_id": bson.M{"$in": entityIDs}}
+	updates := []bson.M{
+		bson.M{"$addToSet": bson.M{"users": UserID}},
+		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
+	}
+
+	var writes []mongo.WriteModel
+	for _, update := range updates {
+		model := mongo.NewUpdateManyModel().SetFilter(filter).SetUpdate(update)
+		writes = append(writes, model)
+	}
+
+	_, err := en.c.BulkWrite(context.Background(), writes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// PATCH /admin/users/{userID}
+
+func (e *entity) removeAssociatedUser(entityIDs []primitive.ObjectID, userID primitive.ObjectID) error {
 	filter := bson.M{"_id": bson.M{"$in": entityIDs}}
 	updates := []bson.M{
 		bson.M{"$pull": bson.M{"users": userID}},

@@ -10,7 +10,7 @@ type category struct{}
 
 var Category = &category{}
 
-func (c *category) Search(req *types.SearchCategoryReqBody) (*types.FindCategoryResult, error) {
+func (c *category) Search(req *types.SearchCategoryReq) (*types.FindCategoryResult, error) {
 	result, err := mongo.Category.Search(req)
 	if err != nil {
 		return nil, err

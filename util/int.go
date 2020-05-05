@@ -1,6 +1,15 @@
 package util
 
-import "strconv"
+import (
+	"strconv"
+)
+
+func PointerToInt(pointer *int) int {
+	if pointer != nil {
+		return *pointer
+	}
+	return 0
+}
 
 func ToInt(input string, defaultValue ...int) (int, error) {
 	if input == "" {

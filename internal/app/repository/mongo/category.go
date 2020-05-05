@@ -43,7 +43,7 @@ func (c *category) Create(name string) (*types.Category, error) {
 	return &category, nil
 }
 
-func (c *category) Search(req *types.SearchCategoryReqBody) (*types.FindCategoryResult, error) {
+func (c *category) Search(req *types.SearchCategoryReq) (*types.FindCategoryResult, error) {
 	var results []*types.Category
 
 	findOptions := options.Find()

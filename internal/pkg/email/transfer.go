@@ -12,7 +12,7 @@ type transfer struct{}
 
 var Transfer = &transfer{}
 
-func (tr *transfer) Initiate(req *types.TransferReqBody) error {
+func (tr *transfer) Initiate(req *types.TransferReq) error {
 	url := viper.GetString("url") + "/pending_transactions"
 
 	var body string

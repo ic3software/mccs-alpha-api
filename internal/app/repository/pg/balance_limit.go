@@ -1,7 +1,6 @@
 package pg
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -36,7 +35,6 @@ func (b *balanceLimit) FindByAccountNumber(accountNumber string) (*types.Balance
 		LIMIT 1
 	`, accountNumber).Scan(&result).Error
 	if err != nil {
-		fmt.Println(accountNumber)
 		return nil, err
 	}
 
@@ -45,7 +43,7 @@ func (b *balanceLimit) FindByAccountNumber(accountNumber string) (*types.Balance
 
 // PATCH /admin/entities/{entityID}
 
-func (b *balanceLimit) AdminUpdate(req *types.AdminUpdateEntityReqBody) error {
+func (b *balanceLimit) AdminUpdate(req *types.AdminUpdateEntityReq) error {
 	update := map[string]interface{}{}
 	if req.MaxPosBal != nil {
 		update["max_pos_bal"] = *req.MaxPosBal
@@ -60,11 +58,7 @@ func (b *balanceLimit) AdminUpdate(req *types.AdminUpdateEntityReqBody) error {
 	return nil
 }
 
-// DELETE /admin/entities/{entityID}
-
-func (b *balanceLimit) Delete(accountNumber string) error {
-	tx := db.Begin()
-
+func (b *balanceLimit) delete(tx *gorm.DB, accountNumber string) error {
 	err := tx.Exec(`
 		UPDATE balance_limits
 		SET deleted_at = ?, updated_at = ?
@@ -74,6 +68,5 @@ func (b *balanceLimit) Delete(accountNumber string) error {
 		tx.Rollback()
 		return err
 	}
-
-	return tx.Commit().Error
+	return nil
 }

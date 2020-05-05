@@ -73,7 +73,7 @@ func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) 
 		Meta meta     `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		query, err := types.NewSearchTagReqBody(r.URL.Query())
+		query, err := types.NewSearchTagReq(r.URL.Query())
 		if err != nil {
 			l.Logger.Info("[Info] TagHandler.searchTag failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -108,7 +108,7 @@ func (h *tagHandler) adminCreate() func(http.ResponseWriter, *http.Request) {
 		Data *types.TagRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminCreateTagReqBody(r)
+		req, errs := types.NewAdminCreateTagReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -139,7 +139,7 @@ func (h *tagHandler) adminUpdate() func(http.ResponseWriter, *http.Request) {
 		Data *types.TagRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminUpdateTagReqBody(r)
+		req, errs := types.NewAdminUpdateTagReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -185,7 +185,7 @@ func (h *tagHandler) adminDelete() func(http.ResponseWriter, *http.Request) {
 		Data *types.TagRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewAdminDeleteTagReqBody(r)
+		req, errs := types.NewAdminDeleteTagReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return

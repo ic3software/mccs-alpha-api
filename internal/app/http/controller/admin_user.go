@@ -75,7 +75,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 		return d
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewLoginReqBody(r)
+		req, errs := types.NewLoginReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -166,7 +166,7 @@ func (handler *adminUserHandler) requestPasswordReset() func(http.ResponseWriter
 func (handler *adminUserHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		var req types.ResetPasswordReqBody
+		var req types.ResetPasswordReq
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&req)
 		if err != nil {

@@ -70,27 +70,3 @@ func ToSearchTags(words string) []string {
 	tags := strings.FieldsFunc(strings.ToLower(words), splitFn)
 	return FormatTags(tags)
 }
-
-// TagDifference finds out the new added tags.
-func TagDifference(new, old []string) ([]string, []string) {
-	encountered := map[string]int{}
-	added := []string{}
-	removed := []string{}
-	for _, tag := range old {
-		if _, ok := encountered[tag]; !ok {
-			encountered[tag]++
-		}
-	}
-	for _, tag := range new {
-		encountered[tag]--
-	}
-	for name, flag := range encountered {
-		if flag == -1 {
-			added = append(added, name)
-		}
-		if flag == 1 {
-			removed = append(removed, name)
-		}
-	}
-	return added, removed
-}

@@ -73,7 +73,7 @@ func (es *user) Delete(id string) error {
 	return nil
 }
 
-func (es *user) AdminSearchUser(req *types.AdminSearchUserReqBody) (*types.ESSearchUserResult, error) {
+func (es *user) AdminSearchUser(req *types.AdminSearchUserReq) (*types.ESSearchUserResult, error) {
 	var ids []string
 	pageSize := req.PageSize
 	from := pageSize * (req.Page - 1)
@@ -115,4 +115,24 @@ func (es *user) AdminSearchUser(req *types.AdminSearchUserReqBody) (*types.ESSea
 		NumberOfResults: numberOfResults,
 		TotalPages:      totalPages,
 	}, nil
+}
+
+// PATCH /admin/entities/{entityID}
+
+func (es *user) AdminUpdate(req *types.AdminUpdateUserReq) error {
+	doc := map[string]interface{}{
+		"email":     req.Email,
+		"firstName": req.FirstName,
+		"lastName":  req.LastName,
+	}
+
+	_, err := es.c.Update().
+		Index(es.index).
+		Id(req.OriginUser.ID.Hex()).
+		Doc(doc).
+		Do(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
 }

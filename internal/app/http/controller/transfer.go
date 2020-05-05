@@ -55,7 +55,7 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 		Data *types.ProposeTransferRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := handler.newTransferReqBody(r)
+		req, errs := handler.newTransferReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -90,8 +90,8 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 	}
 }
 
-func (handler *transferHandler) newTransferReqBody(r *http.Request) (*types.TransferReqBody, []error) {
-	var body types.TransferUserReqBody
+func (handler *transferHandler) newTransferReq(r *http.Request) (*types.TransferReq, []error) {
+	var body types.TransferUserReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&body)
 	if err != nil {
@@ -108,7 +108,7 @@ func (handler *transferHandler) newTransferReqBody(r *http.Request) (*types.Tran
 	if err != nil {
 		return nil, []error{err}
 	}
-	return types.NewTransferReqBody(&body, initiatorEntity, receiverEntity)
+	return types.NewTransferReq(&body, initiatorEntity, receiverEntity)
 }
 
 // GET /transfers
@@ -151,7 +151,7 @@ func (handler *transferHandler) searchTransfer() func(http.ResponseWriter, *http
 	}
 }
 
-func (handler *transferHandler) newSearchTransferQuery(r *http.Request) (*types.SearchTransferReqBody, []error) {
+func (handler *transferHandler) newSearchTransferQuery(r *http.Request) (*types.SearchTransferReq, []error) {
 	entity, err := logic.Entity.FindByStringID(r.URL.Query().Get("querying_entity_id"))
 	if err != nil {
 		return nil, []error{err}
@@ -169,7 +169,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 	type respond struct {
 		Data *types.TransferRespond `json:"data"`
 	}
-	var generateRespond = func(req *types.UpdateTransferReqBody, updated *types.Journal) *types.TransferRespond {
+	var generateRespond = func(req *types.UpdateTransferReq, updated *types.Journal) *types.TransferRespond {
 		t := &types.TransferRespond{
 			TransferID:  req.TransferID,
 			Description: req.Journal.Description,
@@ -197,7 +197,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 		return t
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := handler.newUpdateTransferReqBody(r)
+		req, errs := handler.newUpdateTransferReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -244,7 +244,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 	}
 }
 
-func (handler *transferHandler) newUpdateTransferReqBody(r *http.Request) (*types.UpdateTransferReqBody, []error) {
+func (handler *transferHandler) newUpdateTransferReq(r *http.Request) (*types.UpdateTransferReq, []error) {
 	transferID := mux.Vars(r)["transferID"]
 	journal, err := logic.Transfer.FindByID(transferID)
 	if err != nil {
@@ -262,10 +262,10 @@ func (handler *transferHandler) newUpdateTransferReqBody(r *http.Request) (*type
 	if err != nil {
 		return nil, []error{err}
 	}
-	return types.NewUpdateTransferReqBody(r, journal, initiateEntity, fromEntity, toEntity)
+	return types.NewUpdateTransferReq(r, journal, initiateEntity, fromEntity, toEntity)
 }
 
-func (handler *transferHandler) checkPermissions(req *types.UpdateTransferReqBody) error {
+func (handler *transferHandler) checkPermissions(req *types.UpdateTransferReq) error {
 	if !util.ContainID(req.FromEntity.Users, req.LoggedInUserID) && !util.ContainID(req.ToEntity.Users, req.LoggedInUserID) {
 		return errors.New("You don't have permission to perform this action.")
 	}
@@ -284,7 +284,7 @@ func (handler *transferHandler) checkPermissions(req *types.UpdateTransferReqBod
 	return nil
 }
 
-func (handler *transferHandler) checkBalances(req *types.UpdateTransferReqBody) error {
+func (handler *transferHandler) checkBalances(req *types.UpdateTransferReq) error {
 	fromAccount, err := logic.Account.FindByAccountNumber(req.Journal.FromAccountNumber)
 	if err != nil {
 		return err
@@ -424,7 +424,7 @@ func (handler *transferHandler) adminCreateTransfer() func(http.ResponseWriter, 
 		Data *types.AdminTransferRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := handler.newAdminTransferReqBody(r)
+		req, errs := handler.newAdminTransferReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
@@ -447,8 +447,8 @@ func (handler *transferHandler) adminCreateTransfer() func(http.ResponseWriter, 
 	}
 }
 
-func (handler *transferHandler) newAdminTransferReqBody(r *http.Request) (*types.AdminTransferReqBody, []error) {
-	var body types.AdminTransferUserReqBody
+func (handler *transferHandler) newAdminTransferReq(r *http.Request) (*types.AdminTransferReq, []error) {
+	var body types.AdminTransferUserReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&body)
 	if err != nil {
@@ -465,7 +465,7 @@ func (handler *transferHandler) newAdminTransferReqBody(r *http.Request) (*types
 	if err != nil {
 		return nil, []error{err}
 	}
-	return types.NewAdminTransferReqBody(&body, payerEntity, payeeEntity)
+	return types.NewAdminTransferReq(&body, payerEntity, payeeEntity)
 }
 
 // GET /admin/transfers/{transferID}

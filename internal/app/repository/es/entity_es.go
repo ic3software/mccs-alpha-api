@@ -81,7 +81,7 @@ func (es *entity) Update(update *types.Entity) error {
 
 // PATCH /admin/entities/{entityID}
 
-func (es *entity) AdminUpdate(req *types.AdminUpdateEntityReqBody) error {
+func (es *entity) AdminUpdate(req *types.AdminUpdateEntityReq) error {
 	doc := types.EntityESRecord{
 		Name:   req.EntityName,
 		Email:  req.Email,
@@ -164,7 +164,7 @@ func (es *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDiffere
 
 // GET /entities
 
-func (es *entity) Search(req *types.SearchEntityReqBody) (*types.ESSearchEntityResult, error) {
+func (es *entity) Search(req *types.SearchEntityReq) (*types.ESSearchEntityResult, error) {
 	var ids []string
 
 	q := elastic.NewBoolQuery()
@@ -315,7 +315,7 @@ type byAccount struct {
 	MaxPosBal     *float64
 }
 
-func (es *entity) AdminSearch(req *types.AdminSearchEntityReqBody) (*types.ESSearchEntityResult, error) {
+func (es *entity) AdminSearch(req *types.AdminSearchEntityReq) (*types.ESSearchEntityResult, error) {
 	var ids []string
 
 	q := elastic.NewBoolQuery()

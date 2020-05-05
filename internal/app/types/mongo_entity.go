@@ -23,7 +23,7 @@ type Entity struct {
 	IncType            string      `json:"incType,omitempty" bson:"incType,omitempty"`
 	CompanyNumber      string      `json:"companyNumber,omitempty" bson:"companyNumber,omitempty"`
 	Website            string      `json:"website,omitempty" bson:"website,omitempty"`
-	Turnover           int         `json:"turnover,omitempty" bson:"turnover,omitempty"`
+	Turnover           *int        `json:"turnover,omitempty" bson:"turnover,omitempty"`
 	Offers             []*TagField `json:"offers,omitempty" bson:"offers,omitempty"`
 	Wants              []*TagField `json:"wants,omitempty" bson:"wants,omitempty"`
 	Description        string      `json:"description,omitempty" bson:"description,omitempty"`
@@ -66,7 +66,7 @@ func (entity *Entity) Validate() []error {
 	if len(entity.Website) > 100 {
 		errs = append(errs, errors.New("Website URL length cannot exceed 100 characters."))
 	}
-	if entity.Turnover < 0 {
+	if entity.Turnover != nil && *entity.Turnover < 0 {
 		errs = append(errs, errors.New("Turnover should be a positive number."))
 	}
 	if len(entity.Description) > 500 {
