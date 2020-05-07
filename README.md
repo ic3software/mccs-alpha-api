@@ -1,6 +1,6 @@
 # MCCS Alpha API
 
-## 🚧 This is a work in progress 🚧
+**🚧 This is a work in progress 🚧**
 
 See our development [roadmap](https://github.com/ic3network/mccs#roadmap).
 
@@ -25,7 +25,9 @@ There are four main functions that the MCCS API provides:
 
 See the detailed description of these main functions in the [MCCS overview of functionality](https://github.com/ic3network/mccs/blob/master/alpha-functionality.md).
 
-## Draft API Documentation - 🚧 Work in Progress 🚧
+## Draft API Documentation
+
+**🚧 Work in Progress 🚧**
 
 ### [User API](https://documenter.getpostman.com/view/10168004/SWTD7wqB?version=latest)
 
@@ -54,7 +56,7 @@ Basic requirements: Go version 1.13+, Docker and Docker Compose ([see all requir
     ```
     make seed
     ```
-1. [Make API calls](#api-documentation) - 🚧 Our API documentation is also a work in progress and is subject to change until an initial version is published 🚧
+1. [Make API calls](#draft-api-documentation) - 🚧 Our API documentation is also a work in progress and is subject to change until an initial version is published 🚧
 
 ## Requirements
 
