@@ -25,6 +25,12 @@ There are four main functions that the MCCS API provides:
 
 See the detailed description of these main functions in the [MCCS overview of functionality](https://github.com/ic3network/mccs/blob/master/alpha-functionality.md).
 
+## API Documentation
+
+### [User API](https://documenter.getpostman.com/view/10168004/SWTD7wqB?version=latest)
+
+### [Admin API](https://documenter.getpostman.com/view/10168004/SzYYyy7e?version=latest) - 🚧 work in progress 🚧
+
 ## How to Start
 
 Basic requirements: Go version 1.13+, Docker and Docker Compose ([see all requirements](#requirements))
