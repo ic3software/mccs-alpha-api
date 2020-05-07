@@ -1,16 +1,18 @@
 # MCCS Alpha API
 
-## 🚧 This is a work in progress 🚧
+**🚧 This is a work in progress 🚧**
 
 See our development [roadmap](https://github.com/ic3network/mccs#roadmap).
 
 ## Overview
 
-The MCCS Alpha API is a prototype API that exposes all of the functionality currently available in the [alpha version of the MCCS web application](https://github.com/ic3network/mccs-alpha).
+The MCCS Alpha API is a prototype API that exposes all of the functionality described in the [MCCS overview of functionality](https://github.com/ic3network/mccs/blob/master/alpha-functionality.md).
 
-By providing an API, developers who want to create their own version of MCCS will have significant flexibility to implement it in whatever way they choose. This means developers can build a front end that presents MCCS in any language, setup their own signup flow, optimize it for whatever devices their user base prefers, develop a mobile app, etc.
+By providing an API, developers who want to create their own front-end user interface for MCCS will have significant flexibility to implement it in whatever way they choose. This means developers can present MCCS in any language, setup their own signup flow, optimize it for whatever devices their users prefer, develop a mobile app, integrate other services such as chat, etc.
 
-We are making this code public to show our commitment to free and open source software, and to signal our intention to develop mutual credit software that will be freely available to anyone who wishes to implement a mutual credit trading system.
+Importantly, an API enables developers to integrate MCCS functionality directly into their own apps (e.g., import transfer data into an accounting application, instruct mutual credit transfers from an e-wallet application, etc.).
+
+We are making this code public to show our commitment to free and open source software, and to signal our intention to develop mutual credit software that will be freely available to anyone who wishes to implement a mutual credit transfer system.
 
 ## Main Functions
 
@@ -21,7 +23,15 @@ There are four main functions that the MCCS API provides:
 3. **Transfer mutual credits** - create and complete/cancel mutual credit (MC) transfers between entities
 4. **Review transfer activity** - view pending and completed MC transfers
 
-See the detailed description of these main functions in the [MCCS Alpha web application repository](https://github.com/ic3network/mccs-alpha#main-functions).
+See the detailed description of these main functions in the [MCCS overview of functionality](https://github.com/ic3network/mccs/blob/master/alpha-functionality.md).
+
+## Draft API Documentation
+
+**🚧 Work in Progress 🚧**
+
+### [User API](https://documenter.getpostman.com/view/10168004/SWTD7wqB?version=latest)
+
+### [Admin API](https://documenter.getpostman.com/view/10168004/SzYYyy7e?version=latest)
 
 ## How to Start
 
@@ -46,11 +56,7 @@ Basic requirements: Go version 1.13+, Docker and Docker Compose ([see all requir
     ```
     make seed
     ```
-1. Make API calls
-
-https://documenter.getpostman.com/view/10168004/SWTD7wqB?version=latest
-
-🚧 Our API documentation is also a work in progress and is subject to change until an initial version is published 🚧
+1. [Make API calls](#draft-api-documentation) - 🚧 Our API documentation is also a work in progress and is subject to change until an initial version is published 🚧
 
 ## Requirements
 
