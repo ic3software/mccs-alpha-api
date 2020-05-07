@@ -7,30 +7,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type logHandler struct {
+var UserAction = newUserAction()
+
+type userAction struct {
 	once *sync.Once
 }
 
-var LogHandler = newLogHandler()
-
-func newLogHandler() *logHandler {
-	return &logHandler{
+func newUserAction() *userAction {
+	return &userAction{
 		once: new(sync.Once),
 	}
 }
 
-func (lh *logHandler) RegisterRoutes(
-	public *mux.Router,
-	private *mux.Router,
-	adminPublic *mux.Router,
-	adminPrivate *mux.Router,
-) {
-	lh.once.Do(func() {
-		adminPrivate.Path("/log/search").HandlerFunc(lh.searchLog()).Methods("GET")
+func (ua *userAction) RegisterRoutes(adminPrivate *mux.Router) {
+	ua.once.Do(func() {
+		adminPrivate.Path("/log/search").HandlerFunc(ua.search()).Methods("GET")
 	})
 }
 
-func (lh *logHandler) searchLog() func(http.ResponseWriter, *http.Request) {
+func (ua *userAction) search() func(http.ResponseWriter, *http.Request) {
 	// t := template.NewView("/admin/log")
 	// type formData struct {
 	// 	Email    string

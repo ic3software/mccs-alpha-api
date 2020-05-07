@@ -19,11 +19,11 @@ import (
 	"go.uber.org/zap"
 )
 
+var TransferHandler = newTransferHandler()
+
 type transferHandler struct {
 	once *sync.Once
 }
-
-var TransferHandler = newTransferHandler()
 
 func newTransferHandler() *transferHandler {
 	return &transferHandler{
