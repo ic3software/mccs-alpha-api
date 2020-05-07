@@ -299,7 +299,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReq) erro
 		return err
 	}
 	if exceed {
-		reason := "The sender will exceed its credit limit so this tansfer has been cancelled."
+		reason := "The sender will exceed its credit limit so this transfer has been cancelled."
 		_, err = logic.Transfer.Cancel(req.Journal.TransferID, reason)
 		if err != nil {
 			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
@@ -319,7 +319,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReq) erro
 		return err
 	}
 	if exceed {
-		reason := "The recipient will exceed its maximum positive balance threshold so this tansfer has been cancelled."
+		reason := "The recipient will exceed its maximum positive balance threshold so this transfer has been cancelled."
 		_, err = logic.Transfer.Cancel(req.Journal.TransferID, reason)
 		if err != nil {
 			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
