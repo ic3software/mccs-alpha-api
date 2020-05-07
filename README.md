@@ -8,7 +8,7 @@ See our development [roadmap](https://github.com/ic3network/mccs#roadmap).
 
 The MCCS Alpha API is a prototype API that exposes all of the functionality described in the [MCCS overview of functionality](https://github.com/ic3network/mccs/blob/master/alpha-functionality.md).
 
-By providing an API, developers who want to create their own front end user interface for MCCS will have significant flexibility to implement it in whatever way they choose. This means developers can present MCCS in any language, setup their own signup flow, optimize it for whatever devices their users prefer, develop a mobile app, integrate other services such as chat, etc.
+By providing an API, developers who want to create their own front-end user interface for MCCS will have significant flexibility to implement it in whatever way they choose. This means developers can present MCCS in any language, setup their own signup flow, optimize it for whatever devices their users prefer, develop a mobile app, integrate other services such as chat, etc.
 
 Importantly, an API enables developers to integrate MCCS functionality directly into their own apps (e.g., import transfer data into an accounting application, instruct mutual credit transfers from an e-wallet application, etc.).
 
