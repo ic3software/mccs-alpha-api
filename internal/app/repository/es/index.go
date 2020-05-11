@@ -36,7 +36,7 @@ func checkIndex(client *elastic.Client, index string) {
 	}
 }
 
-var indexes = []string{"entities", "users", "tags", "journals"}
+var indexes = []string{"entities", "users", "tags", "journals", "useractions"}
 
 // Notes:
 // 1. Using nested fields for arrays of objects.
@@ -280,6 +280,49 @@ var indexMappings = map[string]string{
 					"type": "keyword"
 				},
 				"status": {
+					"type": "keyword"
+				},
+				"createdAt": {
+					"type": "date"
+				}
+			}
+		}
+	}`,
+	"useractions": `
+	{
+		"mappings": {
+			"properties": {
+				"userID": {
+					"type": "keyword"
+				},
+				"email": {
+					"type": "text",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"action": {
+					"type": "text",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"detail": {
+					"type": "text",
+					"fields": {
+						"keyword": {
+							"type": "keyword",
+							"ignore_above": 256
+						}
+					}
+				},
+				"category": {
 					"type": "keyword"
 				},
 				"createdAt": {

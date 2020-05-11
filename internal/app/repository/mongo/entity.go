@@ -24,19 +24,31 @@ func (en *entity) Register(db *mongo.Database) {
 	en.c = db.Collection("entities")
 }
 
-func (e *entity) Create(data *types.Entity) (primitive.ObjectID, error) {
-	data.Status = constant.Entity.Pending
-	data.CreatedAt = time.Now()
-	res, err := e.c.InsertOne(context.Background(), data)
-	if err != nil {
-		return primitive.ObjectID{}, err
+func (e *entity) Create(update *types.Entity) (*types.Entity, error) {
+	filter := bson.M{"_id": bson.M{"$exists": false}}
+	update.Status = constant.Entity.Pending
+	update.CreatedAt = time.Now()
+
+	result := e.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{"$set": update},
+		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
 	}
-	entityID := res.InsertedID.(primitive.ObjectID)
+
+	created := types.Entity{}
+	err := result.Decode(&created)
+	if err != nil {
+		return nil, err
+	}
 
 	// Make sure "offers" and "wants" fields exist so it's much easier to update later on.
-	err = e.setDefaultOffersAndWants(entityID, data.Offers, data.Wants)
+	err = e.setDefaultOffersAndWants(created.ID, created.Offers, created.Wants)
 
-	return entityID, nil
+	return &created, nil
 }
 
 func (e *entity) setDefaultOffersAndWants(entityID primitive.ObjectID, offers []*types.TagField, wants []*types.TagField) error {

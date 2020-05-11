@@ -5,14 +5,16 @@ import (
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
+	"github.com/ic3network/mccs-alpha-api/util/l"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type transfer struct{}
 
 var Transfer = &transfer{}
 
-func (tr *transfer) Initiate(req *types.TransferReq) error {
+func (tr *transfer) Initiate(req *types.TransferReq) {
 	url := viper.GetString("url") + "/pending_transactions"
 
 	var body string
@@ -32,9 +34,8 @@ func (tr *transfer) Initiate(req *types.TransferReq) error {
 	}
 	err := e.send(d)
 	if err != nil {
-		return err
+		l.Logger.Error("email.Transfer.Initiate failed", zap.Error(err))
 	}
-	return nil
 }
 
 func (tr *transfer) Accept(j *types.Journal) error {

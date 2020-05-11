@@ -17,29 +17,29 @@ type user struct{}
 
 var User = &user{}
 
-func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
+func (u *user) Create(user *types.User) (*types.User, error) {
 	_, err := mongo.User.FindByEmail(user.Email)
 	if err == nil {
-		return primitive.ObjectID{}, err
+		return nil, err
 	}
 
 	hashedPassword, err := bcrypt.Hash(user.Password)
 	if err != nil {
-		return primitive.ObjectID{}, err
+		return nil, err
 	}
 	user.Password = hashedPassword
 
-	userID, err := mongo.User.Create(user)
+	created, err := mongo.User.Create(user)
 	if err != nil {
-		return primitive.ObjectID{}, err
+		return nil, err
 	}
 
-	err = es.User.Create(userID, user)
+	err = es.User.Create(created.ID, user)
 	if err != nil {
-		return primitive.ObjectID{}, err
+		return nil, err
 	}
 
-	return userID, nil
+	return created, nil
 }
 
 // POST /signup
@@ -129,7 +129,7 @@ func (a *user) UpdateLoginInfo(id primitive.ObjectID, ip string) (*types.LoginIn
 func (u *user) UpdateLoginAttempts(email string) error {
 	user, err := mongo.User.FindByEmail(email)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	if u.isUserLockForLogin(user.LastLoginFailDate) {

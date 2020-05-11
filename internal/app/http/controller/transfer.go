@@ -81,12 +81,8 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewProposeTransferRespond(journal)})
 
-		go func() {
-			err := email.Transfer.Initiate(req)
-			if err != nil {
-				l.Logger.Error("email.Transfer.Initiate failed", zap.Error(err))
-			}
-		}()
+		go logic.UserAction.ProposeTransfer(req, util.ToObjectID(r.Header.Get("userID")))
+		go email.Transfer.Initiate(req)
 	}
 }
 

@@ -24,13 +24,27 @@ func (u *user) Register(db *mongo.Database) {
 	u.c = db.Collection("users")
 }
 
-func (u *user) Create(user *types.User) (primitive.ObjectID, error) {
-	user.CreatedAt = time.Now()
-	res, err := u.c.InsertOne(context.Background(), user)
-	if err != nil {
-		return primitive.ObjectID{}, err
+func (u *user) Create(update *types.User) (*types.User, error) {
+	filter := bson.M{"_id": bson.M{"$exists": false}}
+	update.CreatedAt = time.Now()
+
+	result := u.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{"$set": update},
+		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
 	}
-	return res.InsertedID.(primitive.ObjectID), nil
+
+	created := types.User{}
+	err := result.Decode(&created)
+	if err != nil {
+		return nil, err
+	}
+
+	return &created, nil
 }
 
 func (u *user) FindByEmail(email string) (*types.User, error) {

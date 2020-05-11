@@ -14,21 +14,21 @@ type entity struct{}
 
 var Entity = &entity{}
 
-func (_ *entity) Create(entity *types.Entity) (primitive.ObjectID, error) {
+func (_ *entity) Create(entity *types.Entity) (*types.Entity, error) {
 	account, err := pg.Account.Create()
 	if err != nil {
-		return primitive.ObjectID{}, err
+		return nil, err
 	}
 	entity.AccountNumber = account.AccountNumber
-	id, err := mongo.Entity.Create(entity)
+	created, err := mongo.Entity.Create(entity)
 	if err != nil {
-		return primitive.ObjectID{}, err
+		return nil, err
 	}
-	err = es.Entity.Create(id, entity)
+	err = es.Entity.Create(created.ID, entity)
 	if err != nil {
-		return primitive.ObjectID{}, err
+		return nil, err
 	}
-	return id, nil
+	return created, nil
 }
 
 // POST /signup

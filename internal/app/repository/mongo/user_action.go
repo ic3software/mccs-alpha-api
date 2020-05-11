@@ -7,6 +7,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var UserAction = &userAction{}
@@ -19,9 +20,9 @@ func (u *userAction) Register(db *mongo.Database) {
 	u.c = db.Collection("userActions")
 }
 
-func (u *userAction) Create(a *types.UserAction) error {
-	ctx := context.Background()
-	doc := bson.M{
+func (u *userAction) Create(a *types.UserAction) (*types.UserAction, error) {
+	filter := bson.M{"_id": bson.M{"$exists": false}}
+	update := bson.M{
 		"userID":    a.UserID,
 		"email":     a.Email,
 		"action":    a.Action,
@@ -29,11 +30,24 @@ func (u *userAction) Create(a *types.UserAction) error {
 		"category":  a.Category,
 		"createdAt": time.Now(),
 	}
-	_, err := u.c.InsertOne(ctx, doc)
-	if err != nil {
-		return err
+
+	result := u.c.FindOneAndUpdate(
+		context.Background(),
+		filter,
+		bson.M{"$set": update},
+		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
+	)
+	if result.Err() != nil {
+		return nil, result.Err()
 	}
-	return nil
+
+	created := types.UserAction{}
+	err := result.Decode(&created)
+	if err != nil {
+		return nil, err
+	}
+
+	return &created, nil
 }
 
 // func (u *userAction) Find(c *types.UserActionSearchCriteria, page int64) ([]*types.UserAction, int, error) {

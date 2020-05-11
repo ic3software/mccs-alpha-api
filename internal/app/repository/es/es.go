@@ -22,6 +22,7 @@ func registerCollections(client *elastic.Client) {
 	User.Register(client)
 	Tag.Register(client)
 	Journal.Register(client)
+	UserAction.Register(client)
 }
 
 // New returns an initialized ES instance.

@@ -128,12 +128,15 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 			l.Logger.Info("[INFO] UserHandler.login failed", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			go handler.updateLoginAttempts(req.Email)
+			go logic.UserAction.LoginFail(req.Email, util.IPAddress(r))
 			return
 		}
 		loginInfo, err := logic.User.UpdateLoginInfo(user.ID, util.IPAddress(r))
 		if err != nil {
 			l.Logger.Error("[Error] AdminUser.UpdateLoginInfo failed:", zap.Error(err))
 		}
+
+		go logic.UserAction.Login(user, util.IPAddress(r))
 
 		token, err := util.GenerateToken(user.ID.Hex(), false)
 
@@ -171,7 +174,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		entityID, err := logic.Entity.Create(&types.Entity{
+		createdEntity, err := logic.Entity.Create(&types.Entity{
 			EntityName:         req.EntityName,
 			Email:              req.Email,
 			IncType:            req.IncType,
@@ -193,7 +196,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		userID, err := logic.User.Create(&types.User{
+		createdUser, err := logic.User.Create(&types.User{
 			Email:                 req.Email,
 			Password:              req.Password,
 			FirstName:             req.FirstName,
@@ -207,29 +210,31 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		err = logic.Entity.AssociateUser(entityID, userID)
+		err = logic.Entity.AssociateUser(createdEntity.ID, createdUser.ID)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		err = logic.User.AssociateEntity(userID, entityID)
+		err = logic.User.AssociateEntity(createdUser.ID, createdEntity.ID)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		token, err := util.GenerateToken(userID.Hex(), false)
+		token, err := util.GenerateToken(createdUser.ID.Hex(), false)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
+		go logic.UserAction.Signup(createdUser, createdEntity)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: data{
-			UserID:   userID.Hex(),
-			EntityID: entityID.Hex(),
+			UserID:   createdUser.ID.Hex(),
+			EntityID: createdEntity.ID.Hex(),
 			Token:    token,
 		}})
 	}
@@ -385,6 +390,8 @@ func (handler *userHandler) passwordChange() func(http.ResponseWriter, *http.Req
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
+		go logic.UserAction.ChangePassword(user)
 
 		api.Respond(w, r, http.StatusOK)
 	}
