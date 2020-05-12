@@ -15,10 +15,3 @@ type UserAction struct {
 	Category  string             `bson:"category,omitempty"`
 	CreatedAt time.Time          `bson:"createdAt,omitempty"`
 }
-
-// type UserActionSearchCriteria struct {
-// 	Email    string
-// 	Category string
-// 	DateFrom time.Time
-// 	DateTo   time.Time
-// }
