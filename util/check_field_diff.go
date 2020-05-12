@@ -48,10 +48,6 @@ func CheckFieldDiff(oldStruct interface{}, newStruct interface{}, fieldsToSkip .
 		}
 	}
 
-	// fmt.Println("========================")
-	// fmt.Printf("modifiedFields %+v \n", modifiedFields)
-	// fmt.Println("========================")
-
 	return modifiedFields
 }
 
@@ -72,26 +68,38 @@ func handleBool(field string, origin interface{}, update interface{}) string {
 }
 
 func handlePtr(field string, origin interface{}, update interface{}) string {
-	intValue, ok := origin.(*int)
+	intPtr, ok := origin.(*int)
 	if ok {
-		updateIntValue, _ := origin.(*int)
-		return handleInt(field, *intValue, *updateIntValue)
+		updateIntPtr, _ := update.(*int)
+		if intPtr == nil {
+			return handleInt(field, 0, *updateIntPtr)
+		} else {
+			return handleInt(field, *intPtr, *updateIntPtr)
+		}
 	}
-	floatValue, ok := origin.(*float64)
+	floatPtr, ok := origin.(*float64)
 	if ok {
-		updateFloatValue, _ := origin.(*float64)
-		return handleFloat(field, *floatValue, *updateFloatValue)
+		updateFloatPtr, _ := update.(*float64)
+		if floatPtr == nil {
+			return handleFloat(field, 0, *updateFloatPtr)
+		} else {
+			return handleFloat(field, *floatPtr, *updateFloatPtr)
+		}
 	}
-	boolValue, ok := origin.(*bool)
+	boolPtr, ok := origin.(*bool)
 	if ok {
-		updateBoolValue, _ := origin.(*bool)
-		return handleBool(field, *boolValue, *updateBoolValue)
+		updateBoolPtr, _ := update.(*bool)
+		if boolPtr == nil {
+			return handleBool(field, false, *updateBoolPtr)
+		} else {
+			return handleBool(field, *boolPtr, *updateBoolPtr)
+		}
 	}
 	return ""
 }
 
 func handleSlice(field string, origin interface{}, update interface{}) string {
-	return fmt.Sprintf("%s: %s -> %s", field, origin, update)
+	return fmt.Sprintf("%s: %q -> %q", field, origin, update)
 }
 
 func sliceToMap(elements []string) map[string]bool {
