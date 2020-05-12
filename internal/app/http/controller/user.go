@@ -354,6 +354,8 @@ func (handler *userHandler) passwordReset() func(http.ResponseWriter, *http.Requ
 	}
 }
 
+// POST /password-change
+
 func (handler *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		Password string `json:"password"`
@@ -430,7 +432,7 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		originUser, err := logic.User.FindByStringID(mux.Vars(r)["userID"])
+		originUser, err := logic.User.FindByStringID(r.Header.Get("userID"))
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.updateUser failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -704,6 +706,8 @@ func (handler *userHandler) adminDeleteUser() func(http.ResponseWriter, *http.Re
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		go logic.UserAction.AdminDeleteUser(r.Header.Get("userID"), deleted)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminDeleteUserRespond(deleted)})
 	}

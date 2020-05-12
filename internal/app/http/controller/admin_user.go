@@ -55,6 +55,8 @@ func (handler *adminUserHandler) updateLoginAttempts(email string) {
 	}
 }
 
+// POST /admin/login
+
 func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request) {
 	type data struct {
 		Token         string     `json:"token"`
@@ -102,12 +104,16 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 	}
 }
 
+// POST /admin/logout
+
 func (handler *adminUserHandler) logout() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, cookie.ResetCookie())
 		api.Respond(w, r, http.StatusOK)
 	}
 }
+
+// POST /admin/password-reset
 
 func (handler *adminUserHandler) requestPasswordReset() func(http.ResponseWriter, *http.Request) {
 	type request struct {
@@ -166,6 +172,8 @@ func (handler *adminUserHandler) requestPasswordReset() func(http.ResponseWriter
 	}
 }
 
+// POST /admin/password-reset/{token}
+
 func (handler *adminUserHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -206,6 +214,8 @@ func (handler *adminUserHandler) passwordReset() func(http.ResponseWriter, *http
 		api.Respond(w, r, http.StatusOK)
 	}
 }
+
+// POST /admin/password-change
 
 func (handler *adminUserHandler) passwordChange() func(http.ResponseWriter, *http.Request) {
 	type request struct {

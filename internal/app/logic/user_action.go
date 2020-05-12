@@ -16,6 +16,8 @@ var UserAction = &userAction{}
 
 type userAction struct{}
 
+// POST /signup
+
 func (u *userAction) Signup(user *types.User, entity *types.Entity) {
 	ua := &types.UserAction{
 		UserID: user.ID,
@@ -28,6 +30,8 @@ func (u *userAction) Signup(user *types.User, entity *types.Entity) {
 	u.create(ua)
 }
 
+// POST /login
+
 func (u *userAction) Login(user *types.User, ipAddress string) {
 	ua := &types.UserAction{
 		UserID: user.ID,
@@ -39,6 +43,8 @@ func (u *userAction) Login(user *types.User, ipAddress string) {
 	}
 	u.create(ua)
 }
+
+// POST /login
 
 func (u *userAction) LoginFail(email string, ipAddress string) {
 	user, err := mongo.User.FindByEmail(email)
@@ -80,8 +86,10 @@ func (u *userAction) ChangePassword(user *types.User) {
 	u.create(ua)
 }
 
+// PATCH /user
+
 func (u *userAction) ModifyUser(origin *types.User, updated *types.User) {
-	modifiedFields := util.CheckDiff(origin, updated)
+	modifiedFields := util.CheckFieldDiff(origin, updated)
 	if len(modifiedFields) == 0 {
 		return
 	}
@@ -95,12 +103,14 @@ func (u *userAction) ModifyUser(origin *types.User, updated *types.User) {
 	u.create(ua)
 }
 
+// PATCH /user/entities/{entityID}
+
 func (u *userAction) ModifyEntity(userID string, origin *types.Entity, updated *types.Entity) {
-	user, err := mongo.User.FindByEmail(userID)
+	user, err := User.FindByStringID(userID)
 	if err != nil {
 		return
 	}
-	modifiedFields := util.CheckDiff(origin, updated)
+	modifiedFields := util.CheckFieldDiff(origin, updated)
 	if len(modifiedFields) == 0 {
 		return
 	}
@@ -114,6 +124,8 @@ func (u *userAction) ModifyEntity(userID string, origin *types.Entity, updated *
 	u.create(ua)
 }
 
+// POST /transfers
+
 func (u *userAction) ProposeTransfer(userID string, req *types.TransferReq) {
 	ua := &types.UserAction{
 		UserID: util.ToObjectID(userID),
@@ -125,6 +137,8 @@ func (u *userAction) ProposeTransfer(userID string, req *types.TransferReq) {
 	}
 	u.create(ua)
 }
+
+// PATCH /transfers/{transferID}
 
 func (u *userAction) AcceptTransfer(userID string, j *types.Journal) {
 	ua := &types.UserAction{
@@ -138,6 +152,8 @@ func (u *userAction) AcceptTransfer(userID string, j *types.Journal) {
 	u.create(ua)
 }
 
+// POST /admin/login
+
 func (u *userAction) AdminLogin(admin *types.AdminUser, ipAddress string) {
 	ua := &types.UserAction{
 		UserID: admin.ID,
@@ -149,6 +165,8 @@ func (u *userAction) AdminLogin(admin *types.AdminUser, ipAddress string) {
 	}
 	u.create(ua)
 }
+
+// POST /admin/login
 
 func (u *userAction) AdminLoginFail(email string, ipAddress string) {
 	admin, err := mongo.User.FindByEmail(email)
@@ -166,6 +184,8 @@ func (u *userAction) AdminLoginFail(email string, ipAddress string) {
 	u.create(ua)
 }
 
+// POST /admin/tags
+
 func (u *userAction) AdminCreateTag(userID string, tagName string) {
 	admin, err := AdminUser.FindByIDString(userID)
 	if err != nil {
@@ -181,6 +201,8 @@ func (u *userAction) AdminCreateTag(userID string, tagName string) {
 	}
 	u.create(ua)
 }
+
+// PATCH /admin/tags/{id}
 
 func (u *userAction) AdminModifyTag(userID string, old string, new string) {
 	admin, err := AdminUser.FindByIDString(userID)
@@ -198,6 +220,8 @@ func (u *userAction) AdminModifyTag(userID string, old string, new string) {
 	u.create(ua)
 }
 
+// DELETE /admin/tags/{id}
+
 func (u *userAction) AdminDeleteTag(userID string, tagName string) {
 	admin, err := AdminUser.FindByIDString(userID)
 	if err != nil {
@@ -214,6 +238,8 @@ func (u *userAction) AdminDeleteTag(userID string, tagName string) {
 	u.create(ua)
 }
 
+// POST /admin/categories
+
 func (u *userAction) AdminCreateCategory(userID string, tagName string) {
 	admin, err := AdminUser.FindByIDString(userID)
 	if err != nil {
@@ -229,6 +255,8 @@ func (u *userAction) AdminCreateCategory(userID string, tagName string) {
 	}
 	u.create(ua)
 }
+
+// PATCH /admin/categories/{id}
 
 func (u *userAction) AdminModifyCategory(userID string, old string, new string) {
 	admin, err := AdminUser.FindByIDString(userID)
@@ -264,28 +292,14 @@ func (u *userAction) AdminDeleteCategory(userID string, tagName string) {
 	u.create(ua)
 }
 
-func (u *userAction) AdminTransfer(userID string, j *types.Journal) {
-	admin, err := AdminUser.FindByIDString(userID)
-	if err != nil {
-		return
-	}
-	ua := &types.UserAction{
-		UserID: admin.ID,
-		Email:  admin.Email,
-		Action: "admin transfer for user",
-		// admin - [from] -> [to] - [amount]
-		Detail:   admin.Email + " - " + j.FromAccountNumber + " -> " + j.ToAccountNumber + " - " + fmt.Sprintf("%.2f", j.Amount) + " - " + j.Description,
-		Category: "admin",
-	}
-	u.create(ua)
-}
+// PATCH /admin/users/{userID}
 
 func (u *userAction) AdminModifyUser(userID string, origin *types.User, updated *types.User) {
 	admin, err := AdminUser.FindByIDString(userID)
 	if err != nil {
 		return
 	}
-	modifiedFields := util.CheckDiff(origin, updated)
+	modifiedFields := util.CheckFieldDiff(origin, updated)
 	if len(modifiedFields) == 0 {
 		return
 	}
@@ -299,20 +313,61 @@ func (u *userAction) AdminModifyUser(userID string, origin *types.User, updated 
 	u.create(ua)
 }
 
-func (u *userAction) AdminModifyEntity(userID string, origin *types.Entity, updated *types.Entity) {
-	admin, err := mongo.User.FindByEmail(userID)
+// DELETE /admin/users/{userID}
+
+func (u *userAction) AdminDeleteUser(userID string, deleted *types.User) {
+	admin, err := AdminUser.FindByIDString(userID)
 	if err != nil {
 		return
 	}
-	modifiedFields := util.CheckDiff(origin, updated)
+	admin.Email = strings.ToLower(admin.Email)
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin deleted a user",
+		//
+		Detail:   admin.Email + " - " + deleted.Email,
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+// PATCH /admin/entities/{entityID}
+
+func (u *userAction) AdminModifyEntity(userID string, origin *types.Entity, updated *types.Entity) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	modifiedFields := util.CheckFieldDiff(origin, updated)
 	if len(modifiedFields) == 0 {
 		return
 	}
 	ua := &types.UserAction{
-		UserID:   admin.ID,
-		Email:    admin.Email,
-		Action:   "admin modified entity details",
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin modified entity details",
+		//
 		Detail:   admin.Email + " - " + updated.Email + " - " + strings.Join(modifiedFields, ", "),
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+// DELETE /admin/entities/{entityID}
+
+func (u *userAction) AdminDeleteEntity(userID string, deleted *types.Entity) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	admin.Email = strings.ToLower(admin.Email)
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin deleted a entity",
+		//
+		Detail:   admin.Email + " - " + deleted.Email,
 		Category: "admin",
 	}
 	u.create(ua)
@@ -327,6 +382,24 @@ func (u *userAction) create(ua *types.UserAction) {
 	if err != nil {
 		l.Logger.Error("userAction.create failed", zap.Error(err))
 	}
+}
+
+// POST /admin/transfers
+
+func (u *userAction) AdminTransfer(userID string, j *types.Journal) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin transfer for user",
+		// admin - [from] -> [to] - [amount]
+		Detail:   admin.Email + " - " + j.FromAccountNumber + " -> " + j.ToAccountNumber + " - " + fmt.Sprintf("%.2f", j.Amount) + " - " + j.Description,
+		Category: "admin",
+	}
+	u.create(ua)
 }
 
 // GET /admin/log

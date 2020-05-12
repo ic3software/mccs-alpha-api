@@ -3,41 +3,95 @@ package util
 import (
 	"fmt"
 	"reflect"
-	"strconv"
 
 	"gopkg.in/oleiade/reflections.v1"
 )
 
-var defaultFieldsToSkip = []string{"CurrentLoginIP", "Password", "LastLoginIP"}
+var defaultFieldsToSkip = []string{
+	"CurrentLoginIP",
+	"Password",
+	"LastLoginIP",
+	"UpdatedAt",
+}
 
-// CheckDiff checks what fields have been changed.
-// Only checks "String", "Int" and "Float64" types.
-func CheckDiff(origin interface{}, updated interface{}, fieldsToSkip ...string) []string {
+// CheckFieldDiff checks what fields have been changed.
+func CheckFieldDiff(oldStruct interface{}, newStruct interface{}, fieldsToSkip ...string) []string {
 	modifiedFields := []string{}
-	structItems, _ := reflections.Items(origin)
+
+	structItems, _ := reflections.Items(oldStruct)
 	skipMap := sliceToMap(append(fieldsToSkip, defaultFieldsToSkip...))
 
-	for field, oldValue := range structItems {
+	for field, origin := range structItems {
 		if _, ok := skipMap[field]; ok {
 			continue
 		}
-		fieldKind, _ := reflections.GetFieldKind(origin, field)
-		if fieldKind != reflect.String && fieldKind != reflect.Int && fieldKind != reflect.Float64 {
-			continue
-		}
-		newValue, _ := reflections.GetField(updated, field)
-		if newValue != oldValue {
-			if fieldKind == reflect.Int {
-				modifiedFields = append(modifiedFields, field+": "+strconv.Itoa(oldValue.(int))+" -> "+strconv.Itoa(newValue.(int)))
-			} else if fieldKind == reflect.Float64 {
-				modifiedFields = append(modifiedFields, field+": "+fmt.Sprintf("%.2f", oldValue.(float64))+" -> "+fmt.Sprintf("%.2f", newValue.(float64)))
-			} else {
-				modifiedFields = append(modifiedFields, field+": "+oldValue.(string)+" -> "+newValue.(string))
+		update, _ := reflections.GetField(newStruct, field)
+		if !reflect.DeepEqual(origin, update) {
+			fieldKind, _ := reflections.GetFieldKind(oldStruct, field)
+			switch fieldKind {
+			case reflect.String:
+				modifiedFields = append(modifiedFields, handleString(field, origin, update))
+			case reflect.Int:
+			case reflect.Int32:
+			case reflect.Int64:
+				modifiedFields = append(modifiedFields, handleInt(field, origin, update))
+			case reflect.Float32:
+			case reflect.Float64:
+				modifiedFields = append(modifiedFields, handleFloat(field, origin, update))
+			case reflect.Bool:
+				modifiedFields = append(modifiedFields, handleBool(field, origin, update))
+			case reflect.Ptr:
+				modifiedFields = append(modifiedFields, handlePtr(field, origin, update))
+			case reflect.Slice:
+				modifiedFields = append(modifiedFields, handleSlice(field, origin, update))
 			}
 		}
 	}
 
+	// fmt.Println("========================")
+	// fmt.Printf("modifiedFields %+v \n", modifiedFields)
+	// fmt.Println("========================")
+
 	return modifiedFields
+}
+
+func handleString(field string, origin interface{}, update interface{}) string {
+	return fmt.Sprintf("%s: %s -> %s", field, origin, update)
+}
+
+func handleInt(field string, origin interface{}, update interface{}) string {
+	return fmt.Sprintf("%s: %d -> %d", field, origin, update)
+}
+
+func handleFloat(field string, origin interface{}, update interface{}) string {
+	return fmt.Sprintf("%s: %.2f -> %.2f", field, origin, update)
+}
+
+func handleBool(field string, origin interface{}, update interface{}) string {
+	return fmt.Sprintf("%s: %t -> %t", field, origin, update)
+}
+
+func handlePtr(field string, origin interface{}, update interface{}) string {
+	intValue, ok := origin.(*int)
+	if ok {
+		updateIntValue, _ := origin.(*int)
+		return handleInt(field, *intValue, *updateIntValue)
+	}
+	floatValue, ok := origin.(*float64)
+	if ok {
+		updateFloatValue, _ := origin.(*float64)
+		return handleFloat(field, *floatValue, *updateFloatValue)
+	}
+	boolValue, ok := origin.(*bool)
+	if ok {
+		updateBoolValue, _ := origin.(*bool)
+		return handleBool(field, *boolValue, *updateBoolValue)
+	}
+	return ""
+}
+
+func handleSlice(field string, origin interface{}, update interface{}) string {
+	return fmt.Sprintf("%s: %s -> %s", field, origin, update)
 }
 
 func sliceToMap(elements []string) map[string]bool {

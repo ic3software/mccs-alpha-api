@@ -623,6 +623,8 @@ func (handler *entityHandler) adminDeleteEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
+		go logic.UserAction.AdminDeleteEntity(r.Header.Get("userID"), deleted)
+
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminDeleteEntityRespond(deleted)})
 	}
 }

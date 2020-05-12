@@ -63,6 +63,8 @@ func (h *tagHandler) UpdateWants(added []string) error {
 	return nil
 }
 
+// GET /admin/tags
+
 func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
@@ -103,6 +105,8 @@ func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) 
 	}
 }
 
+// POST /admin/tags
+
 func (h *tagHandler) adminCreate() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.TagRespond `json:"data"`
@@ -135,6 +139,8 @@ func (h *tagHandler) adminCreate() func(http.ResponseWriter, *http.Request) {
 		}})
 	}
 }
+
+// PATCH /admin/tags/{id}
 
 func (h *tagHandler) adminUpdate() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
@@ -183,6 +189,8 @@ func (h *tagHandler) adminUpdate() func(http.ResponseWriter, *http.Request) {
 		}})
 	}
 }
+
+// DELETE /admin/tags/{id}
 
 func (h *tagHandler) adminDelete() func(http.ResponseWriter, *http.Request) {
 	type respond struct {

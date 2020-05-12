@@ -317,8 +317,7 @@ var indexMappings = map[string]string{
 					"type": "text",
 					"fields": {
 						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
+							"type": "keyword"
 						}
 					}
 				},
