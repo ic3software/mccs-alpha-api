@@ -305,6 +305,9 @@ func (handler *userHandler) requestPasswordReset() func(http.ResponseWriter, *ht
 			api.Respond(w, r, http.StatusOK, respond{Data: data{Token: uid.String()}})
 			return
 		}
+
+		go logic.UserAction.LostPassword(user)
+
 		api.Respond(w, r, http.StatusOK)
 	}
 }
@@ -427,8 +430,14 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-		user, err := logic.User.FindOneAndUpdate(userID, &types.User{
+		originUser, err := logic.User.FindByStringID(mux.Vars(r)["userID"])
+		if err != nil {
+			l.Logger.Info("[INFO] UserHandler.updateUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		updated, err := logic.User.FindOneAndUpdate(originUser.ID, &types.User{
 			FirstName:             req.FirstName,
 			LastName:              req.LastName,
 			Telephone:             req.UserPhone,
@@ -441,7 +450,9 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
+		go logic.UserAction.ModifyUser(originUser, updated)
+
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(updated)})
 	}
 }
 
@@ -490,14 +501,14 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 		}
 
 		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
-		oldEntity, err := logic.Entity.FindByID(entityID)
+		origin, err := logic.Entity.FindByID(entityID)
 		if err != nil {
 			l.Logger.Error("[Error] UserHandler.updateUserEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		entity, err := logic.Entity.FindOneAndUpdate(&types.Entity{
+		updated, err := logic.Entity.FindOneAndUpdate(&types.Entity{
 			ID:                 entityID,
 			EntityName:         req.EntityName,
 			Email:              req.Email,
@@ -519,15 +530,17 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 			return
 		}
 
-		go EntityHandler.UpdateOffersAndWants(oldEntity, req.Offers, req.Wants)
+		go EntityHandler.UpdateOffersAndWants(origin, req.Offers, req.Wants)
+
+		go logic.UserAction.ModifyEntity(r.Header.Get("userID"), origin, updated)
 
 		if len(req.Offers) != 0 {
-			entity.Offers = types.ToTagFields(req.Offers)
+			updated.Offers = types.ToTagFields(req.Offers)
 		}
 		if len(req.Wants) != 0 {
-			entity.Wants = types.ToTagFields(req.Wants)
+			updated.Wants = types.ToTagFields(req.Wants)
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(entity)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(updated)})
 	}
 }
 
@@ -640,6 +653,8 @@ func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Re
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		go logic.UserAction.AdminModifyUser(r.Header.Get("userID"), req.OriginUser, updated)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(updated, entities)})
 	}

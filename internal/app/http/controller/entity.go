@@ -493,7 +493,7 @@ func (handler *entityHandler) adminUpdateEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
-		newEntity, err := logic.Entity.AdminFindOneAndUpdate(req)
+		updated, err := logic.Entity.AdminFindOneAndUpdate(req)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.updateEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
@@ -507,12 +507,14 @@ func (handler *entityHandler) adminUpdateEntity() func(http.ResponseWriter, *htt
 			go CategoryHandler.Update(*req.Categories)
 		}
 
-		res, err := handler.newAdminUpdateEntityRespond(req, newEntity)
+		res, err := handler.newAdminUpdateEntityRespond(req, updated)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.updateEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		go logic.UserAction.AdminModifyEntity(r.Header.Get("userID"), req.OriginEntity, updated)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: res})
 	}

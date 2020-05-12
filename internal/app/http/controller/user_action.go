@@ -5,6 +5,11 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	"github.com/ic3network/mccs-alpha-api/internal/app/api"
+	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
+	"github.com/ic3network/mccs-alpha-api/internal/app/types"
+	"github.com/ic3network/mccs-alpha-api/util/l"
+	"go.uber.org/zap"
 )
 
 var UserAction = newUserAction()
@@ -21,59 +26,39 @@ func newUserAction() *userAction {
 
 func (ua *userAction) RegisterRoutes(adminPrivate *mux.Router) {
 	ua.once.Do(func() {
-		adminPrivate.Path("/log/search").HandlerFunc(ua.search()).Methods("GET")
+		adminPrivate.Path("/logs").HandlerFunc(ua.search()).Methods("GET")
 	})
 }
 
 func (ua *userAction) search() func(http.ResponseWriter, *http.Request) {
-	// t := template.NewView("/admin/log")
-	// type formData struct {
-	// 	Email    string
-	// 	DateFrom string
-	// 	DateTo   string
-	// 	Category string
-	// 	Page     int
-	// }
-	// type response struct {
-	// 	FormData    formData
-	// 	UserActions []*types.UserAction
-	// 	TotalPages  int
-	// }
+	type meta struct {
+		NumberOfResults int `json:"numberOfResults"`
+		TotalPages      int `json:"totalPages"`
+	}
+	type respond struct {
+		Data []*types.UserActionESRecord `json:"data"`
+		Meta meta                        `json:"meta"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 	q := r.URL.Query()
+		req, errs := types.NewAdminSearchLog(r)
+		if len(errs) > 0 {
+			api.Respond(w, r, http.StatusBadRequest, errs)
+			return
+		}
 
-		// 	page, err := strconv.Atoi(q.Get("page"))
-		// 	if err != nil {
-		// 		l.Logger.Error("SearchUserLogs failed", zap.Error(err))
-		// 		t.Error(w, r, nil, err)
-		// 		return
-		// 	}
+		found, err := logic.UserAction.Search(req)
+		if err != nil {
+			l.Logger.Error("[Error] TransferHandler.searchTransfers failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusInternalServerError, err)
+			return
+		}
 
-		// 	f := formData{
-		// 		Email:    q.Get("email"),
-		// 		Category: q.Get("category"),
-		// 		DateFrom: q.Get("date-from"),
-		// 		DateTo:   q.Get("date-to"),
-		// 		Page:     page,
-		// 	}
-		// 	res := response{FormData: f}
-
-		// 	c := types.UserActionSearchCriteria{
-		// 		Email:    f.Email,
-		// 		Category: f.Category,
-		// 		DateFrom: util.ParseTime(f.DateFrom),
-		// 		DateTo:   util.ParseTime(f.DateTo),
-		// 	}
-
-		// 	userAction, totalPages, err := logic.UserAction.Find(&c, int64(f.Page))
-		// 	res.TotalPages = totalPages
-		// 	res.UserActions = userAction
-		// 	if err != nil {
-		// 		l.Logger.Error("SearchUserLogs failed", zap.Error(err))
-		// 		t.Error(w, r, res, err)
-		// 		return
-		// 	}
-
-		// 	t.Render(w, r, res, nil)
+		api.Respond(w, r, http.StatusOK, respond{
+			Data: found.UserActions,
+			Meta: meta{
+				TotalPages:      found.TotalPages,
+				NumberOfResults: found.NumberOfResults,
+			},
+		})
 	}
 }

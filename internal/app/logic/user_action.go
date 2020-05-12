@@ -2,12 +2,13 @@ package logic
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
+	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/ic3network/mccs-alpha-api/util/l"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
 
@@ -55,20 +56,67 @@ func (u *userAction) LoginFail(email string, ipAddress string) {
 	u.create(ua)
 }
 
-func (u *userAction) ChangePassword(user *types.User) {
+func (u *userAction) LostPassword(user *types.User) {
 	ua := &types.UserAction{
-		UserID:   user.ID,
-		Email:    user.Email,
-		Action:   "changed password",
+		UserID: user.ID,
+		Email:  user.Email,
+		Action: "sent password reset",
+		// [email]
 		Detail:   user.Email,
 		Category: "user",
 	}
 	u.create(ua)
 }
 
-func (u *userAction) ProposeTransfer(req *types.TransferReq, userID primitive.ObjectID) {
+func (u *userAction) ChangePassword(user *types.User) {
 	ua := &types.UserAction{
-		UserID: userID,
+		UserID: user.ID,
+		Email:  user.Email,
+		Action: "changed password",
+		// [email]
+		Detail:   user.Email,
+		Category: "user",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) ModifyUser(origin *types.User, updated *types.User) {
+	modifiedFields := util.CheckDiff(origin, updated)
+	if len(modifiedFields) == 0 {
+		return
+	}
+	ua := &types.UserAction{
+		UserID:   origin.ID,
+		Email:    updated.Email,
+		Action:   "modified user details",
+		Detail:   origin.Email + " - " + updated.Email + ": " + strings.Join(modifiedFields, ", "),
+		Category: "user",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) ModifyEntity(userID string, origin *types.Entity, updated *types.Entity) {
+	user, err := mongo.User.FindByEmail(userID)
+	if err != nil {
+		return
+	}
+	modifiedFields := util.CheckDiff(origin, updated)
+	if len(modifiedFields) == 0 {
+		return
+	}
+	ua := &types.UserAction{
+		UserID:   user.ID,
+		Email:    user.Email,
+		Action:   "user modified entity details",
+		Detail:   user.Email + " - " + updated.Email + " - " + strings.Join(modifiedFields, ", "),
+		Category: "user",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) ProposeTransfer(userID string, req *types.TransferReq) {
+	ua := &types.UserAction{
+		UserID: util.ToObjectID(userID),
 		Email:  req.FromEmail,
 		Action: "user proposed a transfer",
 		// [proposer] - [from] - [to] - [amount] - [desc]
@@ -78,21 +126,215 @@ func (u *userAction) ProposeTransfer(req *types.TransferReq, userID primitive.Ob
 	u.create(ua)
 }
 
+func (u *userAction) AcceptTransfer(userID string, j *types.Journal) {
+	ua := &types.UserAction{
+		UserID: util.ToObjectID(userID),
+		Email:  j.FromAccountNumber,
+		Action: "user transfer",
+		// [from] - [to] - [amount] - [desc]
+		Detail:   j.FromAccountNumber + " - " + j.ToAccountNumber + " - " + fmt.Sprintf("%.2f", j.Amount) + " - " + j.Description,
+		Category: "user",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminLogin(admin *types.AdminUser, ipAddress string) {
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin user login successful",
+		// [email] - [IP address]
+		Detail:   admin.Email + " - " + ipAddress,
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminLoginFail(email string, ipAddress string) {
+	admin, err := mongo.User.FindByEmail(email)
+	if err != nil {
+		return
+	}
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin user login failed",
+		// [email] - [IP address]
+		Detail:   admin.Email + " - " + ipAddress,
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminCreateTag(userID string, tagName string) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin created new tag",
+		// [email] - [Tag]
+		Detail:   admin.Email + " - " + tagName,
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminModifyTag(userID string, old string, new string) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin modified a tag",
+		// [email] - [Old Tag Name] - [New Tag Name]
+		Detail:   admin.Email + " - " + old + " -> " + new,
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminDeleteTag(userID string, tagName string) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin deleted a tag",
+		// [email] - [Tag]
+		Detail:   admin.Email + " - " + tagName,
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminCreateCategory(userID string, tagName string) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin created a new category",
+		// [email] - [Tag]
+		Detail:   admin.Email + " - " + tagName,
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminModifyCategory(userID string, old string, new string) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	admin.Email = strings.ToLower(admin.Email)
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		// [email] - [Old Tag Name] - [New Tag Name]
+		Action:   "admin modified a category",
+		Detail:   admin.Email + " - " + old + " -> " + new,
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminDeleteCategory(userID string, tagName string) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	admin.Email = strings.ToLower(admin.Email)
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin deleted a category",
+		// [email] - [Tag]
+		Detail:   admin.Email + " - " + tagName,
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminTransfer(userID string, j *types.Journal) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin transfer for user",
+		// admin - [from] -> [to] - [amount]
+		Detail:   admin.Email + " - " + j.FromAccountNumber + " -> " + j.ToAccountNumber + " - " + fmt.Sprintf("%.2f", j.Amount) + " - " + j.Description,
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminModifyUser(userID string, origin *types.User, updated *types.User) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	modifiedFields := util.CheckDiff(origin, updated)
+	if len(modifiedFields) == 0 {
+		return
+	}
+	ua := &types.UserAction{
+		UserID:   origin.ID,
+		Email:    updated.Email,
+		Action:   "admin modified user details",
+		Detail:   admin.Email + " - " + updated.Email + ": " + strings.Join(modifiedFields, ", "),
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
+func (u *userAction) AdminModifyEntity(userID string, origin *types.Entity, updated *types.Entity) {
+	admin, err := mongo.User.FindByEmail(userID)
+	if err != nil {
+		return
+	}
+	modifiedFields := util.CheckDiff(origin, updated)
+	if len(modifiedFields) == 0 {
+		return
+	}
+	ua := &types.UserAction{
+		UserID:   admin.ID,
+		Email:    admin.Email,
+		Action:   "admin modified entity details",
+		Detail:   admin.Email + " - " + updated.Email + " - " + strings.Join(modifiedFields, ", "),
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
 func (u *userAction) create(ua *types.UserAction) {
 	created, err := mongo.UserAction.Create(ua)
 	if err != nil {
-		l.Logger.Error("userAction.Login failed", zap.Error(err))
+		l.Logger.Error("userAction.create failed", zap.Error(err))
 	}
 	err = es.UserAction.Create(created)
 	if err != nil {
-		l.Logger.Error("userAction.Login failed", zap.Error(err))
+		l.Logger.Error("userAction.create failed", zap.Error(err))
 	}
 }
 
-// func (u *userAction) Find(c *types.UserActionSearchCriteria, page int64) ([]*types.UserAction, int, error) {
-// 	userActions, totalPages, err := mongo.UserAction.Find(c, page)
-// 	if err != nil {
-// 		return nil, 0, err
-// 	}
-// 	return userActions, totalPages, nil
-// }
+// GET /admin/log
+
+func (u *userAction) Search(req *types.AdminSearchLogReq) (*types.ESSearchUserActionResult, error) {
+	result, err := es.UserAction.Search(req)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}

@@ -124,6 +124,8 @@ func (handler *categoryHandler) create() func(http.ResponseWriter, *http.Request
 			return
 		}
 
+		go logic.UserAction.AdminCreateCategory(r.Header.Get("userID"), req.Name)
+
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(created)})
 	}
 }
@@ -169,6 +171,8 @@ func (handler *categoryHandler) update() func(http.ResponseWriter, *http.Request
 			}
 		}()
 
+		go logic.UserAction.AdminModifyCategory(r.Header.Get("userID"), old.Name, updated.Name)
+
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(updated)})
 	}
 }
@@ -199,6 +203,8 @@ func (handler *categoryHandler) delete() func(http.ResponseWriter, *http.Request
 				l.Logger.Error("[Error] logic.Entity.delete failed:", zap.Error(err))
 			}
 		}()
+
+		go logic.UserAction.AdminDeleteCategory(r.Header.Get("userID"), deleted.Name)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(deleted)})
 	}

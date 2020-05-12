@@ -12,3 +12,9 @@ type UserActionESRecord struct {
 	Category  string    `json:"category,omitempty"`
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 }
+
+type ESSearchUserActionResult struct {
+	UserActions     []*UserActionESRecord
+	NumberOfResults int
+	TotalPages      int
+}

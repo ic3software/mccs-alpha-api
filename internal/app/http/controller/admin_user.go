@@ -86,6 +86,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 			l.Logger.Info("[Info] AdminUserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			go handler.updateLoginAttempts(req.Email)
+			go logic.UserAction.AdminLoginFail(req.Email, util.IPAddress(r))
 			return
 		}
 		loginInfo, err := logic.AdminUser.UpdateLoginInfo(user.ID, util.IPAddress(r))
@@ -94,6 +95,8 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 		}
 
 		token, err := util.GenerateToken(user.ID.Hex(), true)
+
+		go logic.UserAction.AdminLogin(user, util.IPAddress(r))
 
 		api.Respond(w, r, http.StatusOK, respond{Data: respondData(loginInfo, token)})
 	}

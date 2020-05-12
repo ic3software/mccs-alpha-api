@@ -38,7 +38,7 @@ func (tr *transfer) Initiate(req *types.TransferReq) {
 	}
 }
 
-func (tr *transfer) Accept(j *types.Journal) error {
+func (tr *transfer) Accept(j *types.Journal) {
 	info := tr.getEmailInfo(j)
 
 	var body string
@@ -57,12 +57,11 @@ func (tr *transfer) Accept(j *types.Journal) error {
 	}
 	err := e.send(d)
 	if err != nil {
-		return err
+		l.Logger.Error("email.Transfer.Accept failed", zap.Error(err))
 	}
-	return nil
 }
 
-func (tr *transfer) Reject(j *types.Journal, reason string) error {
+func (tr *transfer) Reject(j *types.Journal, reason string) {
 	info := tr.getEmailInfo(j)
 
 	var body string
@@ -85,12 +84,11 @@ func (tr *transfer) Reject(j *types.Journal, reason string) error {
 	}
 	err := e.send(d)
 	if err != nil {
-		return err
+		l.Logger.Error("email.Transfer.Reject failed", zap.Error(err))
 	}
-	return nil
 }
 
-func (tr *transfer) Cancel(j *types.Journal, reason string) error {
+func (tr *transfer) Cancel(j *types.Journal, reason string) {
 	info := tr.getEmailInfo(j)
 
 	var body string
@@ -113,9 +111,8 @@ func (tr *transfer) Cancel(j *types.Journal, reason string) error {
 	}
 	err := e.send(d)
 	if err != nil {
-		return err
+		l.Logger.Error("email.Transfer.Cancel failed", zap.Error(err))
 	}
-	return nil
 }
 
 func (tr *transfer) CancelBySystem(j *types.Journal, reason string) error {

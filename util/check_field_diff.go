@@ -8,21 +8,24 @@ import (
 	"gopkg.in/oleiade/reflections.v1"
 )
 
+var defaultFieldsToSkip = []string{"CurrentLoginIP", "Password", "LastLoginIP"}
+
 // CheckDiff checks what fields have been changed.
 // Only checks "String", "Int" and "Float64" types.
-func CheckDiff(old interface{}, new interface{}, fieldsToSkip map[string]bool) []string {
-	modifiedFields := make([]string, 0)
-	structItems, _ := reflections.Items(old)
+func CheckDiff(origin interface{}, updated interface{}, fieldsToSkip ...string) []string {
+	modifiedFields := []string{}
+	structItems, _ := reflections.Items(origin)
+	skipMap := sliceToMap(append(fieldsToSkip, defaultFieldsToSkip...))
 
 	for field, oldValue := range structItems {
-		if _, ok := fieldsToSkip[field]; ok {
+		if _, ok := skipMap[field]; ok {
 			continue
 		}
-		fieldKind, _ := reflections.GetFieldKind(old, field)
+		fieldKind, _ := reflections.GetFieldKind(origin, field)
 		if fieldKind != reflect.String && fieldKind != reflect.Int && fieldKind != reflect.Float64 {
 			continue
 		}
-		newValue, _ := reflections.GetField(new, field)
+		newValue, _ := reflections.GetField(updated, field)
 		if newValue != oldValue {
 			if fieldKind == reflect.Int {
 				modifiedFields = append(modifiedFields, field+": "+strconv.Itoa(oldValue.(int))+" -> "+strconv.Itoa(newValue.(int)))
@@ -35,4 +38,12 @@ func CheckDiff(old interface{}, new interface{}, fieldsToSkip map[string]bool) [
 	}
 
 	return modifiedFields
+}
+
+func sliceToMap(elements []string) map[string]bool {
+	elementMap := make(map[string]bool)
+	for _, e := range elements {
+		elementMap[e] = true
+	}
+	return elementMap
 }

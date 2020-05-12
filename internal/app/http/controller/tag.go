@@ -127,6 +127,8 @@ func (h *tagHandler) adminCreate() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
+		go logic.UserAction.AdminCreateTag(r.Header.Get("userID"), req.Name)
+
 		api.Respond(w, r, http.StatusOK, respond{Data: &types.TagRespond{
 			ID:   created.ID.Hex(),
 			Name: created.Name,
@@ -173,6 +175,8 @@ func (h *tagHandler) adminUpdate() func(http.ResponseWriter, *http.Request) {
 			}
 		}()
 
+		go logic.UserAction.AdminModifyTag(r.Header.Get("userID"), old.Name, updated.Name)
+
 		api.Respond(w, r, http.StatusOK, respond{Data: &types.TagRespond{
 			ID:   updated.ID.Hex(),
 			Name: updated.Name,
@@ -204,6 +208,8 @@ func (h *tagHandler) adminDelete() func(http.ResponseWriter, *http.Request) {
 				l.Logger.Error("[Error] logic.Entity.delete failed:", zap.Error(err))
 			}
 		}()
+
+		go logic.UserAction.AdminDeleteTag(r.Header.Get("userID"), deleted.Name)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: &types.TagRespond{
 			ID:   deleted.ID.Hex(),

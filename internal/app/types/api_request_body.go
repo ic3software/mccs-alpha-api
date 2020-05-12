@@ -1439,3 +1439,62 @@ func getStatus(input string) []string {
 	}
 	return strings.FieldsFunc(strings.ToLower(input), splitFn)
 }
+
+// GET /admin/logs
+
+func NewAdminSearchLog(r *http.Request) (*AdminSearchLogReq, []error) {
+	q := r.URL.Query()
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, []error{err}
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	dateFrom := util.ParseTime(q.Get("date_from"))
+	dateTo := util.ParseTime(q.Get("date_to"))
+
+	query := &AdminSearchLogReq{
+		Page:       page,
+		PageSize:   pageSize,
+		Offset:     (page - 1) * pageSize,
+		Email:      q.Get("email"),
+		Categories: getCategories(q.Get("category")),
+		Action:     q.Get("action"),
+		Detail:     q.Get("detail"),
+		DateFrom:   dateFrom,
+		DateTo:     dateTo,
+	}
+
+	return query, query.validate()
+}
+
+type AdminSearchLogReq struct {
+	Page       int
+	PageSize   int
+	Offset     int
+	Email      string
+	Categories []string
+	Action     string
+	Detail     string
+	DateFrom   time.Time
+	DateTo     time.Time
+}
+
+func (req *AdminSearchLogReq) validate() []error {
+	errs := []error{}
+	for _, c := range req.Categories {
+		if c != "user" && c != "admin" {
+			errs = append(errs, errors.New("Please specify valid status."))
+		}
+	}
+	return errs
+}
+
+func getCategories(input string) []string {
+	splitFn := func(c rune) bool {
+		return c == ',' || c == ' '
+	}
+	return strings.FieldsFunc(strings.ToLower(input), splitFn)
+}

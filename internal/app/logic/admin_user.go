@@ -23,6 +23,18 @@ func (a *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
 	return adminUser, nil
 }
 
+func (a *adminUser) FindByIDString(id string) (*types.AdminUser, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	adminUser, err := mongo.AdminUser.FindByID(objectID)
+	if err != nil {
+		return nil, err
+	}
+	return adminUser, nil
+}
+
 func (a *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 	adminUser, err := mongo.AdminUser.FindByEmail(email)
 	if err != nil {
