@@ -250,6 +250,11 @@ func (handler *entityHandler) addToFavoriteEntities() func(http.ResponseWriter, 
 			return
 		}
 
+		if !UserHandler.IsEntityBelongsToUser(req.AddToEntityID, r.Header.Get("userID")) {
+			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
+			return
+		}
+
 		err := logic.Entity.AddToFavoriteEntities(req)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.addToFavorite failed:", zap.Error(err))
