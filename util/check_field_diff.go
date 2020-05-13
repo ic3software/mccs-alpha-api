@@ -1,8 +1,10 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"gopkg.in/oleiade/reflections.v1"
 )
@@ -99,7 +101,9 @@ func handlePtr(field string, origin interface{}, update interface{}) string {
 }
 
 func handleSlice(field string, origin interface{}, update interface{}) string {
-	return fmt.Sprintf("%s: %q -> %q", field, origin, update)
+	o, _ := json.Marshal(origin)
+	u, _ := json.Marshal(update)
+	return fmt.Sprintf("%s: %+v -> %+v", field, strings.Replace(string(o), "\"", " ", -1), strings.Replace(string(u), "\"", " ", -1))
 }
 
 func sliceToMap(elements []string) map[string]bool {

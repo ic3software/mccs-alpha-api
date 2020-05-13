@@ -29,7 +29,7 @@ func (b *balanceLimit) FindByAccountNumber(accountNumber string) (*types.Balance
 	var result types.BalanceLimit
 
 	err := db.Raw(`
-		SELECT max_pos_bal, max_neg_bal
+		SELECT account_number, max_pos_bal, max_neg_bal
 		FROM balance_limits
 		WHERE deleted_at IS NULL AND account_number = ?
 		LIMIT 1

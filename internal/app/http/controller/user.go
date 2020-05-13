@@ -490,60 +490,54 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 		Data *types.EntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewUpdateUserEntityReq(r)
+		req, errs := handler.newUpdateUserEntityReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		vars := mux.Vars(r)
-		if !handler.IsEntityBelongsToUser(vars["entityID"], r.Header.Get("userID")) {
+		if !handler.IsEntityBelongsToUser(req.OriginEntity.ID.Hex(), r.Header.Get("userID")) {
 			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
 			return
 		}
 
-		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
-		origin, err := logic.Entity.FindByID(entityID)
-		if err != nil {
-			l.Logger.Error("[Error] UserHandler.updateUserEntity failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		updated, err := logic.Entity.FindOneAndUpdate(&types.Entity{
-			ID:                 entityID,
-			EntityName:         req.EntityName,
-			Email:              req.Email,
-			EntityPhone:        req.EntityPhone,
-			IncType:            req.IncType,
-			CompanyNumber:      req.CompanyNumber,
-			Website:            req.Website,
-			Turnover:           req.Turnover,
-			Description:        req.Description,
-			LocationAddress:    req.LocationAddress,
-			LocationCity:       req.LocationCity,
-			LocationRegion:     req.LocationRegion,
-			LocationPostalCode: req.LocationPostalCode,
-			LocationCountry:    req.LocationCountry,
-		})
+		updated, err := logic.Entity.FindOneAndUpdate(req)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.updateUserEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		go EntityHandler.UpdateOffersAndWants(origin, req.Offers, req.Wants)
+		go EntityHandler.UpdateOfferAndWants(&types.UpdateOfferAndWants{
+			EntityID:      req.OriginEntity.ID,
+			OriginStatus:  req.OriginEntity.Status,
+			UpdatedStatus: updated.Status,
+			UpdatedOffers: types.TagFieldToNames(updated.Offers),
+			UpdatedWants:  types.TagFieldToNames(updated.Wants),
+			AddedOffers:   req.AddedOffers,
+			AddedWants:    req.AddedWants,
+		})
 
-		go logic.UserAction.ModifyEntity(r.Header.Get("userID"), origin, updated)
+		go logic.UserAction.ModifyEntity(r.Header.Get("userID"), req.OriginEntity, updated)
 
-		if len(req.Offers) != 0 {
-			updated.Offers = types.ToTagFields(req.Offers)
-		}
-		if len(req.Wants) != 0 {
-			updated.Wants = types.ToTagFields(req.Wants)
-		}
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(updated)})
 	}
+}
+
+func (handler *userHandler) newUpdateUserEntityReq(r *http.Request) (*types.UpdateUserEntityReq, []error) {
+	originEntity, err := logic.Entity.FindByStringID(mux.Vars(r)["entityID"])
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	var j types.UpdateUserEntityJSON
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&j)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	return types.NewUpdateUserEntityReq(j, originEntity)
 }
 
 // Admin

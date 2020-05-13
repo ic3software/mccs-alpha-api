@@ -107,40 +107,12 @@ func (e *entity) FindByAccountNumber(accountNumber string) (*types.Entity, error
 	return &entity, nil
 }
 
-func (e *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
-	filter := bson.M{"_id": update.ID}
-	update.UpdatedAt = time.Now()
+// PATCH /user/entities/{entityID}
 
-	doc, err := toDoc(update)
-	if err != nil {
-		return nil, err
-	}
+func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity, error) {
+	updates := []bson.M{}
 
-	result := e.c.FindOneAndUpdate(
-		context.Background(),
-		filter,
-		bson.M{"$set": doc},
-		options.FindOneAndUpdate().SetReturnDocument(options.After),
-	)
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-
-	entity := types.Entity{}
-	err = result.Decode(&entity)
-	if err != nil {
-		return nil, result.Err()
-	}
-
-	return &entity, nil
-}
-
-// PATCH /admin/entities/{entityID}
-
-func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.Entity, error) {
-	filter := bson.M{"_id": req.OriginEntity.ID, "deletedAt": bson.M{"$exists": false}}
 	update := bson.M{"updatedAt": time.Now()}
-
 	if req.EntityName != "" {
 		update["entityName"] = req.EntityName
 	}
@@ -155,6 +127,101 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	}
 	if req.CompanyNumber != "" {
 		update["companyNumber"] = req.CompanyNumber
+	}
+	if req.Website != "" {
+		update["website"] = req.Website
+	}
+	if req.Description != "" {
+		update["description"] = req.Description
+	}
+	if req.Turnover != nil {
+		update["turnover"] = *req.Turnover
+	}
+	if req.LocationAddress != "" {
+		update["locationAddress"] = req.LocationAddress
+	}
+	if req.LocationCity != "" {
+		update["locationCity"] = req.LocationCity
+	}
+	if req.LocationRegion != "" {
+		update["locationRegion"] = req.LocationRegion
+	}
+	if req.LocationCountry != "" {
+		update["locationCountry"] = req.LocationCountry
+	}
+	if req.LocationPostalCode != "" {
+		update["locationPostalCode"] = req.LocationPostalCode
+	}
+	updates = append(updates, bson.M{"$set": update})
+
+	push := bson.M{}
+	if len(req.AddedOffers) != 0 {
+		push["offers"] = bson.M{"$each": types.ToTagFields(req.AddedOffers)}
+	}
+	if len(req.AddedWants) != 0 {
+		push["wants"] = bson.M{"$each": types.ToTagFields(req.AddedWants)}
+	}
+	if len(push) != 0 {
+		updates = append(updates, bson.M{"$push": push})
+	}
+
+	pull := bson.M{}
+	if len(req.RemovedOffers) != 0 {
+		pull["offers"] = bson.M{"name": bson.M{"$in": req.RemovedOffers}}
+	}
+	if len(req.RemovedWants) != 0 {
+		pull["wants"] = bson.M{"name": bson.M{"$in": req.RemovedWants}}
+	}
+	if len(pull) != 0 {
+		updates = append(updates, bson.M{"$pull": pull})
+	}
+
+	filter := bson.M{"_id": req.OriginEntity.ID, "deletedAt": bson.M{"$exists": false}}
+	var writes []mongo.WriteModel
+	for _, update := range updates {
+		model := mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update)
+		writes = append(writes, model)
+	}
+
+	_, err := e.c.BulkWrite(context.Background(), writes)
+	if err != nil {
+		return nil, err
+	}
+
+	entity, err := e.FindByID(req.OriginEntity.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return entity, nil
+}
+
+// PATCH /admin/entities/{entityID}
+
+func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.Entity, error) {
+	updates := []bson.M{}
+
+	update := bson.M{"updatedAt": time.Now()}
+	if req.EntityName != "" {
+		update["entityName"] = req.EntityName
+	}
+	if req.EntityPhone != "" {
+		update["entityPhone"] = req.EntityPhone
+	}
+	if req.Email != "" {
+		update["email"] = req.Email
+	}
+	if req.IncType != "" {
+		update["incType"] = req.IncType
+	}
+	if req.CompanyNumber != "" {
+		update["companyNumber"] = req.CompanyNumber
+	}
+	if req.Website != "" {
+		update["website"] = req.Website
+	}
+	if req.Description != "" {
+		update["description"] = req.Description
 	}
 	if req.Turnover != nil {
 		update["turnover"] = *req.Turnover
@@ -183,7 +250,6 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	if req.Status != "" {
 		update["status"] = req.Status
 	}
-
 	// TODO
 	// This is a trick to prevent setting nothing for the entity.
 	// If we don't do this then it will throw this error:
@@ -191,19 +257,38 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	if req.EntityName == "" {
 		update["entityName"] = req.OriginEntity.EntityName
 	}
+	updates = append(updates, bson.M{"$set": update})
 
-	result := e.c.FindOneAndUpdate(
-		context.Background(),
-		filter,
-		bson.M{"$set": update},
-		options.FindOneAndUpdate().SetReturnDocument(options.After),
-	)
-	if result.Err() != nil {
-		return nil, result.Err()
+	push := bson.M{}
+	if len(req.AddedOffers) != 0 {
+		push["offers"] = bson.M{"$each": types.ToTagFields(req.AddedOffers)}
+	}
+	if len(req.AddedWants) != 0 {
+		push["wants"] = bson.M{"$each": types.ToTagFields(req.AddedWants)}
+	}
+	if len(push) != 0 {
+		updates = append(updates, bson.M{"$push": push})
 	}
 
-	entity := types.Entity{}
-	err := result.Decode(&entity)
+	pull := bson.M{}
+	if len(req.RemovedOffers) != 0 {
+		pull["offers"] = bson.M{"name": bson.M{"$in": req.RemovedOffers}}
+	}
+	if len(req.RemovedWants) != 0 {
+		pull["wants"] = bson.M{"name": bson.M{"$in": req.RemovedWants}}
+	}
+	if len(pull) != 0 {
+		updates = append(updates, bson.M{"$pull": pull})
+	}
+
+	filter := bson.M{"_id": req.OriginEntity.ID, "deletedAt": bson.M{"$exists": false}}
+	var writes []mongo.WriteModel
+	for _, update := range updates {
+		model := mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update)
+		writes = append(writes, model)
+	}
+
+	_, err := e.c.BulkWrite(context.Background(), writes)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +302,12 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 		return nil, err
 	}
 
-	return &entity, nil
+	entity, err := e.FindByID(req.OriginEntity.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return entity, nil
 }
 
 // DELETE /admin/entities/{entityID}
@@ -248,48 +338,6 @@ func (e *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, er
 	}
 
 	return &entity, nil
-}
-
-// PATCH /admin/entities/{entityID}
-
-func (e *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
-	updates := []bson.M{
-		bson.M{"$set": bson.M{"updatedAt": time.Now()}},
-	}
-
-	push := bson.M{}
-	if len(difference.NewAddedOffers) != 0 {
-		push["offers"] = bson.M{"$each": types.ToTagFields(difference.NewAddedOffers)}
-	}
-	if len(difference.NewAddedWants) != 0 {
-		push["wants"] = bson.M{"$each": types.ToTagFields(difference.NewAddedWants)}
-	}
-	if len(push) != 0 {
-		updates = append(updates, bson.M{"$push": push})
-	}
-
-	pull := bson.M{}
-	if len(difference.OffersRemoved) != 0 {
-		pull["offers"] = bson.M{"name": bson.M{"$in": difference.OffersRemoved}}
-	}
-	if len(difference.WantsRemoved) != 0 {
-		pull["wants"] = bson.M{"name": bson.M{"$in": difference.WantsRemoved}}
-	}
-	if len(pull) != 0 {
-		updates = append(updates, bson.M{"$pull": pull})
-	}
-
-	var writes []mongo.WriteModel
-	for _, update := range updates {
-		model := mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": id}).SetUpdate(update)
-		writes = append(writes, model)
-	}
-
-	_, err := e.c.BulkWrite(context.Background(), writes)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (e *entity) AddToFavoriteEntities(req *types.AddToFavoriteReq) error {

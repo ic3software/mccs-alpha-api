@@ -521,17 +521,11 @@ type AdminGetEntityRespond struct {
 
 // PATCH /admin/entities/{entityID}
 
-func NewAdminUpdateEntityRespond(
-	req *AdminUpdateEntityReq,
-	users []*User,
-	entity *Entity,
-	balanceLimit *BalanceLimit,
-) *AdminUpdateEntityRespond {
+func NewAdminUpdateEntityRespond(users []*User, entity *Entity, balanceLimit *BalanceLimit) *AdminUpdateEntityRespond {
 	adminUserResponds := []*AdminUserRespond{}
 	for _, u := range users {
 		adminUserResponds = append(adminUserResponds, NewAdminUserRespond(u))
 	}
-
 	respond := &AdminUpdateEntityRespond{
 		ID:                 entity.ID.Hex(),
 		AccountNumber:      entity.AccountNumber,
@@ -555,12 +549,7 @@ func NewAdminUpdateEntityRespond(
 		MaxPositiveBalance: balanceLimit.MaxPosBal,
 		MaxNegativeBalance: balanceLimit.MaxNegBal,
 		Users:              adminUserResponds,
-	}
-	if len(req.Offers) != 0 {
-		respond.Offers = req.Offers
-	}
-	if len(req.Wants) != 0 {
-		respond.Wants = req.Wants
+		BalanceLimit:       balanceLimit,
 	}
 	return respond
 }
@@ -588,6 +577,8 @@ type AdminUpdateEntityRespond struct {
 	MaxPositiveBalance float64             `json:"maxPositiveBalance"`
 	MaxNegativeBalance float64             `json:"maxNegativeBalance"`
 	Users              []*AdminUserRespond `json:"users"`
+	// To log user action.
+	BalanceLimit *BalanceLimit `json:"-"`
 }
 
 // DELETE /admin/entities/{entityID}

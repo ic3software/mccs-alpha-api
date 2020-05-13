@@ -74,12 +74,14 @@ func (_ *entity) FindByStringID(id string) (*types.Entity, error) {
 	return entity, nil
 }
 
-func (_ *entity) FindOneAndUpdate(update *types.Entity) (*types.Entity, error) {
-	err := es.Entity.Update(update)
+// PATCH /user/entities/{entityID}
+
+func (_ *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity, error) {
+	err := es.Entity.Update(req)
 	if err != nil {
 		return nil, err
 	}
-	entity, err := mongo.Entity.FindOneAndUpdate(update)
+	entity, err := mongo.Entity.FindOneAndUpdate(req)
 	if err != nil {
 		return nil, err
 	}
@@ -120,18 +122,6 @@ func (_ *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, er
 		return nil, err
 	}
 	return deleted, nil
-}
-
-func (_ *entity) UpdateTags(id primitive.ObjectID, difference *types.TagDifference) error {
-	err := mongo.Entity.UpdateTags(id, difference)
-	if err != nil {
-		return err
-	}
-	err = es.Entity.UpdateTags(id, difference)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (_ *entity) Search(req *types.SearchEntityReq) (*types.SearchEntityResult, error) {

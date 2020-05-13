@@ -50,7 +50,7 @@ func (es *userAction) Search(req *types.AdminSearchLogReq) (*types.ESSearchUserA
 	q := elastic.NewBoolQuery()
 
 	if req.Email != "" {
-		q.Must(newWildcardQuery("email", req.Email))
+		q.Must(elastic.NewMatchQuery("email", req.Email))
 	}
 	if req.Action != "" {
 		q.Must(newFuzzyWildcardQuery("action", req.Action))

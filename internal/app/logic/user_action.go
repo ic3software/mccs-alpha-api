@@ -354,6 +354,26 @@ func (u *userAction) AdminModifyEntity(userID string, origin *types.Entity, upda
 	u.create(ua)
 }
 
+func (u *userAction) AdminModifyBalance(userID string, origin *types.BalanceLimit, updated *types.BalanceLimit) {
+	admin, err := AdminUser.FindByIDString(userID)
+	if err != nil {
+		return
+	}
+	modifiedFields := util.CheckFieldDiff(origin, updated)
+	if len(modifiedFields) == 0 {
+		return
+	}
+	ua := &types.UserAction{
+		UserID: admin.ID,
+		Email:  admin.Email,
+		Action: "admin modified balance limit",
+		//
+		Detail:   admin.Email + " - " + updated.AccountNumber + " - " + strings.Join(modifiedFields, ", "),
+		Category: "admin",
+	}
+	u.create(ua)
+}
+
 // DELETE /admin/entities/{entityID}
 
 func (u *userAction) AdminDeleteEntity(userID string, deleted *types.Entity) {
