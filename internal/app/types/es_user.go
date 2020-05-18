@@ -7,3 +7,9 @@ type UserESRecord struct {
 	LastName  string `json:"lastName,omitempty"`
 	Email     string `json:"email,omitempty"`
 }
+
+type ESSearchUserResult struct {
+	UserIDs         []string
+	NumberOfResults int
+	TotalPages      int
+}

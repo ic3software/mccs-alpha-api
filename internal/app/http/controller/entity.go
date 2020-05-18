@@ -89,34 +89,6 @@ func (handler *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	return bs, nil
 }
 
-// PATCH /user/entities/{entityID}
-
-func (handler *entityHandler) UpdateOffersAndWants(old *types.Entity, offers, wants []string) {
-	if len(offers) == 0 && len(wants) == 0 {
-		return
-	}
-
-	tagDifference := types.NewTagDifference(types.TagFieldToNames(old.Offers), offers, types.TagFieldToNames(old.Wants), wants)
-	err := logic.Entity.UpdateTags(old.ID, tagDifference)
-	if err != nil {
-		l.Logger.Error("[Error] EntityHandler.UpdateOffersAndWants failed:", zap.Error(err))
-		return
-	}
-
-	if util.IsAcceptedStatus(old.Status) {
-		// User Update tags logic:
-		// 	1. Update the tags collection only when the entity is in accepted status.
-		err := TagHandler.UpdateOffers(tagDifference.NewAddedOffers)
-		if err != nil {
-			l.Logger.Error("[Error] EntityHandler.UpdateOffersAndWants failed:", zap.Error(err))
-		}
-		err = TagHandler.UpdateWants(tagDifference.NewAddedWants)
-		if err != nil {
-			l.Logger.Error("[Error] EntityHandler.UpdateOffersAndWants failed:", zap.Error(err))
-		}
-	}
-}
-
 func (handler *entityHandler) getSearchEntityQueryParams(q url.Values) (*types.SearchEntityReq, error) {
 	query, err := types.NewSearchEntityReq(q)
 	if err != nil {
@@ -498,26 +470,36 @@ func (handler *entityHandler) adminUpdateEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
-		newEntity, err := logic.Entity.AdminFindOneAndUpdate(req)
+		updated, err := logic.Entity.AdminFindOneAndUpdate(req)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.updateEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		// Update offers and wants are seperate processes.
-		go handler.updateOfferAndWants(req.OriginEntity, req.Status, req.Offers, req.Wants)
+		go handler.UpdateOfferAndWants(&types.UpdateOfferAndWants{
+			EntityID:      req.OriginEntity.ID,
+			OriginStatus:  req.OriginEntity.Status,
+			UpdatedStatus: updated.Status,
+			UpdatedOffers: types.TagFieldToNames(updated.Offers),
+			UpdatedWants:  types.TagFieldToNames(updated.Wants),
+			AddedOffers:   req.AddedOffers,
+			AddedWants:    req.AddedWants,
+		})
 		go handler.updateEntityMemberStartedAt(req.OriginEntity, req.Status)
 		if req.Categories != nil {
 			go CategoryHandler.Update(*req.Categories)
 		}
 
-		res, err := handler.newAdminUpdateEntityRespond(req, newEntity)
+		res, err := handler.newAdminUpdateEntityRespond(req, updated)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.updateEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		go logic.UserAction.AdminModifyEntity(r.Header.Get("userID"), req.OriginEntity, updated)
+		go logic.UserAction.AdminModifyBalance(r.Header.Get("userID"), req.OriginBalanceLimit, res.BalanceLimit)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: res})
 	}
@@ -525,6 +507,10 @@ func (handler *entityHandler) adminUpdateEntity() func(http.ResponseWriter, *htt
 
 func (handler *entityHandler) newAdminUpdateEntityReq(r *http.Request) (*types.AdminUpdateEntityReq, []error) {
 	originEntity, err := logic.Entity.FindByStringID(mux.Vars(r)["entityID"])
+	if err != nil {
+		return nil, []error{err}
+	}
+	originBalanceLimit, err := logic.BalanceLimit.FindByAccountNumber(originEntity.AccountNumber)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -545,7 +531,7 @@ func (handler *entityHandler) newAdminUpdateEntityReq(r *http.Request) (*types.A
 		}
 	}
 
-	return types.NewAdminUpdateEntityReq(j, originEntity)
+	return types.NewAdminUpdateEntityReq(j, originEntity, originBalanceLimit)
 }
 
 func (handler *entityHandler) newAdminUpdateEntityRespond(req *types.AdminUpdateEntityReq, entity *types.Entity) (*types.AdminUpdateEntityRespond, error) {
@@ -557,7 +543,7 @@ func (handler *entityHandler) newAdminUpdateEntityRespond(req *types.AdminUpdate
 	if err != nil {
 		return nil, err
 	}
-	return types.NewAdminUpdateEntityRespond(req, users, entity, balanceLimit), nil
+	return types.NewAdminUpdateEntityRespond(users, entity, balanceLimit), nil
 }
 
 func (handler *entityHandler) updateEntityMemberStartedAt(oldEntity *types.Entity, newStatus string) {
@@ -567,39 +553,35 @@ func (handler *entityHandler) updateEntityMemberStartedAt(oldEntity *types.Entit
 	}
 }
 
-func (handler *entityHandler) updateOfferAndWants(oldEntity *types.Entity, newStatus string, offers []string, wants []string) {
-	tagDifference := types.NewTagDifference(types.TagFieldToNames(oldEntity.Offers), offers, types.TagFieldToNames(oldEntity.Wants), wants)
-	err := logic.Entity.UpdateTags(oldEntity.ID, tagDifference)
-	if err != nil {
-		l.Logger.Error("[Error] EntityHandler.updateOfferAndWants failed:", zap.Error(err))
-		return
-	}
+// PATCH /admin/entities/{entityID}
+// PATCH /user/entities/{entityID}
 
-	// Admin Update tags logic:
+func (handler *entityHandler) UpdateOfferAndWants(req *types.UpdateOfferAndWants) {
+	// Update tags logic:
 	// 	1. When a entity' status is changed from pending/rejected to accepted.
 	// 	   - update all tags.
 	// 	2. When the entity is in accepted status.
 	//	   - only update added tags.
-	if !util.IsAcceptedStatus(oldEntity.Status) && util.IsAcceptedStatus(newStatus) {
-		err := logic.Entity.UpdateAllTagsCreatedAt(oldEntity.ID, time.Now())
+	if !util.IsAcceptedStatus(req.OriginStatus) && util.IsAcceptedStatus(req.UpdatedStatus) {
+		err := logic.Entity.UpdateAllTagsCreatedAt(req.EntityID, time.Now())
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
-		err = TagHandler.UpdateOffers(tagDifference.Offers)
+		err = TagHandler.UpdateOffers(req.UpdatedOffers)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
-		err = TagHandler.UpdateWants(tagDifference.Wants)
+		err = TagHandler.UpdateOffers(req.UpdatedWants)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
 	}
-	if util.IsAcceptedStatus(oldEntity.Status) && util.IsAcceptedStatus(newStatus) {
-		err := TagHandler.UpdateOffers(tagDifference.NewAddedOffers)
+	if util.IsAcceptedStatus(req.OriginStatus) && util.IsAcceptedStatus(req.UpdatedStatus) {
+		err := TagHandler.UpdateOffers(req.AddedOffers)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
-		err = TagHandler.UpdateWants(tagDifference.NewAddedWants)
+		err = TagHandler.UpdateWants(req.AddedWants)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.updateOfferAndWants failed:", zap.Error(err))
 		}
@@ -625,6 +607,8 @@ func (handler *entityHandler) adminDeleteEntity() func(http.ResponseWriter, *htt
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		go logic.UserAction.AdminDeleteEntity(r.Header.Get("userID"), deleted)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminDeleteEntityRespond(deleted)})
 	}

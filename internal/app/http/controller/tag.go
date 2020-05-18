@@ -63,6 +63,8 @@ func (h *tagHandler) UpdateWants(added []string) error {
 	return nil
 }
 
+// GET /admin/tags
+
 func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
 	type meta struct {
 		NumberOfResults int `json:"numberOfResults"`
@@ -103,6 +105,8 @@ func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) 
 	}
 }
 
+// POST /admin/tags
+
 func (h *tagHandler) adminCreate() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
 		Data *types.TagRespond `json:"data"`
@@ -127,12 +131,16 @@ func (h *tagHandler) adminCreate() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
+		go logic.UserAction.AdminCreateTag(r.Header.Get("userID"), req.Name)
+
 		api.Respond(w, r, http.StatusOK, respond{Data: &types.TagRespond{
 			ID:   created.ID.Hex(),
 			Name: created.Name,
 		}})
 	}
 }
+
+// PATCH /admin/tags/{id}
 
 func (h *tagHandler) adminUpdate() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
@@ -173,12 +181,16 @@ func (h *tagHandler) adminUpdate() func(http.ResponseWriter, *http.Request) {
 			}
 		}()
 
+		go logic.UserAction.AdminModifyTag(r.Header.Get("userID"), old.Name, updated.Name)
+
 		api.Respond(w, r, http.StatusOK, respond{Data: &types.TagRespond{
 			ID:   updated.ID.Hex(),
 			Name: updated.Name,
 		}})
 	}
 }
+
+// DELETE /admin/tags/{id}
 
 func (h *tagHandler) adminDelete() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
@@ -204,6 +216,8 @@ func (h *tagHandler) adminDelete() func(http.ResponseWriter, *http.Request) {
 				l.Logger.Error("[Error] logic.Entity.delete failed:", zap.Error(err))
 			}
 		}()
+
+		go logic.UserAction.AdminDeleteTag(r.Header.Get("userID"), deleted.Name)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: &types.TagRespond{
 			ID:   deleted.ID.Hex(),

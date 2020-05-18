@@ -97,3 +97,13 @@ type SearchEntityResult struct {
 	NumberOfResults int
 	TotalPages      int
 }
+
+type UpdateOfferAndWants struct {
+	EntityID      primitive.ObjectID
+	OriginStatus  string
+	UpdatedStatus string
+	UpdatedOffers []string
+	UpdatedWants  []string
+	AddedOffers   []string
+	AddedWants    []string
+}

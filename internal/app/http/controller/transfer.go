@@ -19,11 +19,11 @@ import (
 	"go.uber.org/zap"
 )
 
+var TransferHandler = newTransferHandler()
+
 type transferHandler struct {
 	once *sync.Once
 }
-
-var TransferHandler = newTransferHandler()
 
 func newTransferHandler() *transferHandler {
 	return &transferHandler{
@@ -81,12 +81,8 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewProposeTransferRespond(journal)})
 
-		go func() {
-			err := email.Transfer.Initiate(req)
-			if err != nil {
-				l.Logger.Error("email.Transfer.Initiate failed", zap.Error(err))
-			}
-		}()
+		go logic.UserAction.ProposeTransfer(r.Header.Get("userID"), req)
+		go email.Transfer.Initiate(req)
 	}
 }
 
@@ -222,6 +218,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 				api.Respond(w, r, http.StatusInternalServerError, err)
 				return
 			}
+			go logic.UserAction.AcceptTransfer(r.Header.Get("userID"), updated)
 		}
 		if req.Action == "reject" {
 			updated, err = handler.rejectTransfer(req.Journal, req.Reason)
@@ -299,7 +296,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReq) erro
 		return err
 	}
 	if exceed {
-		reason := "The sender will exceed its credit limit so this tansfer has been cancelled."
+		reason := "The sender will exceed its credit limit so this transfer has been cancelled."
 		_, err = logic.Transfer.Cancel(req.Journal.TransferID, reason)
 		if err != nil {
 			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
@@ -319,7 +316,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReq) erro
 		return err
 	}
 	if exceed {
-		reason := "The recipient will exceed its maximum positive balance threshold so this tansfer has been cancelled."
+		reason := "The recipient will exceed its maximum positive balance threshold so this transfer has been cancelled."
 		_, err = logic.Transfer.Cancel(req.Journal.TransferID, reason)
 		if err != nil {
 			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
@@ -342,13 +339,7 @@ func (handler *transferHandler) acceptTransfer(j *types.Journal) (*types.Journal
 	if err != nil {
 		return nil, err
 	}
-	go func() {
-		err := email.Transfer.Accept(j)
-		if err != nil {
-			l.Logger.Error("email.Transfer.Accept failed", zap.Error(err))
-		}
-	}()
-
+	go email.Transfer.Accept(j)
 	return updated, nil
 }
 
@@ -357,13 +348,7 @@ func (handler *transferHandler) rejectTransfer(j *types.Journal, reason string) 
 	if err != nil {
 		return nil, err
 	}
-	go func() {
-		err := email.Transfer.Reject(j, reason)
-		if err != nil {
-			l.Logger.Error("email.Transfer.Reject failed", zap.Error(err))
-		}
-	}()
-
+	go email.Transfer.Reject(j, reason)
 	return updated, nil
 }
 
@@ -372,13 +357,7 @@ func (handler *transferHandler) cancelTransfer(j *types.Journal, reason string) 
 	if err != nil {
 		return nil, err
 	}
-	go func() {
-		err := email.Transfer.Cancel(j, reason)
-		if err != nil {
-			l.Logger.Error("email.Transfer.Cancel failed", zap.Error(err))
-		}
-	}()
-
+	go email.Transfer.Cancel(j, reason)
 	return updated, nil
 }
 
@@ -442,6 +421,8 @@ func (handler *transferHandler) adminCreateTransfer() func(http.ResponseWriter, 
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
+		go logic.UserAction.AdminTransfer(r.Header.Get("userID"), journal)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewJournalToAdminTransferRespond(journal)})
 	}

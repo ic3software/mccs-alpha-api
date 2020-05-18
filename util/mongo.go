@@ -21,14 +21,14 @@ func ToIDStrings(ids []primitive.ObjectID) []string {
 
 func ContainID(list []primitive.ObjectID, str string) bool {
 	for _, item := range list {
-		if item == toObjectID(str) {
+		if item == ToObjectID(str) {
 			return true
 		}
 	}
 	return false
 }
 
-func toObjectID(id string) primitive.ObjectID {
+func ToObjectID(id string) primitive.ObjectID {
 	objectID, _ := primitive.ObjectIDFromHex(id)
 	return objectID
 }

@@ -61,9 +61,3 @@ type SearchUserResult struct {
 	NumberOfResults int
 	TotalPages      int
 }
-
-type ESSearchUserResult struct {
-	UserIDs         []string
-	NumberOfResults int
-	TotalPages      int
-}

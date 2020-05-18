@@ -55,6 +55,8 @@ func (handler *adminUserHandler) updateLoginAttempts(email string) {
 	}
 }
 
+// POST /admin/login
+
 func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request) {
 	type data struct {
 		Token         string     `json:"token"`
@@ -86,6 +88,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 			l.Logger.Info("[Info] AdminUserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			go handler.updateLoginAttempts(req.Email)
+			go logic.UserAction.AdminLoginFail(req.Email, util.IPAddress(r))
 			return
 		}
 		loginInfo, err := logic.AdminUser.UpdateLoginInfo(user.ID, util.IPAddress(r))
@@ -95,9 +98,13 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 
 		token, err := util.GenerateToken(user.ID.Hex(), true)
 
+		go logic.UserAction.AdminLogin(user, util.IPAddress(r))
+
 		api.Respond(w, r, http.StatusOK, respond{Data: respondData(loginInfo, token)})
 	}
 }
+
+// POST /admin/logout
 
 func (handler *adminUserHandler) logout() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +112,8 @@ func (handler *adminUserHandler) logout() func(http.ResponseWriter, *http.Reques
 		api.Respond(w, r, http.StatusOK)
 	}
 }
+
+// POST /admin/password-reset
 
 func (handler *adminUserHandler) requestPasswordReset() func(http.ResponseWriter, *http.Request) {
 	type request struct {
@@ -163,6 +172,8 @@ func (handler *adminUserHandler) requestPasswordReset() func(http.ResponseWriter
 	}
 }
 
+// POST /admin/password-reset/{token}
+
 func (handler *adminUserHandler) passwordReset() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -203,6 +214,8 @@ func (handler *adminUserHandler) passwordReset() func(http.ResponseWriter, *http
 		api.Respond(w, r, http.StatusOK)
 	}
 }
+
+// POST /admin/password-change
 
 func (handler *adminUserHandler) passwordChange() func(http.ResponseWriter, *http.Request) {
 	type request struct {

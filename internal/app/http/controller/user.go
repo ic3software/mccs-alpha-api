@@ -128,12 +128,15 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 			l.Logger.Info("[INFO] UserHandler.login failed", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			go handler.updateLoginAttempts(req.Email)
+			go logic.UserAction.LoginFail(req.Email, util.IPAddress(r))
 			return
 		}
 		loginInfo, err := logic.User.UpdateLoginInfo(user.ID, util.IPAddress(r))
 		if err != nil {
 			l.Logger.Error("[Error] AdminUser.UpdateLoginInfo failed:", zap.Error(err))
 		}
+
+		go logic.UserAction.Login(user, util.IPAddress(r))
 
 		token, err := util.GenerateToken(user.ID.Hex(), false)
 
@@ -171,7 +174,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		entityID, err := logic.Entity.Create(&types.Entity{
+		createdEntity, err := logic.Entity.Create(&types.Entity{
 			EntityName:         req.EntityName,
 			Email:              req.Email,
 			IncType:            req.IncType,
@@ -193,7 +196,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		userID, err := logic.User.Create(&types.User{
+		createdUser, err := logic.User.Create(&types.User{
 			Email:                 req.Email,
 			Password:              req.Password,
 			FirstName:             req.FirstName,
@@ -207,29 +210,31 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		err = logic.Entity.AssociateUser(entityID, userID)
+		err = logic.Entity.AssociateUser(createdEntity.ID, createdUser.ID)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		err = logic.User.AssociateEntity(userID, entityID)
+		err = logic.User.AssociateEntity(createdUser.ID, createdEntity.ID)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		token, err := util.GenerateToken(userID.Hex(), false)
+		token, err := util.GenerateToken(createdUser.ID.Hex(), false)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
+		go logic.UserAction.Signup(createdUser, createdEntity)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: data{
-			UserID:   userID.Hex(),
-			EntityID: entityID.Hex(),
+			UserID:   createdUser.ID.Hex(),
+			EntityID: createdEntity.ID.Hex(),
 			Token:    token,
 		}})
 	}
@@ -297,9 +302,13 @@ func (handler *userHandler) requestPasswordReset() func(http.ResponseWriter, *ht
 			type respond struct {
 				Data data `json:"data"`
 			}
+			go logic.UserAction.LostPassword(user, util.IPAddress(r))
 			api.Respond(w, r, http.StatusOK, respond{Data: data{Token: uid.String()}})
 			return
 		}
+
+		go logic.UserAction.LostPassword(user, util.IPAddress(r))
+
 		api.Respond(w, r, http.StatusOK)
 	}
 }
@@ -346,6 +355,8 @@ func (handler *userHandler) passwordReset() func(http.ResponseWriter, *http.Requ
 	}
 }
 
+// POST /password-change
+
 func (handler *userHandler) passwordChange() func(http.ResponseWriter, *http.Request) {
 	type request struct {
 		Password string `json:"password"`
@@ -386,6 +397,8 @@ func (handler *userHandler) passwordChange() func(http.ResponseWriter, *http.Req
 			return
 		}
 
+		go logic.UserAction.ChangePassword(user, util.IPAddress(r))
+
 		api.Respond(w, r, http.StatusOK)
 	}
 }
@@ -420,8 +433,14 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
-		user, err := logic.User.FindOneAndUpdate(userID, &types.User{
+		originUser, err := logic.User.FindByStringID(r.Header.Get("userID"))
+		if err != nil {
+			l.Logger.Info("[INFO] UserHandler.updateUser failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		updated, err := logic.User.FindOneAndUpdate(originUser.ID, &types.User{
 			FirstName:             req.FirstName,
 			LastName:              req.LastName,
 			Telephone:             req.UserPhone,
@@ -434,7 +453,9 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 			return
 		}
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(user)})
+		go logic.UserAction.ModifyUser(originUser, updated)
+
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewUserRespond(updated)})
 	}
 }
 
@@ -470,58 +491,54 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 		Data *types.EntityRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req, errs := types.NewUpdateUserEntityReq(r)
+		req, errs := handler.newUpdateUserEntityReq(r)
 		if len(errs) > 0 {
 			api.Respond(w, r, http.StatusBadRequest, errs)
 			return
 		}
 
-		vars := mux.Vars(r)
-		if !handler.IsEntityBelongsToUser(vars["entityID"], r.Header.Get("userID")) {
+		if !handler.IsEntityBelongsToUser(req.OriginEntity.ID.Hex(), r.Header.Get("userID")) {
 			api.Respond(w, r, http.StatusForbidden, api.ErrPermissionDenied)
 			return
 		}
 
-		entityID, _ := primitive.ObjectIDFromHex(vars["entityID"])
-		oldEntity, err := logic.Entity.FindByID(entityID)
-		if err != nil {
-			l.Logger.Error("[Error] UserHandler.updateUserEntity failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		entity, err := logic.Entity.FindOneAndUpdate(&types.Entity{
-			ID:                 entityID,
-			EntityName:         req.EntityName,
-			Email:              req.Email,
-			EntityPhone:        req.EntityPhone,
-			IncType:            req.IncType,
-			CompanyNumber:      req.CompanyNumber,
-			Website:            req.Website,
-			Turnover:           req.Turnover,
-			Description:        req.Description,
-			LocationAddress:    req.LocationAddress,
-			LocationCity:       req.LocationCity,
-			LocationRegion:     req.LocationRegion,
-			LocationPostalCode: req.LocationPostalCode,
-			LocationCountry:    req.LocationCountry,
-		})
+		updated, err := logic.Entity.FindOneAndUpdate(req)
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.updateUserEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
 
-		go EntityHandler.UpdateOffersAndWants(oldEntity, req.Offers, req.Wants)
+		go EntityHandler.UpdateOfferAndWants(&types.UpdateOfferAndWants{
+			EntityID:      req.OriginEntity.ID,
+			OriginStatus:  req.OriginEntity.Status,
+			UpdatedStatus: updated.Status,
+			UpdatedOffers: types.TagFieldToNames(updated.Offers),
+			UpdatedWants:  types.TagFieldToNames(updated.Wants),
+			AddedOffers:   req.AddedOffers,
+			AddedWants:    req.AddedWants,
+		})
 
-		if len(req.Offers) != 0 {
-			entity.Offers = types.ToTagFields(req.Offers)
-		}
-		if len(req.Wants) != 0 {
-			entity.Wants = types.ToTagFields(req.Wants)
-		}
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(entity)})
+		go logic.UserAction.ModifyEntity(r.Header.Get("userID"), req.OriginEntity, updated)
+
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(updated)})
 	}
+}
+
+func (handler *userHandler) newUpdateUserEntityReq(r *http.Request) (*types.UpdateUserEntityReq, []error) {
+	originEntity, err := logic.Entity.FindByStringID(mux.Vars(r)["entityID"])
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	var j types.UpdateUserEntityJSON
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&j)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	return types.NewUpdateUserEntityReq(j, originEntity)
 }
 
 // Admin
@@ -634,6 +651,8 @@ func (handler *userHandler) adminUpdateUser() func(http.ResponseWriter, *http.Re
 			return
 		}
 
+		go logic.UserAction.AdminModifyUser(r.Header.Get("userID"), req.OriginUser, updated)
+
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminGetUserRespond(updated, entities)})
 	}
 }
@@ -682,6 +701,8 @@ func (handler *userHandler) adminDeleteUser() func(http.ResponseWriter, *http.Re
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		go logic.UserAction.AdminDeleteUser(r.Header.Get("userID"), deleted)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminDeleteUserRespond(deleted)})
 	}

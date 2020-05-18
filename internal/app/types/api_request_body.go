@@ -184,39 +184,98 @@ func (req *UpdateUserReq) validate() []error {
 	return errs
 }
 
-func NewUpdateUserEntityReq(r *http.Request) (*UpdateUserEntityReq, []error) {
-	var req UpdateUserEntityReq
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&req)
-	if err != nil {
-		return nil, []error{err}
+func NewUpdateUserEntityReq(j UpdateUserEntityJSON, originEntity *Entity) (*UpdateUserEntityReq, []error) {
+	errs := j.validate()
+	if len(errs) != 0 {
+		return nil, errs
 	}
-	req.Offers, req.Wants = util.FormatTags(req.Offers), util.FormatTags(req.Wants)
-	return &req, req.validate()
+
+	addedOffers := []string{}
+	removedOffers := []string{}
+	if j.Offers != nil {
+		addedOffers, removedOffers = util.StringDiff(util.FormatTags(*j.Offers), TagFieldToNames(originEntity.Offers))
+	}
+	addedWants := []string{}
+	removedWants := []string{}
+	if j.Wants != nil {
+		addedWants, removedWants = util.StringDiff(util.FormatTags(*j.Wants), TagFieldToNames(originEntity.Wants))
+	}
+
+	req := UpdateUserEntityReq{
+		OriginEntity:  originEntity,
+		EntityName:    j.EntityName,
+		EntityPhone:   j.EntityPhone,
+		Email:         j.Email,
+		IncType:       j.IncType,
+		CompanyNumber: j.CompanyNumber,
+		Website:       j.Website,
+		Turnover:      j.Turnover,
+		Description:   j.Description,
+		// Tags
+		Offers:        j.Offers,
+		AddedOffers:   addedOffers,
+		RemovedOffers: removedOffers,
+		Wants:         j.Wants,
+		AddedWants:    addedWants,
+		RemovedWants:  removedWants,
+		// Address
+		LocationAddress:    j.LocationAddress,
+		LocationCity:       j.LocationCity,
+		LocationRegion:     j.LocationRegion,
+		LocationPostalCode: j.LocationPostalCode,
+		LocationCountry:    j.LocationCountry,
+	}
+
+	return &req, nil
 }
 
 type UpdateUserEntityReq struct {
-	EntityName         string   `json:"entityName"`
-	Email              string   `json:"email"`
-	EntityPhone        string   `json:"entityPhone"`
-	IncType            string   `json:"incType"`
-	CompanyNumber      string   `json:"companyNumber"`
-	Website            string   `json:"website"`
-	Turnover           *int     `json:"turnover"`
-	Description        string   `json:"description"`
-	LocationAddress    string   `json:"locationAddress"`
-	LocationCity       string   `json:"locationCity"`
-	LocationRegion     string   `json:"locationRegion"`
-	LocationPostalCode string   `json:"locationPostalCode"`
-	LocationCountry    string   `json:"locationCountry"`
-	Offers             []string `json:"offers"`
-	Wants              []string `json:"wants"`
+	OriginEntity       *Entity
+	EntityName         string
+	Email              string
+	EntityPhone        string
+	IncType            string
+	CompanyNumber      string
+	Website            string
+	Turnover           *int
+	Description        string
+	LocationAddress    string
+	LocationCity       string
+	LocationRegion     string
+	LocationPostalCode string
+	LocationCountry    string
+	// Tags
+	Offers        *[]string
+	AddedOffers   []string
+	RemovedOffers []string
+	Wants         *[]string
+	AddedWants    []string
+	RemovedWants  []string
+}
+
+type UpdateUserEntityJSON struct {
+	EntityName         string `json:"entityName"`
+	Email              string `json:"email"`
+	EntityPhone        string `json:"entityPhone"`
+	IncType            string `json:"incType"`
+	CompanyNumber      string `json:"companyNumber"`
+	Website            string `json:"website"`
+	Turnover           *int   `json:"turnover"`
+	Description        string `json:"description"`
+	LocationAddress    string `json:"locationAddress"`
+	LocationCity       string `json:"locationCity"`
+	LocationRegion     string `json:"locationRegion"`
+	LocationPostalCode string `json:"locationPostalCode"`
+	LocationCountry    string `json:"locationCountry"`
+	// Tags
+	Offers *[]string `json:"offers"`
+	Wants  *[]string `json:"wants"`
 	// Not allow to change
 	ID     string `json:"id"`
 	Status string `json:"status"`
 }
 
-func (req *UpdateUserEntityReq) validate() []error {
+func (req *UpdateUserEntityJSON) validate() []error {
 	errs := []error{}
 
 	if req.ID != "" {
@@ -242,8 +301,12 @@ func (req *UpdateUserEntityReq) validate() []error {
 		LocationPostalCode: req.LocationPostalCode,
 	}
 	errs = append(errs, entity.Validate()...)
-	errs = append(errs, validateTags(req.Offers)...)
-	errs = append(errs, validateTags(req.Wants)...)
+	if req.Offers != nil {
+		errs = append(errs, validateTags(*req.Offers)...)
+	}
+	if req.Wants != nil {
+		errs = append(errs, validateTags(*req.Wants)...)
+	}
 
 	return errs
 }
@@ -1146,7 +1209,7 @@ func NewAdminGetEntityReq(r *http.Request) (*AdminGetEntity, []error) {
 
 // PATCH /admin/entities/{entityID}
 
-func NewAdminUpdateEntityReq(j AdminUpdateEntityJSON, originEntity *Entity) (*AdminUpdateEntityReq, []error) {
+func NewAdminUpdateEntityReq(j AdminUpdateEntityJSON, originEntity *Entity, originBalanceLimit *BalanceLimit) (*AdminUpdateEntityReq, []error) {
 	errs := j.validate()
 	if len(errs) != 0 {
 		return nil, errs
@@ -1157,25 +1220,40 @@ func NewAdminUpdateEntityReq(j AdminUpdateEntityJSON, originEntity *Entity) (*Ad
 	if j.Users != nil {
 		addedUsers, removedUsers = util.StringDiff(*j.Users, util.ToIDStrings(originEntity.Users))
 	}
+	addedOffers := []string{}
+	removedOffers := []string{}
+	if j.Offers != nil {
+		addedOffers, removedOffers = util.StringDiff(util.FormatTags(*j.Offers), TagFieldToNames(originEntity.Offers))
+	}
+	addedWants := []string{}
+	removedWants := []string{}
+	if j.Wants != nil {
+		addedWants, removedWants = util.StringDiff(util.FormatTags(*j.Wants), TagFieldToNames(originEntity.Wants))
+	}
 
 	req := AdminUpdateEntityReq{
-		OriginEntity:  originEntity,
-		EntityName:    j.EntityName,
-		EntityPhone:   j.EntityPhone,
-		Email:         j.Email,
-		IncType:       j.IncType,
-		CompanyNumber: j.CompanyNumber,
-		Website:       j.Website,
-		Turnover:      j.Turnover,
-		Description:   j.Description,
+		OriginEntity:       originEntity,
+		OriginBalanceLimit: originBalanceLimit,
+		EntityName:         j.EntityName,
+		EntityPhone:        j.EntityPhone,
+		Email:              j.Email,
+		IncType:            j.IncType,
+		CompanyNumber:      j.CompanyNumber,
+		Website:            j.Website,
+		Turnover:           j.Turnover,
+		Description:        j.Description,
 		// Users
 		Users:        j.Users,
 		AddedUsers:   util.ToObjectIDs(addedUsers),
 		RemovedUsers: util.ToObjectIDs(removedUsers),
 		// Tags
-		Offers:     util.FormatTags(j.Offers),
-		Wants:      util.FormatTags(j.Wants),
-		Categories: j.Categories,
+		Offers:        j.Offers,
+		AddedOffers:   addedOffers,
+		RemovedOffers: removedOffers,
+		Wants:         j.Wants,
+		AddedWants:    addedWants,
+		RemovedWants:  removedWants,
+		Categories:    j.Categories,
 		// Address
 		LocationAddress:    j.LocationAddress,
 		LocationCity:       j.LocationCity,
@@ -1192,24 +1270,29 @@ func NewAdminUpdateEntityReq(j AdminUpdateEntityJSON, originEntity *Entity) (*Ad
 }
 
 type AdminUpdateEntityReq struct {
-	OriginEntity  *Entity
-	Status        string
-	EntityName    string
-	Email         string
-	EntityPhone   string
-	IncType       string
-	CompanyNumber string
-	Website       string
-	Turnover      *int
-	Description   string
+	OriginEntity       *Entity
+	OriginBalanceLimit *BalanceLimit
+	Status             string
+	EntityName         string
+	Email              string
+	EntityPhone        string
+	IncType            string
+	CompanyNumber      string
+	Website            string
+	Turnover           *int
+	Description        string
 	// Users
 	Users        *[]string
 	AddedUsers   []primitive.ObjectID
 	RemovedUsers []primitive.ObjectID
 	// Tags
-	Offers     []string
-	Wants      []string
-	Categories *[]string
+	Offers        *[]string
+	AddedOffers   []string
+	RemovedOffers []string
+	Wants         *[]string
+	AddedWants    []string
+	RemovedWants  []string
+	Categories    *[]string
 	// Address
 	LocationAddress    string
 	LocationCity       string
@@ -1233,8 +1316,8 @@ type AdminUpdateEntityJSON struct {
 	Description   string    `json:"description"`
 	Users         *[]string `json:"users"`
 	// Tags
-	Offers     []string  `json:"offers"`
-	Wants      []string  `json:"wants"`
+	Offers     *[]string `json:"offers"`
+	Wants      *[]string `json:"wants"`
 	Categories *[]string `json:"categories"`
 	// Address
 	LocationAddress    string `json:"locationAddress"`
@@ -1289,8 +1372,12 @@ func (req *AdminUpdateEntityJSON) validate() []error {
 		Status:             req.Status,
 	}
 	errs = append(errs, entity.Validate()...)
-	errs = append(errs, validateTags(req.Offers)...)
-	errs = append(errs, validateTags(req.Wants)...)
+	if req.Offers != nil {
+		errs = append(errs, validateTags(*req.Offers)...)
+	}
+	if req.Wants != nil {
+		errs = append(errs, validateTags(*req.Wants)...)
+	}
 
 	return errs
 }
@@ -1434,6 +1521,65 @@ func (req *AdminSearchTransferReq) validate() []error {
 }
 
 func getStatus(input string) []string {
+	splitFn := func(c rune) bool {
+		return c == ',' || c == ' '
+	}
+	return strings.FieldsFunc(strings.ToLower(input), splitFn)
+}
+
+// GET /admin/logs
+
+func NewAdminSearchLog(r *http.Request) (*AdminSearchLogReq, []error) {
+	q := r.URL.Query()
+	page, err := util.ToInt(q.Get("page"), 1)
+	if err != nil {
+		return nil, []error{err}
+	}
+	pageSize, err := util.ToInt(q.Get("page_size"), viper.GetInt("page_size"))
+	if err != nil {
+		return nil, []error{err}
+	}
+	dateFrom := util.ParseTime(q.Get("date_from"))
+	dateTo := util.ParseTime(q.Get("date_to"))
+
+	query := &AdminSearchLogReq{
+		Page:       page,
+		PageSize:   pageSize,
+		Offset:     (page - 1) * pageSize,
+		Email:      q.Get("email"),
+		Categories: getCategories(q.Get("category")),
+		Action:     q.Get("action"),
+		Detail:     q.Get("detail"),
+		DateFrom:   dateFrom,
+		DateTo:     dateTo,
+	}
+
+	return query, query.validate()
+}
+
+type AdminSearchLogReq struct {
+	Page       int
+	PageSize   int
+	Offset     int
+	Email      string
+	Categories []string
+	Action     string
+	Detail     string
+	DateFrom   time.Time
+	DateTo     time.Time
+}
+
+func (req *AdminSearchLogReq) validate() []error {
+	errs := []error{}
+	for _, c := range req.Categories {
+		if c != "user" && c != "admin" {
+			errs = append(errs, errors.New("Please specify valid status."))
+		}
+	}
+	return errs
+}
+
+func getCategories(input string) []string {
 	splitFn := func(c rune) bool {
 		return c == ',' || c == ' '
 	}
