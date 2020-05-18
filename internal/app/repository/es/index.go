@@ -78,13 +78,7 @@ var indexMappings = map[string]string{
 					}
 				},
 				"entityEmail": {
-					"type": "text",
-					"fields": {
-						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
-						}
-					}
+					"type": "keyword"
 				},
 				"status": {
 					"type": "keyword"
@@ -182,13 +176,7 @@ var indexMappings = map[string]string{
 		"mappings": {
 			"properties": {
 				"email": {
-					"type": "text",
-					"fields": {
-						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
-						}
-					}
+					"type": "keyword"
 				},
 				"firstName": {
 					"type": "text",
@@ -296,13 +284,7 @@ var indexMappings = map[string]string{
 					"type": "keyword"
 				},
 				"email": {
-					"type": "text",
-					"fields": {
-						"keyword": {
-							"type": "keyword",
-							"ignore_above": 256
-						}
-					}
+					"type": "keyword"
 				},
 				"action": {
 					"type": "text",
