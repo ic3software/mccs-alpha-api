@@ -62,25 +62,25 @@ func (u *userAction) LoginFail(email string, ipAddress string) {
 	u.create(ua)
 }
 
-func (u *userAction) LostPassword(user *types.User) {
+func (u *userAction) LostPassword(user *types.User, ipAddress string) {
 	ua := &types.UserAction{
 		UserID: user.ID,
 		Email:  user.Email,
 		Action: "sent password reset",
 		// [email]
-		Detail:   user.Email,
+		Detail:   user.Email + " - " + ipAddress,
 		Category: "user",
 	}
 	u.create(ua)
 }
 
-func (u *userAction) ChangePassword(user *types.User) {
+func (u *userAction) ChangePassword(user *types.User, ipAddress string) {
 	ua := &types.UserAction{
 		UserID: user.ID,
 		Email:  user.Email,
 		Action: "changed password",
 		// [email]
-		Detail:   user.Email,
+		Detail:   user.Email + " - " + ipAddress,
 		Category: "user",
 	}
 	u.create(ua)
@@ -96,7 +96,7 @@ func (u *userAction) ModifyUser(origin *types.User, updated *types.User) {
 	ua := &types.UserAction{
 		UserID:   origin.ID,
 		Email:    updated.Email,
-		Action:   "modified user details",
+		Action:   "user modified user details",
 		Detail:   origin.Email + " - " + updated.Email + ": " + strings.Join(modifiedFields, ", "),
 		Category: "user",
 	}
@@ -132,7 +132,7 @@ func (u *userAction) ProposeTransfer(userID string, req *types.TransferReq) {
 		Email:  req.FromEmail,
 		Action: "user proposed a transfer",
 		// [proposer] - [from] - [to] - [amount] - [desc]
-		Detail:   req.FromEmail + " - " + req.FromAccountNumber + " - " + req.ToAccountNumber + " - " + fmt.Sprintf("%.2f", req.Amount) + " - " + req.Description,
+		Detail:   req.InitiatorEntityName + ": " + req.FromEntityName + " - " + req.FromAccountNumber + " -> " + req.ToEntityName + " - " + req.ToAccountNumber + " - " + fmt.Sprintf("%.2f", req.Amount) + " - " + req.Description,
 		Category: "user",
 	}
 	u.create(ua)
@@ -144,9 +144,9 @@ func (u *userAction) AcceptTransfer(userID string, j *types.Journal) {
 	ua := &types.UserAction{
 		UserID: util.ToObjectID(userID),
 		Email:  j.FromAccountNumber,
-		Action: "user transfer",
+		Action: "user accepted a transfer",
 		// [from] - [to] - [amount] - [desc]
-		Detail:   j.FromAccountNumber + " - " + j.ToAccountNumber + " - " + fmt.Sprintf("%.2f", j.Amount) + " - " + j.Description,
+		Detail:   j.FromEntityName + " - " + j.FromAccountNumber + " -> " + j.ToEntityName + " - " + j.ToAccountNumber + " - " + fmt.Sprintf("%.2f", j.Amount) + " - " + j.Description,
 		Category: "user",
 	}
 	u.create(ua)
@@ -158,7 +158,7 @@ func (u *userAction) AdminLogin(admin *types.AdminUser, ipAddress string) {
 	ua := &types.UserAction{
 		UserID: admin.ID,
 		Email:  admin.Email,
-		Action: "admin user login successful",
+		Action: "admin login successful",
 		// [email] - [IP address]
 		Detail:   admin.Email + " - " + ipAddress,
 		Category: "admin",
@@ -176,7 +176,7 @@ func (u *userAction) AdminLoginFail(email string, ipAddress string) {
 	ua := &types.UserAction{
 		UserID: admin.ID,
 		Email:  admin.Email,
-		Action: "admin user login failed",
+		Action: "admin login failed",
 		// [email] - [IP address]
 		Detail:   admin.Email + " - " + ipAddress,
 		Category: "admin",
@@ -194,7 +194,7 @@ func (u *userAction) AdminCreateTag(userID string, tagName string) {
 	ua := &types.UserAction{
 		UserID: admin.ID,
 		Email:  admin.Email,
-		Action: "admin created new tag",
+		Action: "admin created a new tag",
 		// [email] - [Tag]
 		Detail:   admin.Email + " - " + tagName,
 		Category: "admin",
@@ -385,9 +385,9 @@ func (u *userAction) AdminDeleteEntity(userID string, deleted *types.Entity) {
 	ua := &types.UserAction{
 		UserID: admin.ID,
 		Email:  admin.Email,
-		Action: "admin deleted a entity",
+		Action: "admin deleted an entity",
 		//
-		Detail:   admin.Email + " - " + deleted.Email,
+		Detail:   admin.Email + " - " + deleted.EntityName + " - " + deleted.Email,
 		Category: "admin",
 	}
 	u.create(ua)
@@ -416,7 +416,7 @@ func (u *userAction) AdminTransfer(userID string, j *types.Journal) {
 		Email:  admin.Email,
 		Action: "admin transfer for user",
 		// admin - [from] -> [to] - [amount]
-		Detail:   admin.Email + " - " + j.FromAccountNumber + " -> " + j.ToAccountNumber + " - " + fmt.Sprintf("%.2f", j.Amount) + " - " + j.Description,
+		Detail:   admin.Email + " - " + j.FromAccountNumber + " (" + j.FromEntityName + ") -> " + j.ToAccountNumber + " (" + j.ToEntityName + ") - " + fmt.Sprintf("%.2f", j.Amount) + " - " + j.Description,
 		Category: "admin",
 	}
 	u.create(ua)

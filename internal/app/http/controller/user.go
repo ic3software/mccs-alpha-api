@@ -302,11 +302,12 @@ func (handler *userHandler) requestPasswordReset() func(http.ResponseWriter, *ht
 			type respond struct {
 				Data data `json:"data"`
 			}
+			go logic.UserAction.LostPassword(user, util.IPAddress(r))
 			api.Respond(w, r, http.StatusOK, respond{Data: data{Token: uid.String()}})
 			return
 		}
 
-		go logic.UserAction.LostPassword(user)
+		go logic.UserAction.LostPassword(user, util.IPAddress(r))
 
 		api.Respond(w, r, http.StatusOK)
 	}
@@ -396,7 +397,7 @@ func (handler *userHandler) passwordChange() func(http.ResponseWriter, *http.Req
 			return
 		}
 
-		go logic.UserAction.ChangePassword(user)
+		go logic.UserAction.ChangePassword(user, util.IPAddress(r))
 
 		api.Respond(w, r, http.StatusOK)
 	}
