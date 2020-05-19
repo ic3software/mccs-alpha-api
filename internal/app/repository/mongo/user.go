@@ -392,6 +392,8 @@ func (u *user) removeAssociatedEntity(userIDs []primitive.ObjectID, entityID pri
 	return nil
 }
 
+// daily_email_schedule
+
 func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	filter := bson.M{
 		"dailyNotification": true,
@@ -400,9 +402,8 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	projection := bson.M{
 		"_id":                      1,
 		"email":                    1,
-		"companyID":                1,
-		"lastNotificationSentDate": 1,
 		"dailyNotification":        1,
+		"lastNotificationSentDate": 1,
 	}
 	findOptions := options.Find()
 	findOptions.SetProjection(projection)

@@ -14,9 +14,9 @@ import (
 
 func main() {
 	global.Init()
-	restoreUser()
-	restoreEntity()
-	restoreTag()
+	// restoreUser()
+	// restoreEntity()
+	// restoreTag()
 }
 
 func restoreUser() {

@@ -6,6 +6,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/util/l"
 	"github.com/spf13/viper"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
 
@@ -30,36 +31,42 @@ func Run() {
 
 func createEmailWorker(u *types.User) func() {
 	return func() {
-		matchedTags, err := getMatchTags(u)
-		if err != nil {
-			l.Logger.Error("dailyemail failed", zap.Error(err))
+		if (len(u.Entities)) == 0 {
 			return
 		}
-		if len(matchedTags.MatchedOffers) == 0 && len(matchedTags.MatchedWants) == 0 {
-			return
-		}
-		err = email.SendDailyEmailList(u, matchedTags)
-		if err != nil {
-			l.Logger.Error("dailyemail failed", zap.Error(err))
-		}
-		err = logic.User.UpdateLastNotificationSentDate(u.ID)
-		if err != nil {
-			l.Logger.Error("dailyemail failed", zap.Error(err))
+
+		for _, entity := range u.Entities {
+			matchedTags, err := getMatchTags(u, entity)
+			if err != nil {
+				l.Logger.Error("dailyemail failed", zap.Error(err))
+				return
+			}
+			if len(matchedTags.MatchedOffers) == 0 && len(matchedTags.MatchedWants) == 0 {
+				return
+			}
+			err = email.SendDailyEmailList(u, matchedTags)
+			if err != nil {
+				l.Logger.Error("dailyemail failed", zap.Error(err))
+			}
+			err = logic.User.UpdateLastNotificationSentDate(u.ID)
+			if err != nil {
+				l.Logger.Error("dailyemail failed", zap.Error(err))
+			}
 		}
 	}
 }
 
-func getMatchTags(user *types.User) (*types.MatchedTags, error) {
-	entity, err := logic.Entity.FindByID(user.Entities[0])
+func getMatchTags(user *types.User, entityID primitive.ObjectID) (*types.MatchedTags, error) {
+	entity, err := logic.Entity.FindByID(entityID)
 	if err != nil {
 		return nil, err
 	}
 
-	matchedOffers, err := logic.Tag.MatchOffers(getTagNames(entity.Offers), user.LastNotificationSentDate)
+	matchedOffers, err := logic.Tag.MatchOffers(types.TagFieldToNames(entity.Offers), user.LastNotificationSentDate)
 	if err != nil {
 		return nil, err
 	}
-	matchedWants, err := logic.Tag.MatchWants(getTagNames(entity.Wants), user.LastNotificationSentDate)
+	matchedWants, err := logic.Tag.MatchWants(types.TagFieldToNames(entity.Wants), user.LastNotificationSentDate)
 	if err != nil {
 		return nil, err
 	}
@@ -68,12 +75,4 @@ func getMatchTags(user *types.User) (*types.MatchedTags, error) {
 		MatchedOffers: matchedOffers,
 		MatchedWants:  matchedWants,
 	}, nil
-}
-
-func getTagNames(tags []*types.TagField) []string {
-	names := make([]string, 0, len(tags))
-	for _, t := range tags {
-		names = append(names, t.Name)
-	}
-	return names
 }
