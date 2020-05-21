@@ -3,6 +3,7 @@ package email
 import (
 	"bytes"
 	"errors"
+	"time"
 
 	"github.com/ic3network/mccs-alpha-api/global"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
@@ -201,25 +202,27 @@ func (e *Email) adminResetPassword(receiver string, email string, token string) 
 }
 
 // SendDailyEmailList sends the matching tags for a user.
-func SendDailyEmailList(user *types.User, matchedTags *types.MatchedTags) error {
-	return e.sendDailyEmailList(user, matchedTags)
+func SendDailyEmailList(entity *types.Entity, matchedTags *types.MatchedTags, lastNotificationSentDate time.Time) error {
+	return e.sendDailyEmailList(entity, matchedTags, lastNotificationSentDate)
 }
-func (e *Email) sendDailyEmailList(user *types.User, matchedTags *types.MatchedTags) error {
+func (e *Email) sendDailyEmailList(entity *types.Entity, matchedTags *types.MatchedTags, lastNotificationSentDate time.Time) error {
 	t, err := template.NewEmailView("dailyEmail")
 	if err != nil {
 		return err
 	}
 
 	data := struct {
-		User          *types.User
-		MatchedOffers map[string][]string
-		MatchedWants  map[string][]string
-		URL           string
+		Entity                   *types.Entity
+		MatchedOffers            map[string][]string
+		MatchedWants             map[string][]string
+		LastNotificationSentDate time.Time
+		URL                      string
 	}{
-		User:          user,
-		MatchedOffers: matchedTags.MatchedOffers,
-		MatchedWants:  matchedTags.MatchedWants,
-		URL:           viper.GetString("url"),
+		Entity:                   entity,
+		MatchedOffers:            matchedTags.MatchedOffers,
+		MatchedWants:             matchedTags.MatchedWants,
+		LastNotificationSentDate: lastNotificationSentDate,
+		URL:                      viper.GetString("url"),
 	}
 
 	var tpl bytes.Buffer
@@ -229,8 +232,8 @@ func (e *Email) sendDailyEmailList(user *types.User, matchedTags *types.MatchedT
 	html := tpl.String()
 
 	d := emailData{
-		receiver:      user.FirstName + " " + user.LastName,
-		receiverEmail: user.Email,
+		receiver:      entity.EntityName,
+		receiverEmail: entity.Email,
 		subject:       "Potential trades via the Open Credit Network",
 		text:          "Good news! There are new matches on The Open Credit Network for your offers and/or wants. Please login to your account to view them: https://trade.opencredit.network",
 		html:          html,

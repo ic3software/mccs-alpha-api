@@ -401,7 +401,7 @@ func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	}
 	projection := bson.M{
 		"_id":                      1,
-		"email":                    1,
+		"entities":                 1,
 		"dailyNotification":        1,
 		"lastNotificationSentDate": 1,
 	}

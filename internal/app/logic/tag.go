@@ -113,11 +113,11 @@ func (t *tag) UpdateWant(name string) error {
 
 // MatchOffers loops through user's offers and finds out the matched wants.
 // Only add to the result when matches more than one tag.
-func (t *tag) MatchOffers(offers []string, lastLoginDate time.Time) (map[string][]string, error) {
+func (t *tag) MatchOffers(offers []string, lastNotificationSentDate time.Time) (map[string][]string, error) {
 	resultMap := map[string][]string{}
 
 	for _, offer := range offers {
-		matches, err := es.Tag.MatchOffer(offer, lastLoginDate)
+		matches, err := es.Tag.MatchOffer(offer, lastNotificationSentDate)
 		if err != nil {
 			return nil, err
 		}
@@ -131,11 +131,11 @@ func (t *tag) MatchOffers(offers []string, lastLoginDate time.Time) (map[string]
 
 // MatchWants loops through user's wants and finds out the matched offers.
 // Only add to the result when matches more than one tag.
-func (t *tag) MatchWants(wants []string, lastLoginDate time.Time) (map[string][]string, error) {
+func (t *tag) MatchWants(wants []string, lastNotificationSentDate time.Time) (map[string][]string, error) {
 	resultMap := map[string][]string{}
 
 	for _, want := range wants {
-		matches, err := es.Tag.MatchWant(want, lastLoginDate)
+		matches, err := es.Tag.MatchWant(want, lastNotificationSentDate)
 		if err != nil {
 			return nil, err
 		}
