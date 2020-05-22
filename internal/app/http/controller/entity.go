@@ -89,15 +89,6 @@ func (handler *entityHandler) FindByUserID(uID string) (*types.Entity, error) {
 	return bs, nil
 }
 
-func (handler *entityHandler) getSearchEntityQueryParams(q url.Values) (*types.SearchEntityReq, error) {
-	query, err := types.NewSearchEntityReq(q)
-	if err != nil {
-		return nil, err
-	}
-	query.FavoriteEntities = handler.getFavoriteEntities(q.Get("querying_entity_id"))
-	return query, nil
-}
-
 func (handler *entityHandler) getFavoriteEntities(entityID string) []primitive.ObjectID {
 	entity, err := EntityHandler.FindByID(entityID)
 	if err == nil {
@@ -165,6 +156,15 @@ func (handler *entityHandler) searchEntity() func(http.ResponseWriter, *http.Req
 			},
 		})
 	}
+}
+
+func (handler *entityHandler) getSearchEntityQueryParams(q url.Values) (*types.SearchEntityReq, error) {
+	query, err := types.NewSearchEntityReq(q)
+	if err != nil {
+		return nil, err
+	}
+	query.FavoriteEntities = handler.getFavoriteEntities(q.Get("querying_entity_id"))
+	return query, nil
 }
 
 func (handler *entityHandler) getQueryingEntityStatus(entityID string) string {

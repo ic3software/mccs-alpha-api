@@ -110,6 +110,14 @@ func (u *user) FindByIDs(ids []primitive.ObjectID) ([]*types.User, error) {
 	return users, nil
 }
 
+func (u *user) FindByEmail(email string) (*types.User, error) {
+	user, err := mongo.User.FindByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 func (u *user) FindByEntityID(id primitive.ObjectID) (*types.User, error) {
 	user, err := mongo.User.FindByEntityID(id)
 	if err != nil {
@@ -240,24 +248,7 @@ func (u *user) AdminSearchUser(req *types.AdminSearchUserReq) (*types.SearchUser
 	}, nil
 }
 
-// TO BE REMOVED
-
-func (u *user) FindByEmail(email string) (*types.User, error) {
-	user, err := mongo.User.FindByEmail(email)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-// UserEmailExists checks if the email exists in the database.
-func (u *user) UserEmailExists(email string) bool {
-	_, err := mongo.User.FindByEmail(email)
-	if err != nil {
-		return false
-	}
-	return true
-}
+// daily_email_schedule
 
 func (u *user) FindByDailyNotification() ([]*types.User, error) {
 	users, err := mongo.User.FindByDailyNotification()
@@ -273,4 +264,12 @@ func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
 		return err
 	}
 	return nil
+}
+
+func (u *user) UserEmailExists(email string) bool {
+	_, err := mongo.User.FindByEmail(email)
+	if err != nil {
+		return false
+	}
+	return true
 }

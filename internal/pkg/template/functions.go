@@ -59,10 +59,7 @@ func idToString(id primitive.ObjectID) string {
 }
 
 func formatTime(t time.Time) string {
-	tt := t.UTC()
-	return fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d UTC",
-		tt.Year(), tt.Month(), tt.Day(),
-		tt.Hour(), tt.Minute(), tt.Second())
+	return fmt.Sprintf("%d", t.UTC().Unix())
 }
 
 func formatAccountBalance(balance float64) string {

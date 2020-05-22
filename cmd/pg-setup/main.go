@@ -15,7 +15,7 @@ import (
 
 func main() {
 	global.Init()
-	setUpAccount()
+	// setUpAccount()
 }
 
 // setUpAccount reads the entities from MongoDB and build up the accounts in PostgreSQL.

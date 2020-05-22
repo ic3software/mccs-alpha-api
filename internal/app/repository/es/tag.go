@@ -158,11 +158,9 @@ func (es *tag) DeleteByID(id string) error {
 	return nil
 }
 
-// TO BE REMOVED
-
 // MatchOffer matches wants for the given offer.
-func (es *tag) MatchOffer(offer string, lastLoginDate time.Time) ([]string, error) {
-	q := newTagQuery(offer, lastLoginDate, "wantAddedAt")
+func (es *tag) MatchOffer(offer string, lastNotificationSentDate time.Time) ([]string, error) {
+	q := newTagQuery(offer, lastNotificationSentDate, "wantAddedAt")
 	res, err := es.c.Search().
 		Index(es.index).
 		Query(q).
@@ -172,7 +170,7 @@ func (es *tag) MatchOffer(offer string, lastLoginDate time.Time) ([]string, erro
 		return nil, err
 	}
 
-	matchTags := make([]string, 0, 8)
+	matchTags := []string{}
 	for _, hit := range res.Hits.Hits {
 		var record types.TagESRecord
 		err := json.Unmarshal(hit.Source, &record)
@@ -186,8 +184,8 @@ func (es *tag) MatchOffer(offer string, lastLoginDate time.Time) ([]string, erro
 }
 
 // MatchWant matches offers for the given want.
-func (es *tag) MatchWant(want string, lastLoginDate time.Time) ([]string, error) {
-	q := newTagQuery(want, lastLoginDate, "offerAddedAt")
+func (es *tag) MatchWant(want string, lastNotificationSentDate time.Time) ([]string, error) {
+	q := newTagQuery(want, lastNotificationSentDate, "offerAddedAt")
 	res, err := es.c.Search().
 		Index(es.index).
 		Query(q).
@@ -197,7 +195,7 @@ func (es *tag) MatchWant(want string, lastLoginDate time.Time) ([]string, error)
 		return nil, err
 	}
 
-	matchTags := make([]string, 0, 8)
+	matchTags := []string{}
 	for _, hit := range res.Hits.Hits {
 		var record types.TagESRecord
 		err := json.Unmarshal(hit.Source, &record)
