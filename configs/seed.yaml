@@ -15,7 +15,7 @@ receive_signup_notifications: false
 
 rate_limiting:
   duration: 1 # minute
-  requests: 60
+  limit: 60
 
 validate:
   email:
