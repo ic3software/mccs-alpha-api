@@ -13,6 +13,10 @@ concurrency_num: 3
 receive_trade_contact_emails: true
 receive_signup_notifications: true
 
+rate_limiting:
+  duration: 1 # minute
+  requests: 1000
+
 validate:
   email:
     maxLen: 100
@@ -20,8 +24,8 @@ validate:
     minLen: 8
 
 transaction:
-  maxNegBal: 0
-  maxPosBal: 500
+  max_neg_bal: 0
+  max_pos_bal: 500
 
 psql:
   host: postgres
@@ -33,6 +37,11 @@ psql:
 mongo:
   url: mongodb://mongo:27017
   database: mccs
+
+redis:
+  host: redis
+  port: 6379
+  password: sOmE_sEcUrE_pAsS
 
 es:
   url: http://es01:9200

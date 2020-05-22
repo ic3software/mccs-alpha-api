@@ -16,7 +16,9 @@ services:
     ports:
       - 8080:8080
     depends_on:
+      - postgres
       - mongo
+      - redis
       - es01
 
   postgres:

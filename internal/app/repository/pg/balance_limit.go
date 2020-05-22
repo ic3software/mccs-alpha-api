@@ -15,8 +15,8 @@ type balanceLimit struct{}
 func (b *balanceLimit) Create(tx *gorm.DB, accountNumber string) error {
 	balance := &types.BalanceLimit{
 		AccountNumber: accountNumber,
-		MaxNegBal:     viper.GetFloat64("transaction.maxNegBal"),
-		MaxPosBal:     viper.GetFloat64("transaction.maxPosBal"),
+		MaxNegBal:     viper.GetFloat64("transaction.max_neg_bal"),
+		MaxPosBal:     viper.GetFloat64("transaction.max_pos_bal"),
 	}
 	err := tx.Create(balance).Error
 	if err != nil {
