@@ -17,7 +17,7 @@ receive_signup_notifications: true
 
 rate_limiting:
   duration: 1 # minute
-  limit: 60
+  limit: 60 # number of requests within the duration; increase for automated testing scripts
 
 validate:
   email:
