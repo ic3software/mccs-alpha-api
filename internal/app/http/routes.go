@@ -8,13 +8,13 @@ import (
 
 func RegisterRoutes(r *mux.Router) {
 	public := r.PathPrefix("/api/v1").Subrouter()
-	public.Use(middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser())
+	public.Use(middleware.Recover(), middleware.RateLimiting(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser())
 	private := r.PathPrefix("/api/v1").Subrouter()
-	private.Use(middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser(), middleware.RequireUser())
+	private.Use(middleware.Recover(), middleware.RateLimiting(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser(), middleware.RequireUser())
 	adminPublic := r.PathPrefix("/api/v1/admin").Subrouter()
-	adminPublic.Use(middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser())
+	adminPublic.Use(middleware.Recover(), middleware.RateLimiting(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser())
 	adminPrivate := r.PathPrefix("/api/v1/admin").Subrouter()
-	adminPrivate.Use(middleware.Recover(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser(), middleware.RequireAdmin())
+	adminPrivate.Use(middleware.Recover(), middleware.RateLimiting(), middleware.NoCache(), middleware.Logging(), middleware.GetLoggedInUser(), middleware.RequireAdmin())
 
 	controller.ServiceDiscovery.RegisterRoutes(public, private)
 	controller.UserHandler.RegisterRoutes(public, private, adminPublic, adminPrivate)
