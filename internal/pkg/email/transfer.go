@@ -15,7 +15,7 @@ type transfer struct{}
 var Transfer = &transfer{}
 
 func (tr *transfer) Initiate(req *types.TransferReq) {
-	url := viper.GetString("url") + "/pending_transactions"
+	url := viper.GetString("url") + "/pending-transfers"
 
 	var body string
 	if req.TransferDirection == constant.TransferDirection.Out {

@@ -23,7 +23,7 @@
                 <li>
                     <span style="margin-top:5px;margin-bottom:5px;margin:auto;padding: 0px 5px;display: inline-block;vertical-align: middle;border-radius: 5px;background: #003fa7;color: #ffffff;">{{ $myWant }}</span> -
                     <a
-                    href="{{$.URL}}/api/v1/entities?page=1&wants={{$myWant}}&tagged_since={{FormatTime $.LastNotificationSentDate}}">
+                    href="{{$.URL}}/new-matches?page=1&wants={{$myWant}}&tagged_since={{FormatTime $.LastNotificationSentDate}}">
                     See the full details and get in touch
                     </a>
                 </li>
@@ -45,7 +45,7 @@
                 <li>
                     <span style="margin-top:5px;margin-bottom:5px;margin:auto;padding: 0px 5px;display: inline-block;vertical-align: middle;border-radius: 5px;background: #f7a502;color: #ffffff;">{{ $myOffer }}</span> - 
                     <a
-                    href="{{$.URL}}/api/v1/entities?page=1&offers={{$myOffer}}&tagged_since={{FormatTime $.LastNotificationSentDate}}">
+                    href="{{$.URL}}/new-matches?page=1&offers={{$myOffer}}&tagged_since={{FormatTime $.LastNotificationSentDate}}">
                     See the full details and get in touch
                     </a>
                 </li>
