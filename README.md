@@ -73,6 +73,7 @@ The MCCS web app is written in Go, and it uses Docker Compose to orchestrate its
 - [MongoDB](https://en.wikipedia.org/wiki/MongoDB) - the database used to store user and entity directory data
 - [PostgreSQL](https://www.postgresql.org/) - the database used to store mutual credit transfer data
 - [Elasticsearch](https://en.wikipedia.org/wiki/Elasticsearch) - the search engine for searching user/entity data
+- [Redis](https://redis.io/) - in-memory cache used for rate limiting API requests
 
 These dependencies are installed automatically by Docker Compose.
 
