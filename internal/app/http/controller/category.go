@@ -56,8 +56,8 @@ func (handler *categoryHandler) search() func(http.ResponseWriter, *http.Request
 		TotalPages      int `json:"totalPages"`
 	}
 	type respond struct {
-		Data []string `json:"data"`
-		Meta meta     `json:"meta"`
+		Data []*types.CategoryRespond `json:"data"`
+		Meta meta                     `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, err := types.NewSearchCategoryReq(r.URL.Query())
@@ -81,7 +81,7 @@ func (handler *categoryHandler) search() func(http.ResponseWriter, *http.Request
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{
-			Data: handler.categoryToStrings(found.Categories),
+			Data: types.NewSearchCategoryRespond(found.Categories),
 			Meta: meta{
 				TotalPages:      found.TotalPages,
 				NumberOfResults: found.NumberOfResults,
@@ -90,19 +90,11 @@ func (handler *categoryHandler) search() func(http.ResponseWriter, *http.Request
 	}
 }
 
-func (handler *categoryHandler) categoryToStrings(categories []*types.Category) []string {
-	names := []string{}
-	for _, c := range categories {
-		names = append(names, c.Name)
-	}
-	return names
-}
-
 // POST /admin/categories
 
 func (handler *categoryHandler) create() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.AdminCategoryRespond `json:"data"`
+		Data *types.CategoryRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminCreateCategoryReq(r)
@@ -126,7 +118,7 @@ func (handler *categoryHandler) create() func(http.ResponseWriter, *http.Request
 
 		go logic.UserAction.AdminCreateCategory(r.Header.Get("userID"), req.Name)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(created)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewCategoryRespond(created)})
 	}
 }
 
@@ -134,7 +126,7 @@ func (handler *categoryHandler) create() func(http.ResponseWriter, *http.Request
 
 func (handler *categoryHandler) update() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.AdminCategoryRespond `json:"data"`
+		Data *types.CategoryRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminUpdateCategoryReq(r)
@@ -173,7 +165,7 @@ func (handler *categoryHandler) update() func(http.ResponseWriter, *http.Request
 
 		go logic.UserAction.AdminModifyCategory(r.Header.Get("userID"), old.Name, updated.Name)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(updated)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewCategoryRespond(updated)})
 	}
 }
 
@@ -181,7 +173,7 @@ func (handler *categoryHandler) update() func(http.ResponseWriter, *http.Request
 
 func (handler *categoryHandler) delete() func(http.ResponseWriter, *http.Request) {
 	type respond struct {
-		Data *types.AdminCategoryRespond `json:"data"`
+		Data *types.CategoryRespond `json:"data"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, errs := types.NewAdminDeleteCategoryReq(r)
@@ -206,6 +198,6 @@ func (handler *categoryHandler) delete() func(http.ResponseWriter, *http.Request
 
 		go logic.UserAction.AdminDeleteCategory(r.Header.Get("userID"), deleted.Name)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewAdminCategoryRespond(deleted)})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewCategoryRespond(deleted)})
 	}
 }

@@ -306,21 +306,57 @@ type AdminUserRespond struct {
 	ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
 }
 
-func NewAdminCategoryRespond(category *Category) *AdminCategoryRespond {
-	return &AdminCategoryRespond{
+// Category
+
+type CategoryRespond struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// GET /categories
+
+func NewSearchCategoryRespond(categories []*Category) []*CategoryRespond {
+	result := []*CategoryRespond{}
+	for _, category := range categories {
+		result = append(result, NewCategoryRespond(category))
+	}
+	return result
+}
+
+// POST /admin/categories
+
+func NewCategoryRespond(category *Category) *CategoryRespond {
+	return &CategoryRespond{
 		ID:   category.ID.Hex(),
 		Name: category.Name,
 	}
 }
 
-type AdminCategoryRespond struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
+// Tag
 
 type TagRespond struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+// GET /tags
+// GET /admin/tags
+
+func NewSearchTagRespond(tags []*Tag) []*TagRespond {
+	result := []*TagRespond{}
+	for _, tag := range tags {
+		result = append(result, NewTagRespond(tag))
+	}
+	return result
+}
+
+// POST /admin/tags
+
+func NewTagRespond(tag *Tag) *TagRespond {
+	return &TagRespond{
+		ID:   tag.ID.Hex(),
+		Name: tag.Name,
+	}
 }
 
 func NewAdminGetUserRespond(user *User, entities []*Entity) *AdminGetUserRespond {
