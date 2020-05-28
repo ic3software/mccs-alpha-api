@@ -48,13 +48,6 @@ func (handler *adminUserHandler) RegisterRoutes(
 	})
 }
 
-func (handler *adminUserHandler) incLoginAttempts(email string) {
-	err := logic.AdminUser.IncLoginAttempts(email)
-	if err != nil {
-		l.Logger.Error("[Error] AdminUserHandler.incLoginAttempts failed:", zap.Error(err))
-	}
-}
-
 // POST /admin/login
 
 func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request) {
@@ -87,7 +80,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 		if err != nil {
 			l.Logger.Info("[Info] AdminUserHandler.login failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
-			go handler.incLoginAttempts(req.Email)
+			go logic.AdminUser.IncLoginAttempts(req.Email)
 			go logic.UserAction.AdminLoginFail(req.Email, util.IPAddress(r))
 			return
 		}
