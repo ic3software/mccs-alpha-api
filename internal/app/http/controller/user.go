@@ -125,10 +125,13 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 
 		user, err := logic.User.Login(req.Email, req.Password)
 		if err != nil {
+
+			go handler.incLoginAttempts(req.Email)
+			go logic.UserAction.LoginFail(req.Email, util.IPAddress(r))
+
 			l.Logger.Info("[INFO] UserHandler.login failed", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
-			go handler.updateLoginAttempts(req.Email)
-			go logic.UserAction.LoginFail(req.Email, util.IPAddress(r))
+
 			return
 		}
 		loginInfo, err := logic.User.UpdateLoginInfo(user.ID, util.IPAddress(r))
@@ -144,10 +147,10 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (u *userHandler) updateLoginAttempts(email string) {
-	err := logic.User.UpdateLoginAttempts(email)
+func (u *userHandler) incLoginAttempts(email string) {
+	err := logic.User.IncLoginAttempts(email)
 	if err != nil {
-		l.Logger.Error("[Error] UserHandler.updateLoginAttempts failed:", zap.Error(err))
+		l.Logger.Error("[Error] UserHandler.incLoginAttempts failed:", zap.Error(err))
 	}
 }
 
