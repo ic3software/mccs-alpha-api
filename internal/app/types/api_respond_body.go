@@ -216,16 +216,17 @@ func NewJournalsToTransfersRespond(journals []*Journal, queryingAccountNumber st
 }
 
 type TransferRespond struct {
-	TransferID    string     `json:"id"`
-	Transfer      string     `json:"transfer"`
-	IsInitiator   bool       `json:"isInitiator"`
-	AccountNumber string     `json:"accountNumber"`
-	EntityName    string     `json:"entityName"`
-	Amount        float64    `json:"amount"`
-	Description   string     `json:"description"`
-	Status        string     `json:"status"`
-	CreatedAt     *time.Time `json:"dateProposed,omitempty"`
-	CompletedAt   *time.Time `json:"dateCompleted,omitempty"`
+	TransferID         string     `json:"id"`
+	Transfer           string     `json:"transfer"`
+	IsInitiator        bool       `json:"isInitiator"`
+	AccountNumber      string     `json:"accountNumber"`
+	EntityName         string     `json:"entityName"`
+	Amount             float64    `json:"amount"`
+	Description        string     `json:"description"`
+	Status             string     `json:"status"`
+	CancellationReason string     `json:"cancellationReason,omitempty"`
+	CreatedAt          *time.Time `json:"dateProposed,omitempty"`
+	CompletedAt        *time.Time `json:"dateCompleted,omitempty"`
 }
 
 type SearchTransferRespond struct {

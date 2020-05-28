@@ -612,8 +612,8 @@ func NewUpdateTransferReq(
 	toEntity *Entity,
 ) (*UpdateTransferReq, []error) {
 	var body struct {
-		Action string `json:"action"`
-		Reason string `json:"reason"`
+		Action             string `json:"action"`
+		CancellationReason string `json:"cancellationReason"`
 	}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&body)
@@ -625,23 +625,23 @@ func NewUpdateTransferReq(
 	}
 
 	req := UpdateTransferReq{
-		TransferID:     mux.Vars(r)["transferID"],
-		LoggedInUserID: r.Header.Get("userID"),
-		Action:         body.Action,
-		Reason:         body.Reason,
-		Journal:        journal,
-		InitiateEntity: initiateEntity,
-		FromEntity:     fromEntity,
-		ToEntity:       toEntity,
+		TransferID:         mux.Vars(r)["transferID"],
+		LoggedInUserID:     r.Header.Get("userID"),
+		Action:             body.Action,
+		CancellationReason: body.CancellationReason,
+		Journal:            journal,
+		InitiateEntity:     initiateEntity,
+		FromEntity:         fromEntity,
+		ToEntity:           toEntity,
 	}
 
 	return &req, req.Validate()
 }
 
 type UpdateTransferReq struct {
-	TransferID string
-	Action     string
-	Reason     string
+	TransferID         string
+	Action             string
+	CancellationReason string
 
 	LoggedInUserID string
 
