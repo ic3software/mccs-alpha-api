@@ -63,6 +63,7 @@ func (h *tagHandler) UpdateWants(added []string) error {
 	return nil
 }
 
+// GET /tags
 // GET /admin/tags
 
 func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) {
@@ -71,8 +72,8 @@ func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) 
 		TotalPages      int `json:"totalPages"`
 	}
 	type respond struct {
-		Data []string `json:"data"`
-		Meta meta     `json:"meta"`
+		Data []*types.TagRespond `json:"data"`
+		Meta meta                `json:"meta"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		query, err := types.NewSearchTagReq(r.URL.Query())
@@ -96,7 +97,7 @@ func (handler *tagHandler) searchTag() func(http.ResponseWriter, *http.Request) 
 		}
 
 		api.Respond(w, r, http.StatusOK, respond{
-			Data: types.TagToNames(found.Tags),
+			Data: types.NewSearchTagRespond(found.Tags),
 			Meta: meta{
 				TotalPages:      found.TotalPages,
 				NumberOfResults: found.NumberOfResults,
@@ -133,10 +134,7 @@ func (h *tagHandler) adminCreate() func(http.ResponseWriter, *http.Request) {
 
 		go logic.UserAction.AdminCreateTag(r.Header.Get("userID"), req.Name)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: &types.TagRespond{
-			ID:   created.ID.Hex(),
-			Name: created.Name,
-		}})
+		api.Respond(w, r, http.StatusOK, respond{Data: types.NewTagRespond(created)})
 	}
 }
 
