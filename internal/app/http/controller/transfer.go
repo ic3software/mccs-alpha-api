@@ -189,6 +189,9 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 		if updated.Status == constant.Transfer.Completed {
 			t.CompletedAt = &updated.UpdatedAt
 		}
+		if updated.Status == constant.Transfer.Cancelled {
+			t.CancellationReason = updated.CancellationReason
+		}
 
 		return t
 	}
@@ -221,7 +224,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 			go logic.UserAction.AcceptTransfer(r.Header.Get("userID"), updated)
 		}
 		if req.Action == "reject" {
-			updated, err = handler.rejectTransfer(req.Journal, req.Reason)
+			updated, err = handler.rejectTransfer(req.Journal, req.CancellationReason)
 			if err != nil {
 				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 				api.Respond(w, r, http.StatusInternalServerError, err)
@@ -229,7 +232,7 @@ func (handler *transferHandler) updateTransfer() func(http.ResponseWriter, *http
 			}
 		}
 		if req.Action == "cancel" {
-			updated, err = handler.cancelTransfer(req.Journal, req.Reason)
+			updated, err = handler.cancelTransfer(req.Journal, req.CancellationReason)
 			if err != nil {
 				l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 				api.Respond(w, r, http.StatusInternalServerError, err)
