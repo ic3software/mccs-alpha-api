@@ -4,14 +4,16 @@ port: 8080
 reset_password_timeout: 60
 page_size: 10
 tags_limit: 10
-login_attempts_limit: 3
-login_attempts_timeout: 900
 email_from: MCCS
 daily_email_schedule: "0 0 7 * * *"
 balance_check_schedule: "0 0 * * * *"
 concurrency_num: 3
 receive_trade_contact_emails: false
 receive_signup_notifications: false
+
+login_attempts:
+  limit: 3
+  timeout: 60
 
 rate_limiting:
   duration: 1 # minute
@@ -39,7 +41,7 @@ mongo:
   database: mccs
 
 redis:
-  host: redis
+  host: localhost
   port: 6379
   password: sOmE_sEcUrE_pAsS
 

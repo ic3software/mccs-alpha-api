@@ -2,10 +2,10 @@ package logic
 
 import (
 	"errors"
-	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/mongo"
+	"github.com/ic3network/mccs-alpha-api/internal/app/repository/redis"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/ic3network/mccs-alpha-api/util/bcrypt"
@@ -52,35 +52,27 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 	return nil
 }
 
-func (u *user) isUserLockForLogin(lastLoginFailDate time.Time) bool {
-	if time.Now().Sub(lastLoginFailDate).Seconds() <= viper.GetFloat64("login_attempts_timeout") {
-		return true
-	}
-	return false
-}
-
 func (u *user) Login(email string, password string) (*types.User, error) {
 	user, err := mongo.User.FindByEmail(email)
 	if err != nil {
 		return nil, err
 	}
 
-	if u.isUserLockForLogin(user.LastLoginFailDate) {
+	attempts := redis.GetLoginAttempts(email)
+
+	if attempts >= viper.GetInt("login_attempts.limit") {
 		return nil, ErrLoginLocked
 	}
 
 	err = bcrypt.CompareHash(user.Password, password)
 	if err != nil {
-		if user.LoginAttempts+1 >= viper.GetInt("login_attempts_limit") {
+		if attempts+1 >= viper.GetInt("login_attempts.limit") {
 			return nil, ErrLoginLocked
 		}
 		return nil, errors.New("Invalid password.")
 	}
 
-	err = mongo.User.UpdateLoginAttempts(email, 0, false)
-	if err != nil {
-		return nil, err
-	}
+	redis.ResetLoginAttempts(email)
 
 	return user, nil
 }
@@ -134,31 +126,11 @@ func (a *user) UpdateLoginInfo(id primitive.ObjectID, ip string) (*types.LoginIn
 	return info, nil
 }
 
-func (u *user) UpdateLoginAttempts(email string) error {
-	user, err := mongo.User.FindByEmail(email)
-	if err != nil {
-		return nil
-	}
-
-	if u.isUserLockForLogin(user.LastLoginFailDate) {
-		return nil
-	}
-
-	attempts := user.LoginAttempts
-	lockUser := false
-
-	if attempts+1 >= viper.GetInt("login_attempts_limit") {
-		attempts = 0
-		lockUser = true
-	} else {
-		attempts++
-	}
-
-	err = mongo.User.UpdateLoginAttempts(email, attempts, lockUser)
+func (u *user) IncLoginAttempts(email string) error {
+	err := redis.IncLoginAttempts(email)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 

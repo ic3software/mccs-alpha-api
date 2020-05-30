@@ -27,9 +27,6 @@ type User struct {
 	LastLoginIP      string    `json:"lastLoginIP,omitempty" bson:"lastLoginIP,omitempty"`
 	LastLoginDate    time.Time `json:"lastLoginDate,omitempty" bson:"lastLoginDate,omitempty"`
 
-	LoginAttempts     int       `json:"loginAttempts,omitempty" bson:"loginAttempts,omitempty"`
-	LastLoginFailDate time.Time `json:"lastLoginFailDate,omitempty" bson:"lastLoginFailDate,omitempty"`
-
 	ShowRecentMatchedTags    *bool     `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
 	DailyNotification        *bool     `json:"dailyNotification,omitempty" bson:"dailyNotification,omitempty"`
 	LastNotificationSentDate time.Time `json:"lastNotificationSentDate,omitempty" bson:"lastNotificationSentDate,omitempty"`

@@ -6,8 +6,6 @@ port: 8080
 reset_password_timeout: 60 # 1 minute, should be at least 60 minutes in production
 page_size: 10
 tags_limit: 10
-login_attempts_limit: 3 # number of attempts before applying login_attempts_timeout
-login_attempts_timeout: 60 # 1 minute, should be at least 15 minutes in production
 email_from: MCCS localhost dev
 daily_email_schedule: "* * 1 * * *"
 balance_check_schedule: "* * 1 * * *"
@@ -15,9 +13,13 @@ concurrency_num: 3
 receive_trade_contact_emails: true
 receive_signup_notifications: true
 
+login_attempts:
+  limit: 3     # number of attempts before applying login_attempts_timeout
+  timeout: 60  # 1 minute, should be at least 15 minutes in production
+
 rate_limiting:
-  duration: 1 # minute
   limit: 60 # number of requests within the duration; increase for automated testing scripts
+  duration: 1 # minute
 
 validate:
   email:

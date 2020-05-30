@@ -237,26 +237,6 @@ func (u *user) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types
 	return new, nil
 }
 
-func (u *user) UpdateLoginAttempts(email string, attempts int, lockUser bool) error {
-	filter := bson.M{"email": email, "deletedAt": bson.M{"$exists": false}}
-	set := bson.M{
-		"loginAttempts": attempts,
-	}
-	if lockUser {
-		set["lastLoginFailDate"] = time.Now()
-	}
-	update := bson.M{"$set": set}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // PATCH /admin/users/{userID}
 
 func (u *user) AdminFindOneAndUpdate(req *types.AdminUpdateUserReq) (*types.User, error) {

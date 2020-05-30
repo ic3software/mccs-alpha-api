@@ -41,26 +41,6 @@ func (u *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 	return &user, nil
 }
 
-func (u *adminUser) UpdateLoginAttempts(email string, attempts int, lockUser bool) error {
-	filter := bson.M{"email": email}
-	set := bson.M{
-		"loginAttempts": attempts,
-	}
-	if lockUser {
-		set["lastLoginFailDate"] = time.Now()
-	}
-	update := bson.M{"$set": set}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (u *adminUser) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types.LoginInfo, error) {
 	old := &types.LoginInfo{}
 	filter := bson.M{"_id": id}
