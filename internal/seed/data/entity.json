@@ -33,7 +33,9 @@
         "postalCode": "UK1 2ENG",
         "country": "England",
         "status": "tradingAccepted",
-        "createdAt": "2020-02-16T08:40:10.249Z"
+        "createdAt": "2020-02-16T08:40:10.249Z",
+        "receiveDailyNotificationEmail": true,
+        "showRecentMatchedTags": true
     },
     {
         "name": "Joe's Woodworking",
@@ -73,7 +75,9 @@
         "postalCode": "UK1 2ENG",
         "country": "England",
         "status": "tradingAccepted",
-        "createdAt": "2020-02-16T08:35:55.758Z"
+        "createdAt": "2020-02-16T08:35:55.758Z",
+        "receiveDailyNotificationEmail": true,
+        "showRecentMatchedTags": true
     },
     {
         "name": "Farmer Freddy's Veg",
@@ -117,7 +121,9 @@
         "postalCode": "UK1 2ENG",
         "country": "England",
         "status": "tradingAccepted",
-        "createdAt": "2020-02-20T06:45:55.849Z"
+        "createdAt": "2020-02-20T06:45:55.849Z",
+        "receiveDailyNotificationEmail": true,
+        "showRecentMatchedTags": true
     },
     {
         "name": "Betty's Baked Goods",
@@ -161,7 +167,9 @@
         "postalCode": "UK1 2ENG",
         "country": "England",
         "status": "tradingAccepted",
-        "createdAt": "2020-02-24T09:45:52.849Z"
+        "createdAt": "2020-02-24T09:45:52.849Z",
+        "receiveDailyNotificationEmail": true,
+        "showRecentMatchedTags": true
     },
     {
         "name": "Herbie's Hipster Brews",
@@ -206,42 +214,56 @@
         "postalCode": "UK1 2ENG",
         "country": "England",
         "status": "tradingAccepted",
-        "createdAt": "2020-02-27T17:12:30.849Z"
+        "createdAt": "2020-02-27T17:12:30.849Z",
+        "receiveDailyNotificationEmail": true,
+        "showRecentMatchedTags": true
     },
     {
         "name": "AA",
         "email": "api-test-user06@ic3.dev",
         "status": "rejected",
-        "createdAt": "2020-02-28T17:12:30.849Z"
+        "createdAt": "2020-02-28T17:12:30.849Z",
+        "receiveDailyNotificationEmail": false,
+        "showRecentMatchedTags": false
     },
     {
         "name": "DD",
         "email": "api-test-user07@ic3.dev",
         "status": "pending",
-        "createdAt": "2020-02-29T17:12:30.849Z"
+        "createdAt": "2020-02-29T17:12:30.849Z",
+        "receiveDailyNotificationEmail": false,
+        "showRecentMatchedTags": false
     },
     {
         "name": "EE",
         "email": "api-test-user08@ic3.dev",
         "status": "accepted",
-        "createdAt": "2020-03-01T17:12:30.849Z"
+        "createdAt": "2020-03-01T17:12:30.849Z",
+        "receiveDailyNotificationEmail": false,
+        "showRecentMatchedTags": false
     },
     {
         "name": "GG",
         "email": "api-test-user09@ic3.dev",
         "status": "tradingRejected",
-        "createdAt": "2020-03-02T17:12:30.849Z"
+        "createdAt": "2020-03-02T17:12:30.849Z",
+        "receiveDailyNotificationEmail": false,
+        "showRecentMatchedTags": false
     },
     {
         "name": "II",
         "email": "api-test-user10@ic3.dev",
         "status": "tradingPending",
-        "createdAt": "2020-03-03T07:12:30.849Z"
+        "createdAt": "2020-03-03T07:12:30.849Z",
+        "receiveDailyNotificationEmail": false,
+        "showRecentMatchedTags": false
     },
     {
         "name": "JJ",
         "email": "api-test-user11@ic3.dev",
         "status": "accepted",
-        "createdAt": "2020-03-03T07:13:30.849Z"
+        "createdAt": "2020-03-03T07:13:30.849Z",
+        "receiveDailyNotificationEmail": false,
+        "showRecentMatchedTags": false
     }
 ]
