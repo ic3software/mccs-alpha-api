@@ -17,23 +17,23 @@ type Entity struct {
 
 	Users []primitive.ObjectID `json:"users,omitempty" bson:"users,omitempty"`
 
-	EntityName         string      `json:"entityName,omitempty" bson:"entityName,omitempty"`
-	EntityPhone        string      `json:"entityPhone,omitempty" bson:"entityPhone,omitempty"`
-	Email              string      `json:"email,omitempty" bson:"email,omitempty"`
-	IncType            string      `json:"incType,omitempty" bson:"incType,omitempty"`
-	CompanyNumber      string      `json:"companyNumber,omitempty" bson:"companyNumber,omitempty"`
-	Website            string      `json:"website,omitempty" bson:"website,omitempty"`
-	Turnover           *int        `json:"turnover,omitempty" bson:"turnover,omitempty"`
-	Offers             []*TagField `json:"offers,omitempty" bson:"offers,omitempty"`
-	Wants              []*TagField `json:"wants,omitempty" bson:"wants,omitempty"`
-	Description        string      `json:"description,omitempty" bson:"description,omitempty"`
-	LocationAddress    string      `json:"locationAddress,omitempty" bson:"locationAddress,omitempty"`
-	LocationCity       string      `json:"locationCity,omitempty" bson:"locationCity,omitempty"`
-	LocationRegion     string      `json:"locationRegion,omitempty" bson:"locationRegion,omitempty"`
-	LocationPostalCode string      `json:"locationPostalCode,omitempty" bson:"locationPostalCode,omitempty"`
-	LocationCountry    string      `json:"locationCountry,omitempty" bson:"locationCountry,omitempty"`
-	Status             string      `json:"status,omitempty" bson:"status,omitempty"`
-	Categories         []string    `json:"categories,omitempty" bson:"categories,omitempty"`
+	Name             string      `json:"name,omitempty" bson:"name,omitempty"`
+	Telephone        string      `json:"telephone,omitempty" bson:"telephone,omitempty"`
+	Email            string      `json:"email,omitempty" bson:"email,omitempty"`
+	IncType          string      `json:"incType,omitempty" bson:"incType,omitempty"`
+	CompanyNumber    string      `json:"companyNumber,omitempty" bson:"companyNumber,omitempty"`
+	Website          string      `json:"website,omitempty" bson:"website,omitempty"`
+	DeclaredTurnover *int        `json:"declaredTurnover,omitempty" bson:"declaredTurnover,omitempty"`
+	Offers           []*TagField `json:"offers,omitempty" bson:"offers,omitempty"`
+	Wants            []*TagField `json:"wants,omitempty" bson:"wants,omitempty"`
+	Description      string      `json:"description,omitempty" bson:"description,omitempty"`
+	Address          string      `json:"address,omitempty" bson:"address,omitempty"`
+	City             string      `json:"city,omitempty" bson:"city,omitempty"`
+	Region           string      `json:"region,omitempty" bson:"region,omitempty"`
+	PostalCode       string      `json:"postalCode,omitempty" bson:"postalCode,omitempty"`
+	Country          string      `json:"country,omitempty" bson:"country,omitempty"`
+	Status           string      `json:"status,omitempty" bson:"status,omitempty"`
+	Categories       []string    `json:"categories,omitempty" bson:"categories,omitempty"`
 	// Timestamp when trading status applied
 	MemberStartedAt time.Time `json:"memberStartedAt,omitempty" bson:"memberStartedAt,omitempty"`
 
@@ -51,10 +51,10 @@ func (entity *Entity) Validate() []error {
 		errs = append(errs, errors.New("Please specify a valid status."))
 	}
 
-	if len(entity.EntityName) > 100 {
+	if len(entity.Name) > 100 {
 		errs = append(errs, errors.New("Entity name length cannot exceed 100 characters."))
 	}
-	if len(entity.EntityPhone) > 25 {
+	if len(entity.Telephone) > 25 {
 		errs = append(errs, errors.New("Telephone length cannot exceed 25 characters."))
 	}
 	if len(entity.IncType) > 25 {
@@ -66,25 +66,25 @@ func (entity *Entity) Validate() []error {
 	if len(entity.Website) > 100 {
 		errs = append(errs, errors.New("Website URL length cannot exceed 100 characters."))
 	}
-	if entity.Turnover != nil && *entity.Turnover < 0 {
+	if entity.DeclaredTurnover != nil && *entity.DeclaredTurnover < 0 {
 		errs = append(errs, errors.New("Turnover should be a positive number."))
 	}
 	if len(entity.Description) > 500 {
 		errs = append(errs, errors.New("Description length cannot exceed 500 characters."))
 	}
-	if len(entity.LocationAddress) > 255 {
+	if len(entity.Address) > 255 {
 		errs = append(errs, errors.New("Address length cannot exceed 255 characters."))
 	}
-	if len(entity.LocationCity) > 10 {
+	if len(entity.City) > 10 {
 		errs = append(errs, errors.New("City length cannot exceed 50 characters."))
 	}
-	if len(entity.LocationRegion) > 50 {
+	if len(entity.Region) > 50 {
 		errs = append(errs, errors.New("Region length cannot exceed 50 characters."))
 	}
-	if len(entity.LocationPostalCode) > 10 {
+	if len(entity.PostalCode) > 10 {
 		errs = append(errs, errors.New("Postal code length cannot exceed 10 characters."))
 	}
-	if len(entity.LocationCountry) > 10 {
+	if len(entity.Country) > 10 {
 		errs = append(errs, errors.New("Country length cannot exceed 50 characters."))
 	}
 	return errs

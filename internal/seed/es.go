@@ -19,16 +19,16 @@ func (_ *elasticSearch) CreateEntity(
 	balance := 0.0
 	record := types.EntityESRecord{
 		ID:         entity.ID.Hex(),
-		Name:       entity.EntityName,
+		Name:       entity.Name,
 		Email:      entity.Email,
 		Offers:     entity.Offers,
 		Wants:      entity.Wants,
 		Status:     entity.Status,
 		Categories: entity.Categories,
 		// Address
-		LocationCity:    entity.LocationCity,
-		LocationRegion:  entity.LocationRegion,
-		LocationCountry: entity.LocationCountry,
+		City:    entity.City,
+		Region:  entity.Region,
+		Country: entity.Country,
 		// Account
 		AccountNumber: accountNumber,
 		Balance:       &balance,

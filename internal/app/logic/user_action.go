@@ -24,7 +24,7 @@ func (u *userAction) Signup(user *types.User, entity *types.Entity) {
 		Email:  user.Email,
 		Action: "account created",
 		// [EntityName] - [firstName] [lastName] - [email]
-		Detail:   entity.EntityName + " - " + user.FirstName + " " + user.LastName + " - " + user.Email,
+		Detail:   entity.Name + " - " + user.FirstName + " " + user.LastName + " - " + user.Email,
 		Category: "user",
 	}
 	u.create(ua)
@@ -387,7 +387,7 @@ func (u *userAction) AdminDeleteEntity(userID string, deleted *types.Entity) {
 		Email:  admin.Email,
 		Action: "admin deleted an entity",
 		//
-		Detail:   admin.Email + " - " + deleted.EntityName + " - " + deleted.Email,
+		Detail:   admin.Email + " - " + deleted.Name + " - " + deleted.Email,
 		Category: "admin",
 	}
 	u.create(ua)

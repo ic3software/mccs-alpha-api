@@ -71,19 +71,19 @@ func (req *SignupReq) validate() []error {
 		Telephone: req.UserPhone,
 	}
 	entity := Entity{
-		Email:              req.Email,
-		EntityName:         req.EntityName,
-		EntityPhone:        req.EntityPhone,
-		IncType:            req.IncType,
-		CompanyNumber:      req.CompanyNumber,
-		Website:            req.Website,
-		Turnover:           req.Turnover,
-		Description:        req.Description,
-		LocationCity:       req.LocationCity,
-		LocationCountry:    req.LocationCountry,
-		LocationAddress:    req.LocationAddress,
-		LocationRegion:     req.LocationRegion,
-		LocationPostalCode: req.LocationPostalCode,
+		Email:            req.Email,
+		Name:             req.EntityName,
+		Telephone:        req.EntityPhone,
+		IncType:          req.IncType,
+		CompanyNumber:    req.CompanyNumber,
+		Website:          req.Website,
+		DeclaredTurnover: req.Turnover,
+		Description:      req.Description,
+		City:             req.LocationCity,
+		Country:          req.LocationCountry,
+		Address:          req.LocationAddress,
+		Region:           req.LocationRegion,
+		PostalCode:       req.LocationPostalCode,
 	}
 
 	errs = append(errs, user.Validate()...)
@@ -286,19 +286,19 @@ func (req *UpdateUserEntityJSON) validate() []error {
 	}
 
 	entity := Entity{
-		Email:              req.Email,
-		EntityName:         req.EntityName,
-		EntityPhone:        req.EntityPhone,
-		IncType:            req.IncType,
-		CompanyNumber:      req.CompanyNumber,
-		Website:            req.Website,
-		Turnover:           req.Turnover,
-		Description:        req.Description,
-		LocationCity:       req.LocationCity,
-		LocationCountry:    req.LocationCountry,
-		LocationAddress:    req.LocationAddress,
-		LocationRegion:     req.LocationRegion,
-		LocationPostalCode: req.LocationPostalCode,
+		Email:            req.Email,
+		Name:             req.EntityName,
+		Telephone:        req.EntityPhone,
+		IncType:          req.IncType,
+		CompanyNumber:    req.CompanyNumber,
+		Website:          req.Website,
+		DeclaredTurnover: req.Turnover,
+		Description:      req.Description,
+		City:             req.LocationCity,
+		Country:          req.LocationCountry,
+		Address:          req.LocationAddress,
+		Region:           req.LocationRegion,
+		PostalCode:       req.LocationPostalCode,
 	}
 	errs = append(errs, entity.Validate()...)
 	if req.Offers != nil {
@@ -439,10 +439,10 @@ func NewTransferReq(userReq *TransferUserReq, initiatorEntity *Entity, receiverE
 		Description:            userReq.Description,
 		InitiatorAccountNumber: initiatorEntity.AccountNumber,
 		InitiatorEmail:         initiatorEntity.Email,
-		InitiatorEntityName:    initiatorEntity.EntityName,
+		InitiatorEntityName:    initiatorEntity.Name,
 		ReceiverAccountNumber:  receiverEntity.AccountNumber,
 		ReceiverEmail:          receiverEntity.Email,
-		ReceiverEntityName:     receiverEntity.EntityName,
+		ReceiverEntityName:     receiverEntity.Name,
 		InitiatorEntity:        initiatorEntity,
 		ReceiverEntity:         receiverEntity,
 	}
@@ -450,24 +450,24 @@ func NewTransferReq(userReq *TransferUserReq, initiatorEntity *Entity, receiverE
 	if req.TransferDirection == constant.TransferDirection.Out {
 		req.FromAccountNumber = initiatorEntity.AccountNumber
 		req.FromEmail = initiatorEntity.Email
-		req.FromEntityName = initiatorEntity.EntityName
+		req.FromEntityName = initiatorEntity.Name
 		req.FromStatus = initiatorEntity.Status
 
 		req.ToAccountNumber = receiverEntity.AccountNumber
 		req.ToEmail = receiverEntity.Email
-		req.ToEntityName = receiverEntity.EntityName
+		req.ToEntityName = receiverEntity.Name
 		req.ToStatus = receiverEntity.Status
 	}
 
 	if req.TransferDirection == constant.TransferDirection.In {
 		req.FromAccountNumber = receiverEntity.AccountNumber
 		req.FromEmail = receiverEntity.Email
-		req.FromEntityName = receiverEntity.EntityName
+		req.FromEntityName = receiverEntity.Name
 		req.FromStatus = receiverEntity.Status
 
 		req.ToAccountNumber = initiatorEntity.AccountNumber
 		req.ToEmail = initiatorEntity.Email
-		req.ToEntityName = initiatorEntity.EntityName
+		req.ToEntityName = initiatorEntity.Name
 		req.ToStatus = initiatorEntity.Status
 	}
 
@@ -1355,21 +1355,21 @@ func (req *AdminUpdateEntityJSON) validate() []error {
 	}
 
 	entity := Entity{
-		Email:              req.Email,
-		EntityName:         req.EntityName,
-		EntityPhone:        req.EntityPhone,
-		IncType:            req.IncType,
-		CompanyNumber:      req.CompanyNumber,
-		Website:            req.Website,
-		Turnover:           req.Turnover,
-		Description:        req.Description,
-		LocationCity:       req.LocationCity,
-		LocationCountry:    req.LocationCountry,
-		LocationAddress:    req.LocationAddress,
-		LocationRegion:     req.LocationRegion,
-		LocationPostalCode: req.LocationPostalCode,
-		Categories:         categories,
-		Status:             req.Status,
+		Email:            req.Email,
+		Name:             req.EntityName,
+		Telephone:        req.EntityPhone,
+		IncType:          req.IncType,
+		CompanyNumber:    req.CompanyNumber,
+		Website:          req.Website,
+		DeclaredTurnover: req.Turnover,
+		Description:      req.Description,
+		City:             req.LocationCity,
+		Country:          req.LocationCountry,
+		Address:          req.LocationAddress,
+		Region:           req.LocationRegion,
+		PostalCode:       req.LocationPostalCode,
+		Categories:       categories,
+		Status:           req.Status,
 	}
 	errs = append(errs, entity.Validate()...)
 	if req.Offers != nil {

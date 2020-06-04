@@ -232,7 +232,7 @@ func (e *Email) sendDailyEmailList(entity *types.Entity, matchedTags *types.Matc
 	html := tpl.String()
 
 	d := emailData{
-		receiver:      entity.EntityName,
+		receiver:      entity.Name,
 		receiverEmail: entity.Email,
 		subject:       "Potential trades via the Open Credit Network",
 		text:          "Good news! There are new matches on The Open Credit Network for your offers and/or wants. Please login to your account to view them: https://trade.opencredit.network",

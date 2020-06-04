@@ -281,7 +281,7 @@ func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
-		err = email.SendContactEntity(ReceiverEntity.EntityName, ReceiverEntity.Email, SenderEntity.EntityName, SenderEntity.Email, req.Body)
+		err = email.SendContactEntity(ReceiverEntity.Name, ReceiverEntity.Email, SenderEntity.Name, SenderEntity.Email, req.Body)
 		if err != nil {
 			l.Logger.Error("[Error] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
@@ -298,8 +298,8 @@ func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *htt
 				Data data `json:"data"`
 			}
 			api.Respond(w, r, http.StatusOK, respond{Data: data{
-				SenderEntityName:   SenderEntity.EntityName,
-				ReceiverEntityName: ReceiverEntity.EntityName,
+				SenderEntityName:   SenderEntity.Name,
+				ReceiverEntityName: ReceiverEntity.Name,
 				Body:               req.Body,
 			}})
 			return

@@ -33,7 +33,7 @@ func (es *entity) Create(id primitive.ObjectID, entity *types.Entity) error {
 
 	body := types.EntityESRecord{
 		ID:     id.Hex(),
-		Name:   entity.EntityName,
+		Name:   entity.Name,
 		Email:  entity.Email,
 		Status: constant.Entity.Pending,
 		// Tags
@@ -41,9 +41,9 @@ func (es *entity) Create(id primitive.ObjectID, entity *types.Entity) error {
 		Wants:      entity.Wants,
 		Categories: entity.Categories,
 		// Address
-		LocationCity:    entity.LocationCity,
-		LocationRegion:  entity.LocationRegion,
-		LocationCountry: entity.LocationCountry,
+		City:    entity.City,
+		Region:  entity.Region,
+		Country: entity.Country,
 		// Account
 		AccountNumber: entity.AccountNumber,
 		Balance:       &balance,
@@ -68,9 +68,9 @@ func (es *entity) Update(req *types.UpdateUserEntityReq) error {
 		Name:  req.EntityName,
 		Email: req.Email,
 		// Address
-		LocationCity:    req.LocationCity,
-		LocationRegion:  req.LocationRegion,
-		LocationCountry: req.LocationCountry,
+		City:    req.LocationCity,
+		Region:  req.LocationRegion,
+		Country: req.LocationCountry,
 	}
 
 	script := es.getUpateTagScript(req.AddedOffers, req.AddedWants, req.RemovedOffers, req.RemovedWants)
@@ -104,9 +104,9 @@ func (es *entity) AdminUpdate(req *types.AdminUpdateEntityReq) error {
 		Email:  req.Email,
 		Status: req.Status,
 		// Address
-		LocationCity:    req.LocationCity,
-		LocationRegion:  req.LocationRegion,
-		LocationCountry: req.LocationCountry,
+		City:    req.LocationCity,
+		Region:  req.LocationRegion,
+		Country: req.LocationCountry,
 		// Account
 		MaxNegBal: req.MaxNegBal,
 		MaxPosBal: req.MaxPosBal,
