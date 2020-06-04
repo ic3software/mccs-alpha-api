@@ -79,7 +79,7 @@ func (entity *Entity) Validate() []error {
 	if len(entity.Address) > 255 {
 		errs = append(errs, errors.New("Address length cannot exceed 255 characters."))
 	}
-	if len(entity.City) > 10 {
+	if len(entity.City) > 50 {
 		errs = append(errs, errors.New("City length cannot exceed 50 characters."))
 	}
 	if len(entity.Region) > 50 {
