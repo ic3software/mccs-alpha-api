@@ -89,15 +89,15 @@ func restoreEntity() {
 		{
 			entityID := b.ID.Hex()
 			uRecord := types.EntityESRecord{
-				ID:              entityID,
-				Name:            b.EntityName,
-				Email:           b.Email,
-				Offers:          b.Offers,
-				Wants:           b.Wants,
-				LocationCity:    b.LocationCity,
-				LocationCountry: b.LocationCountry,
-				Status:          b.Status,
-				Categories:      b.Categories,
+				ID:         entityID,
+				Name:       b.Name,
+				Email:      b.Email,
+				Offers:     b.Offers,
+				Wants:      b.Wants,
+				City:       b.City,
+				Country:    b.Country,
+				Status:     b.Status,
+				Categories: b.Categories,
 			}
 			_, err = es.Client().Index().
 				Index("entities").
