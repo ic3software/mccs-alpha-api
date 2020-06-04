@@ -197,15 +197,7 @@ func (u *user) UpdatePassword(user *types.User) error {
 func (u *user) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types.LoginInfo, error) {
 	old := &types.LoginInfo{}
 	filter := bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
-	projection := bson.M{
-		"currentLoginIP":   1,
-		"currentLoginDate": 1,
-		"lastLoginIP":      1,
-		"lastLoginDate":    1,
-	}
-	findOneOptions := options.FindOne()
-	findOneOptions.SetProjection(projection)
-	err := u.c.FindOne(context.Background(), filter, findOneOptions).Decode(&old)
+	err := u.c.FindOne(context.Background(), filter).Decode(&old)
 	if err != nil {
 		return nil, err
 	}
@@ -364,22 +356,4 @@ func (u *user) removeAssociatedEntity(userIDs []primitive.ObjectID, entityID pri
 		return err
 	}
 	return nil
-}
-
-func (u *user) GetLoginInfo(id primitive.ObjectID) (*types.LoginInfo, error) {
-	loginInfo := &types.LoginInfo{}
-	filter := bson.M{"_id": id}
-	projection := bson.M{
-		"currentLoginIP":   1,
-		"currentLoginDate": 1,
-		"lastLoginIP":      1,
-		"lastLoginDate":    1,
-	}
-	findOneOptions := options.FindOne()
-	findOneOptions.SetProjection(projection)
-	err := u.c.FindOne(context.Background(), filter, findOneOptions).Decode(&loginInfo)
-	if err != nil {
-		return nil, err
-	}
-	return loginInfo, nil
 }
