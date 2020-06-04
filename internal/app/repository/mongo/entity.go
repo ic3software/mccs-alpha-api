@@ -244,6 +244,12 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	if req.Categories != nil {
 		update["categories"] = util.FormatTags(*req.Categories)
 	}
+	if req.DailyEmailMatchNotification != nil {
+		update["dailyNotification"] = *req.DailyEmailMatchNotification
+	}
+	if req.ShowTagsMatchedSinceLastLogin != nil {
+		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
+	}
 	if req.Users != nil {
 		update["users"] = util.ToObjectIDs(*req.Users)
 	}
@@ -614,6 +620,62 @@ func (e *entity) removeAssociatedUser(entityIDs []primitive.ObjectID, userID pri
 	}
 
 	_, err := e.c.BulkWrite(context.Background(), writes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// daily_email_schedule
+
+func (e *entity) FindByDailyNotification() ([]*types.Entity, error) {
+	filter := bson.M{
+		"receiveDailyNotificationEmail": true,
+		"deletedAt":                     bson.M{"$exists": false},
+	}
+	projection := bson.M{
+		"_id":                           1,
+		"entities":                      1,
+		"receiveDailyNotificationEmail": 1,
+		"lastNotificationSentDate":      1,
+	}
+	findOptions := options.Find()
+	findOptions.SetProjection(projection)
+	cur, err := e.c.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	var entities []*types.Entity
+	for cur.Next(context.TODO()) {
+		var elem types.Entity
+		err := cur.Decode(&elem)
+		if err != nil {
+			return nil, err
+		}
+		entities = append(entities, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	cur.Close(context.TODO())
+
+	return entities, nil
+}
+
+// daily_email_schedule
+
+func (e *entity) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
+	filter := bson.M{"_id": id}
+	update := bson.M{"$set": bson.M{
+		"lastNotificationSentDate": time.Now(),
+		"updatedAt":                time.Now(),
+	}}
+	_, err := e.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
 	if err != nil {
 		return err
 	}

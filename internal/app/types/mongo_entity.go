@@ -37,6 +37,10 @@ type Entity struct {
 	// Timestamp when trading status applied
 	MemberStartedAt time.Time `json:"memberStartedAt,omitempty" bson:"memberStartedAt,omitempty"`
 
+	ShowRecentMatchedTags         *bool     `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
+	ReceiveDailyNotificationEmail *bool     `json:"receiveDailyNotificationEmail,omitempty" bson:"receiveDailyNotificationEmail,omitempty"`
+	LastNotificationSentDate      time.Time `json:"lastNotificationSentDate,omitempty" bson:"lastNotificationSentDate,omitempty"`
+
 	AccountNumber    string               `json:"accountNumber,omitempty" bson:"accountNumber,omitempty"`
 	FavoriteEntities []primitive.ObjectID `json:"favoriteEntities,omitempty" bson:"favoriteEntities,omitempty"`
 }
