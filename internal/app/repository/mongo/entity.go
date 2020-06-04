@@ -114,10 +114,10 @@ func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity
 
 	update := bson.M{"updatedAt": time.Now()}
 	if req.EntityName != "" {
-		update["entityName"] = req.EntityName
+		update["name"] = req.EntityName
 	}
 	if req.EntityPhone != "" {
-		update["entityPhone"] = req.EntityPhone
+		update["telephone"] = req.EntityPhone
 	}
 	if req.Email != "" {
 		update["email"] = req.Email
@@ -135,22 +135,22 @@ func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity
 		update["description"] = req.Description
 	}
 	if req.Turnover != nil {
-		update["turnover"] = *req.Turnover
+		update["declaredTurnover"] = *req.Turnover
 	}
 	if req.LocationAddress != "" {
-		update["locationAddress"] = req.LocationAddress
+		update["address"] = req.LocationAddress
 	}
 	if req.LocationCity != "" {
-		update["locationCity"] = req.LocationCity
+		update["city"] = req.LocationCity
 	}
 	if req.LocationRegion != "" {
-		update["locationRegion"] = req.LocationRegion
+		update["region"] = req.LocationRegion
 	}
 	if req.LocationCountry != "" {
-		update["locationCountry"] = req.LocationCountry
+		update["country"] = req.LocationCountry
 	}
 	if req.LocationPostalCode != "" {
-		update["locationPostalCode"] = req.LocationPostalCode
+		update["postalCode"] = req.LocationPostalCode
 	}
 	updates = append(updates, bson.M{"$set": update})
 
@@ -203,10 +203,10 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 
 	update := bson.M{"updatedAt": time.Now()}
 	if req.EntityName != "" {
-		update["entityName"] = req.EntityName
+		update["name"] = req.EntityName
 	}
 	if req.EntityPhone != "" {
-		update["entityPhone"] = req.EntityPhone
+		update["telephone"] = req.EntityPhone
 	}
 	if req.Email != "" {
 		update["email"] = req.Email
@@ -224,22 +224,22 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 		update["description"] = req.Description
 	}
 	if req.Turnover != nil {
-		update["turnover"] = *req.Turnover
+		update["declaredTurnover"] = *req.Turnover
 	}
 	if req.LocationAddress != "" {
-		update["locationAddress"] = req.LocationAddress
+		update["address"] = req.LocationAddress
 	}
 	if req.LocationCity != "" {
-		update["locationCity"] = req.LocationCity
+		update["city"] = req.LocationCity
 	}
 	if req.LocationRegion != "" {
-		update["locationRegion"] = req.LocationRegion
+		update["region"] = req.LocationRegion
 	}
 	if req.LocationCountry != "" {
-		update["locationCountry"] = req.LocationCountry
+		update["country"] = req.LocationCountry
 	}
 	if req.LocationPostalCode != "" {
-		update["locationPostalCode"] = req.LocationPostalCode
+		update["postalCode"] = req.LocationPostalCode
 	}
 	if req.Categories != nil {
 		update["categories"] = util.FormatTags(*req.Categories)
@@ -255,7 +255,7 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	// If we don't do this then it will throw this error:
 	// (FailedToParse) '$set' is empty. You must specify a field like so: {$set: {<field>: ...}}
 	if req.EntityName == "" {
-		update["entityName"] = req.OriginEntity.EntityName
+		update["name"] = req.OriginEntity.Name
 	}
 	updates = append(updates, bson.M{"$set": update})
 

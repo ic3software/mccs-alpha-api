@@ -1,245 +1,245 @@
 [
     {
-        "entityName": "Pete's Painting",
+        "name": "Pete's Painting",
         "incType": "sole",
         "companyNumber": "none",
         "website": "https://petes-painting.null",
-        "entityPhone": "+442074848484",
-        "turnover": 150000,
+        "telephone": "+442074848484",
+        "declaredTurnover": 150000,
         "email": "api-test-user01@ic3.dev",
-        "categories": [ 
+        "categories": [
             "Painting"
         ],
-        "offers": [ 
+        "offers": [
             {
                 "name": "painting",
                 "createdAt": "2020-02-16T08:40:10.249Z"
             }
         ],
-        "wants": [ 
+        "wants": [
             {
                 "name": "vegetables",
                 "createdAt": "2020-02-16T08:40:10.249Z"
-            }, 
+            },
             {
                 "name": "wine",
                 "createdAt": "2020-02-16T08:40:10.249Z"
             }
         ],
         "description": "Indoor and outdoor painting specialist.",
-        "locationAddress": "456 Main",
-        "locationCity": "London",
-        "locationRegion": "Greater London",
-        "locationPostalCode": "UK1 2ENG",
-        "locationCountry": "England",
+        "address": "456 Main",
+        "city": "London",
+        "region": "Greater London",
+        "postalCode": "UK1 2ENG",
+        "country": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-16T08:40:10.249Z"
     },
     {
-        "entityName": "Joe's Woodworking",
+        "name": "Joe's Woodworking",
         "incType": "sole",
         "companyNumber": "none",
         "website": "https://joes-woodworking.null",
-        "entityPhone": "+442089292929",
-        "turnover": 50000,
+        "telephone": "+442089292929",
+        "declaredTurnover": 50000,
         "email": "api-test-user02@ic3.dev",
-        "categories": [ 
+        "categories": [
             "Carpentry"
         ],
-        "offers": [ 
+        "offers": [
             {
                 "name": "carpentry",
                 "createdAt": "2020-02-16T08:37:08.218Z"
-            }, 
+            },
             {
                 "name": "painting",
                 "createdAt": "2020-02-16T08:39:10.249Z"
             }
         ],
-        "wants": [ 
+        "wants": [
             {
                 "name": "pizza",
                 "createdAt": "2020-02-16T08:37:08.218Z"
-            }, 
+            },
             {
                 "name": "beer",
                 "createdAt": "2020-02-16T08:37:08.218Z"
             }
         ],
         "description": "High quality carpentry at a reasonable price.",
-        "locationAddress": "789 Main",
-        "locationCity": "London",
-        "locationRegion": "Greater London",
-        "locationPostalCode": "UK1 2ENG",
-        "locationCountry": "England",
+        "address": "789 Main",
+        "city": "London",
+        "region": "Greater London",
+        "postalCode": "UK1 2ENG",
+        "country": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-16T08:35:55.758Z"
     },
     {
-        "entityName": "Farmer Freddy's Veg",
+        "name": "Farmer Freddy's Veg",
         "incType": "sole",
         "companyNumber": "none",
         "website": "https://farmer-freddy.null",
-        "entityPhone": "+4420832132132",
-        "turnover": 10000,
+        "telephone": "+4420832132132",
+        "declaredTurnover": 10000,
         "email": "api-test-user03@ic3.dev",
-        "categories": [ 
+        "categories": [
             "Organic Produce"
         ],
-        "offers": [ 
+        "offers": [
             {
                 "name": "organic-vegetables",
                 "createdAt": "2020-02-20T06:45:55.849Z"
-            }, 
+            },
             {
                 "name": "organic-fruits",
                 "createdAt": "2020-02-20T06:45:55.849Z"
-            }, 
+            },
             {
                 "name": "flour",
                 "createdAt": "2020-02-20T06:45:55.849Z"
             }
         ],
-        "wants": [ 
+        "wants": [
             {
                 "name": "carpentry",
                 "createdAt": "2020-02-20T06:45:55.849Z"
-            }, 
+            },
             {
                 "name": "beer",
                 "createdAt": "2020-02-20T06:45:55.849Z"
             }
         ],
         "description": "Only the freshest organic produce of the highest quality.",
-        "locationAddress": "123 Main",
-        "locationCity": "London",
-        "locationRegion": "Greater London",
-        "locationPostalCode": "UK1 2ENG",
-        "locationCountry": "England",
+        "address": "123 Main",
+        "city": "London",
+        "region": "Greater London",
+        "postalCode": "UK1 2ENG",
+        "country": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-20T06:45:55.849Z"
     },
     {
-        "entityName": "Betty's Baked Goods",
+        "name": "Betty's Baked Goods",
         "incType": "sole",
         "companyNumber": "none",
         "website": "https://betty-bakes.null",
-        "entityPhone": "+442087070707",
-        "turnover": 32000,
+        "telephone": "+442087070707",
+        "declaredTurnover": 32000,
         "email": "api-test-user04@ic3.dev",
-        "categories": [ 
+        "categories": [
             "Bakery"
         ],
-        "offers": [ 
+        "offers": [
             {
                 "name": "baked-goods",
                 "createdAt": "2020-02-24T09:45:52.849Z"
-            }, 
+            },
             {
                 "name": "bread",
                 "createdAt": "2020-02-24T09:45:52.849Z"
-            }, 
+            },
             {
                 "name": "pasteries",
                 "createdAt": "2020-02-24T09:45:52.849Z"
             }
         ],
-        "wants": [ 
+        "wants": [
             {
                 "name": "organic-fruits",
                 "createdAt": "2020-02-24T09:45:52.849Z"
-            }, 
+            },
             {
                 "name": "flour",
                 "createdAt": "2020-02-24T09:45:52.849Z"
             }
         ],
         "description": "The tastiest baked goods in this solar system!",
-        "locationAddress": "575 Main",
-        "locationCity": "London",
-        "locationRegion": "Greater London",
-        "locationPostalCode": "UK1 2ENG",
-        "locationCountry": "England",
+        "address": "575 Main",
+        "city": "London",
+        "region": "Greater London",
+        "postalCode": "UK1 2ENG",
+        "country": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-24T09:45:52.849Z"
     },
     {
-        "entityName": "Herbie's Hipster Brews",
+        "name": "Herbie's Hipster Brews",
         "incType": "plc",
         "companyNumber": "999888777",
         "website": "https://herbie-brews.null",
-        "entityPhone": "+442012345678",
-        "turnover": 250000,
+        "telephone": "+442012345678",
+        "declaredTurnover": 250000,
         "email": "api-test-user05@ic3.dev",
-        "categories": [ 
+        "categories": [
             "Brewery",
             "Restaurant"
         ],
-        "offers": [ 
+        "offers": [
             {
                 "name": "craft-beers",
                 "createdAt": "2020-02-27T17:12:30.849Z"
-            }, 
+            },
             {
                 "name": "beer",
                 "createdAt": "2020-02-27T17:12:30.849Z"
-            }, 
+            },
             {
                 "name": "pizza",
                 "createdAt": "2020-02-27T17:12:30.849Z"
             }
         ],
-        "wants": [ 
+        "wants": [
             {
                 "name": "organic-flour",
                 "createdAt": "2020-02-27T17:12:30.849Z"
-            }, 
+            },
             {
                 "name": "organic-vegetables",
                 "createdAt": "2020-02-27T17:12:30.849Z"
             }
         ],
         "description": "Quality brews, tasty pizza...what more could you want?",
-        "locationAddress": "575 Main",
-        "locationCity": "London",
-        "locationRegion": "Greater London",
-        "locationPostalCode": "UK1 2ENG",
-        "locationCountry": "England",
+        "address": "575 Main",
+        "city": "London",
+        "region": "Greater London",
+        "postalCode": "UK1 2ENG",
+        "country": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-27T17:12:30.849Z"
     },
     {
-        "entityName": "AA",
+        "name": "AA",
         "email": "api-test-user06@ic3.dev",
         "status": "rejected",
         "createdAt": "2020-02-28T17:12:30.849Z"
     },
     {
-        "entityName": "DD",
+        "name": "DD",
         "email": "api-test-user07@ic3.dev",
         "status": "pending",
         "createdAt": "2020-02-29T17:12:30.849Z"
     },
     {
-        "entityName": "EE",
+        "name": "EE",
         "email": "api-test-user08@ic3.dev",
         "status": "accepted",
         "createdAt": "2020-03-01T17:12:30.849Z"
     },
     {
-        "entityName": "GG",
+        "name": "GG",
         "email": "api-test-user09@ic3.dev",
         "status": "tradingRejected",
         "createdAt": "2020-03-02T17:12:30.849Z"
     },
     {
-        "entityName": "II",
+        "name": "II",
         "email": "api-test-user10@ic3.dev",
         "status": "tradingPending",
         "createdAt": "2020-03-03T07:12:30.849Z"
     },
     {
-        "entityName": "JJ",
+        "name": "JJ",
         "email": "api-test-user11@ic3.dev",
         "status": "accepted",
         "createdAt": "2020-03-03T07:13:30.849Z"

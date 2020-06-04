@@ -11,9 +11,9 @@ type EntityESRecord struct {
 	Wants      []*TagField `json:"wants,omitempty"`
 	Categories []string    `json:"categories,omitempty"`
 	// Address
-	LocationCity    string `json:"locationCity,omitempty"`
-	LocationRegion  string `json:"locationRegion,omitempty"`
-	LocationCountry string `json:"locationCountry,omitempty"`
+	City    string `json:"city,omitempty"`
+	Region  string `json:"region,omitempty"`
+	Country string `json:"country,omitempty"`
 	// Account
 	AccountNumber string   `json:"accountNumber,omitempty"`
 	Balance       *float64 `json:"balance,omitempty"`

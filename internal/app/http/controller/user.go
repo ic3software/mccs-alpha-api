@@ -171,21 +171,21 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		}
 
 		createdEntity, err := logic.Entity.Create(&types.Entity{
-			EntityName:         req.EntityName,
-			Email:              req.Email,
-			IncType:            req.IncType,
-			CompanyNumber:      req.CompanyNumber,
-			EntityPhone:        req.EntityPhone,
-			Website:            req.Website,
-			Turnover:           req.Turnover,
-			Description:        req.Description,
-			LocationAddress:    req.LocationAddress,
-			LocationCity:       req.LocationCity,
-			LocationRegion:     req.LocationRegion,
-			LocationPostalCode: req.LocationPostalCode,
-			LocationCountry:    req.LocationCountry,
-			Offers:             types.ToTagFields(req.Offers),
-			Wants:              types.ToTagFields(req.Wants),
+			Name:             req.EntityName,
+			Email:            req.Email,
+			IncType:          req.IncType,
+			CompanyNumber:    req.CompanyNumber,
+			Telephone:        req.EntityPhone,
+			Website:          req.Website,
+			DeclaredTurnover: req.Turnover,
+			Description:      req.Description,
+			Address:          req.LocationAddress,
+			City:             req.LocationCity,
+			Region:           req.LocationRegion,
+			PostalCode:       req.LocationPostalCode,
+			Country:          req.LocationCountry,
+			Offers:           types.ToTagFields(req.Offers),
+			Wants:            types.ToTagFields(req.Wants),
 		})
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))

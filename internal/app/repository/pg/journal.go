@@ -208,9 +208,9 @@ func (t *journal) Create(req *types.AdminTransferReq) (*types.Journal, error) {
 	tx := db.Begin()
 	journal, err := t.propose(tx, &types.TransferReq{
 		FromAccountNumber: req.PayerEntity.AccountNumber,
-		FromEntityName:    req.PayerEntity.EntityName,
+		FromEntityName:    req.PayerEntity.Name,
 		ToAccountNumber:   req.PayeeEntity.AccountNumber,
-		ToEntityName:      req.PayeeEntity.EntityName,
+		ToEntityName:      req.PayeeEntity.Name,
 		Amount:            req.Amount,
 		Description:       req.Description,
 		TransferType:      constant.TransferType.AdminTransfer,
