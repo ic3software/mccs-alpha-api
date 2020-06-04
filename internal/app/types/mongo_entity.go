@@ -88,7 +88,7 @@ func (entity *Entity) Validate() []error {
 	if len(entity.PostalCode) > 10 {
 		errs = append(errs, errors.New("Postal code length cannot exceed 10 characters."))
 	}
-	if len(entity.Country) > 10 {
+	if len(entity.Country) > 50 {
 		errs = append(errs, errors.New("Country length cannot exceed 50 characters."))
 	}
 	return errs
