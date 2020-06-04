@@ -271,13 +271,13 @@ func seachbyNameEmailAndAddress(q *elastic.BoolQuery, req *byNameAndAddress) {
 		q.Must(newWildcardQuery("email", req.Email))
 	}
 	if req.City != "" {
-		q.Must(newFuzzyWildcardQuery("locationCity", req.City))
+		q.Must(newFuzzyWildcardQuery("city", req.City))
 	}
 	if req.Region != "" {
-		q.Must(newFuzzyWildcardQuery("locationRegion", req.Region))
+		q.Must(newFuzzyWildcardQuery("region", req.Region))
 	}
 	if req.Country != "" {
-		q.Must(elastic.NewMatchQuery("locationCountry", req.Country))
+		q.Must(elastic.NewMatchQuery("country", req.Country))
 	}
 }
 
