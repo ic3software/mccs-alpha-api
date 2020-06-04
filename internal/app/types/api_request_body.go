@@ -34,27 +34,28 @@ func NewSignupReq(r *http.Request) (*SignupReq, []error) {
 }
 
 type SignupReq struct {
-	Email                         string   `json:"email"`
-	Password                      string   `json:"password"`
-	FirstName                     string   `json:"firstName"`
-	LastName                      string   `json:"lastName"`
-	UserPhone                     string   `json:"userPhone"`
-	EntityName                    string   `json:"entityName"`
-	IncType                       string   `json:"incType"`
-	CompanyNumber                 string   `json:"companyNumber"`
-	EntityPhone                   string   `json:"entityPhone"`
-	Website                       string   `json:"website"`
-	Turnover                      *int     `json:"turnover"`
-	Description                   string   `json:"description"`
-	LocationAddress               string   `json:"locationAddress"`
-	LocationCity                  string   `json:"locationCity"`
-	LocationRegion                string   `json:"locationRegion"`
-	LocationPostalCode            string   `json:"locationPostalCode"`
-	LocationCountry               string   `json:"locationCountry"`
-	Offers                        []string `json:"offers"`
-	Wants                         []string `json:"wants"`
-	ShowTagsMatchedSinceLastLogin *bool    `json:"showTagsMatchedSinceLastLogin"`
-	DailyEmailMatchNotification   *bool    `json:"dailyEmailMatchNotification"`
+	Email              string   `json:"email"`
+	Password           string   `json:"password"`
+	FirstName          string   `json:"firstName"`
+	LastName           string   `json:"lastName"`
+	UserPhone          string   `json:"userPhone"`
+	EntityName         string   `json:"entityName"`
+	IncType            string   `json:"incType"`
+	CompanyNumber      string   `json:"companyNumber"`
+	EntityPhone        string   `json:"entityPhone"`
+	Website            string   `json:"website"`
+	Turnover           *int     `json:"turnover"`
+	Description        string   `json:"description"`
+	LocationAddress    string   `json:"locationAddress"`
+	LocationCity       string   `json:"locationCity"`
+	LocationRegion     string   `json:"locationRegion"`
+	LocationPostalCode string   `json:"locationPostalCode"`
+	LocationCountry    string   `json:"locationCountry"`
+	Offers             []string `json:"offers"`
+	Wants              []string `json:"wants"`
+	// flags
+	ShowTagsMatchedSinceLastLogin *bool `json:"showTagsMatchedSinceLastLogin"`
+	DailyEmailMatchNotification   *bool `json:"dailyEmailMatchNotification"`
 }
 
 func (req *SignupReq) validate() []error {
@@ -154,13 +155,11 @@ func NewUpdateUserReq(r *http.Request) (*UpdateUserReq, []error) {
 }
 
 type UpdateUserReq struct {
-	ID                            string `json:"id"`
-	Email                         string `json:"email"`
-	FirstName                     string `json:"firstName"`
-	LastName                      string `json:"lastName"`
-	UserPhone                     string `json:"userPhone"`
-	DailyEmailMatchNotification   *bool  `json:"dailyEmailMatchNotification"`
-	ShowTagsMatchedSinceLastLogin *bool  `json:"showTagsMatchedSinceLastLogin"`
+	ID        string `json:"id"`
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	UserPhone string `json:"userPhone"`
 }
 
 func (req *UpdateUserReq) validate() []error {
@@ -223,6 +222,9 @@ func NewUpdateUserEntityReq(j UpdateUserEntityJSON, originEntity *Entity) (*Upda
 		LocationRegion:     j.LocationRegion,
 		LocationPostalCode: j.LocationPostalCode,
 		LocationCountry:    j.LocationCountry,
+		// flags
+		ShowTagsMatchedSinceLastLogin: j.ShowTagsMatchedSinceLastLogin,
+		DailyEmailMatchNotification:   j.DailyEmailMatchNotification,
 	}
 
 	return &req, nil
@@ -250,6 +252,9 @@ type UpdateUserEntityReq struct {
 	Wants         *[]string
 	AddedWants    []string
 	RemovedWants  []string
+	// flags
+	ShowTagsMatchedSinceLastLogin *bool `json:"showTagsMatchedSinceLastLogin"`
+	DailyEmailMatchNotification   *bool `json:"dailyEmailMatchNotification"`
 }
 
 type UpdateUserEntityJSON struct {
@@ -269,6 +274,9 @@ type UpdateUserEntityJSON struct {
 	// Tags
 	Offers *[]string `json:"offers"`
 	Wants  *[]string `json:"wants"`
+	// flags
+	ShowTagsMatchedSinceLastLogin *bool `json:"showTagsMatchedSinceLastLogin"`
+	DailyEmailMatchNotification   *bool `json:"dailyEmailMatchNotification"`
 	// Not allow to change
 	ID     string `json:"id"`
 	Status string `json:"status"`
@@ -1302,18 +1310,16 @@ type AdminUpdateEntityReq struct {
 }
 
 type AdminUpdateEntityJSON struct {
-	Status                        string    `json:"status"`
-	EntityName                    string    `json:"entityName"`
-	Email                         string    `json:"email"`
-	EntityPhone                   string    `json:"entityPhone"`
-	IncType                       string    `json:"incType"`
-	CompanyNumber                 string    `json:"companyNumber"`
-	Website                       string    `json:"website"`
-	Turnover                      *int      `json:"turnover"`
-	Description                   string    `json:"description"`
-	Users                         *[]string `json:"users"`
-	DailyEmailMatchNotification   *bool     `json:"dailyEmailMatchNotification"`
-	ShowTagsMatchedSinceLastLogin *bool     `json:"showTagsMatchedSinceLastLogin"`
+	Status        string    `json:"status"`
+	EntityName    string    `json:"entityName"`
+	Email         string    `json:"email"`
+	EntityPhone   string    `json:"entityPhone"`
+	IncType       string    `json:"incType"`
+	CompanyNumber string    `json:"companyNumber"`
+	Website       string    `json:"website"`
+	Turnover      *int      `json:"turnover"`
+	Description   string    `json:"description"`
+	Users         *[]string `json:"users"`
 	// Tags
 	Offers     *[]string `json:"offers"`
 	Wants      *[]string `json:"wants"`
@@ -1324,6 +1330,9 @@ type AdminUpdateEntityJSON struct {
 	LocationRegion     string `json:"locationRegion"`
 	LocationPostalCode string `json:"locationPostalCode"`
 	LocationCountry    string `json:"locationCountry"`
+	// flags
+	DailyEmailMatchNotification   *bool `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin *bool `json:"showTagsMatchedSinceLastLogin"`
 	// Account
 	MaxPosBal *float64 `json:"maxPositiveBalance"`
 	MaxNegBal *float64 `json:"maxNegativeBalance"`

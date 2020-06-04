@@ -152,6 +152,12 @@ func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity
 	if req.LocationPostalCode != "" {
 		update["postalCode"] = req.LocationPostalCode
 	}
+	if req.DailyEmailMatchNotification != nil {
+		update["dailyNotification"] = *req.DailyEmailMatchNotification
+	}
+	if req.ShowTagsMatchedSinceLastLogin != nil {
+		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
+	}
 	updates = append(updates, bson.M{"$set": update})
 
 	push := bson.M{}
@@ -244,17 +250,17 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	if req.Categories != nil {
 		update["categories"] = util.FormatTags(*req.Categories)
 	}
-	if req.DailyEmailMatchNotification != nil {
-		update["dailyNotification"] = *req.DailyEmailMatchNotification
-	}
-	if req.ShowTagsMatchedSinceLastLogin != nil {
-		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
-	}
 	if req.Users != nil {
 		update["users"] = util.ToObjectIDs(*req.Users)
 	}
 	if req.Status != "" {
 		update["status"] = req.Status
+	}
+	if req.DailyEmailMatchNotification != nil {
+		update["dailyNotification"] = *req.DailyEmailMatchNotification
+	}
+	if req.ShowTagsMatchedSinceLastLogin != nil {
+		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
 	}
 	// TODO
 	// This is a trick to prevent setting nothing for the entity.
@@ -633,15 +639,7 @@ func (e *entity) FindByDailyNotification() ([]*types.Entity, error) {
 		"receiveDailyNotificationEmail": true,
 		"deletedAt":                     bson.M{"$exists": false},
 	}
-	projection := bson.M{
-		"_id":                           1,
-		"entities":                      1,
-		"receiveDailyNotificationEmail": 1,
-		"lastNotificationSentDate":      1,
-	}
-	findOptions := options.Find()
-	findOptions.SetProjection(projection)
-	cur, err := e.c.Find(context.TODO(), filter, findOptions)
+	cur, err := e.c.Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
