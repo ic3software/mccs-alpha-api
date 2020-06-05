@@ -6,7 +6,7 @@
         "website": "https://petes-painting.null",
         "telephone": "+442074848484",
         "declaredTurnover": 150000,
-        "email": "api-test-user01@ic3.dev",
+        "email": "api-test-user01-entity@ic3.dev",
         "categories": [
             "Painting"
         ],
@@ -44,7 +44,7 @@
         "website": "https://joes-woodworking.null",
         "telephone": "+442089292929",
         "declaredTurnover": 50000,
-        "email": "api-test-user02@ic3.dev",
+        "email": "api-test-user02-entity@ic3.dev",
         "categories": [
             "Carpentry"
         ],
@@ -86,7 +86,7 @@
         "website": "https://farmer-freddy.null",
         "telephone": "+4420832132132",
         "declaredTurnover": 10000,
-        "email": "api-test-user03@ic3.dev",
+        "email": "api-test-user03-entity@ic3.dev",
         "categories": [
             "Organic Produce"
         ],
@@ -132,7 +132,7 @@
         "website": "https://betty-bakes.null",
         "telephone": "+442087070707",
         "declaredTurnover": 32000,
-        "email": "api-test-user04@ic3.dev",
+        "email": "api-test-user04-entity@ic3.dev",
         "categories": [
             "Bakery"
         ],
@@ -178,7 +178,7 @@
         "website": "https://herbie-brews.null",
         "telephone": "+442012345678",
         "declaredTurnover": 250000,
-        "email": "api-test-user05@ic3.dev",
+        "email": "api-test-user05-entity@ic3.dev",
         "categories": [
             "Brewery",
             "Restaurant"
