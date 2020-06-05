@@ -153,7 +153,7 @@ func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity
 		update["postalCode"] = req.LocationPostalCode
 	}
 	if req.DailyEmailMatchNotification != nil {
-		update["dailyNotification"] = *req.DailyEmailMatchNotification
+		update["receiveDailyNotificationEmail"] = *req.DailyEmailMatchNotification
 	}
 	if req.ShowTagsMatchedSinceLastLogin != nil {
 		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
@@ -257,7 +257,7 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 		update["status"] = req.Status
 	}
 	if req.DailyEmailMatchNotification != nil {
-		update["dailyNotification"] = *req.DailyEmailMatchNotification
+		update["receiveDailyNotificationEmail"] = *req.DailyEmailMatchNotification
 	}
 	if req.ShowTagsMatchedSinceLastLogin != nil {
 		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin

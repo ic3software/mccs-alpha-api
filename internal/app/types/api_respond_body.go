@@ -54,6 +54,9 @@ func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
 		Status:             entity.Status,
 		Offers:             TagFieldToNames(entity.Offers),
 		Wants:              TagFieldToNames(entity.Wants),
+		// flags
+		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
+		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
 	}
 }
 
@@ -76,6 +79,9 @@ func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
 		Status:             entity.Status,
 		Offers:             TagFieldToNames(entity.Offers),
 		Wants:              TagFieldToNames(entity.Wants),
+		// flags
+		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
+		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
 	}
 }
 
@@ -98,6 +104,9 @@ type EntityRespond struct {
 	Status             string   `json:"status"`
 	Offers             []string `json:"offers"`
 	Wants              []string `json:"wants"`
+	// flags
+	DailyEmailMatchNotification   bool `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin bool `json:"showTagsMatchedSinceLastLogin"`
 }
 
 func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favoriteEntities []primitive.ObjectID) *SearchEntityRespond {
@@ -579,6 +588,9 @@ func NewAdminUpdateEntityRespond(users []*User, entity *Entity, balanceLimit *Ba
 		MaxNegativeBalance: balanceLimit.MaxNegBal,
 		Users:              adminUserResponds,
 		BalanceLimit:       balanceLimit,
+		// flags
+		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
+		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
 	}
 	return respond
 }
@@ -606,6 +618,9 @@ type AdminUpdateEntityRespond struct {
 	MaxPositiveBalance float64             `json:"maxPositiveBalance"`
 	MaxNegativeBalance float64             `json:"maxNegativeBalance"`
 	Users              []*AdminUserRespond `json:"users"`
+	// flags
+	DailyEmailMatchNotification   bool `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin bool `json:"showTagsMatchedSinceLastLogin"`
 	// To log user action.
 	BalanceLimit *BalanceLimit `json:"-"`
 }
