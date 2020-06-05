@@ -548,7 +548,7 @@ func (handler *entityHandler) newAdminUpdateEntityRespond(req *types.AdminUpdate
 
 func (handler *entityHandler) updateEntityMemberStartedAt(oldEntity *types.Entity, newStatus string) {
 	// Set timestamp when first trading status applied.
-	if oldEntity.MemberStartedAt.IsZero() && (oldEntity.Status == constant.Entity.Accepted) && (newStatus == constant.Trading.Accepted) {
+	if oldEntity.MemberStartedAt.IsZero() && (newStatus == constant.Trading.Accepted) {
 		logic.Entity.SetMemberStartedAt(oldEntity.ID)
 	}
 }
