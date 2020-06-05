@@ -37,6 +37,12 @@ type Entity struct {
 	// Timestamp when trading status applied
 	MemberStartedAt time.Time `json:"memberStartedAt,omitempty" bson:"memberStartedAt,omitempty"`
 
+	// flags
+	ShowRecentMatchedTags         *bool `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
+	ReceiveDailyNotificationEmail *bool `json:"receiveDailyNotificationEmail,omitempty" bson:"receiveDailyNotificationEmail,omitempty"`
+
+	LastNotificationSentDate time.Time `json:"lastNotificationSentDate,omitempty" bson:"lastNotificationSentDate,omitempty"`
+
 	AccountNumber    string               `json:"accountNumber,omitempty" bson:"accountNumber,omitempty"`
 	FavoriteEntities []primitive.ObjectID `json:"favoriteEntities,omitempty" bson:"favoriteEntities,omitempty"`
 }
@@ -75,7 +81,7 @@ func (entity *Entity) Validate() []error {
 	if len(entity.Address) > 255 {
 		errs = append(errs, errors.New("Address length cannot exceed 255 characters."))
 	}
-	if len(entity.City) > 10 {
+	if len(entity.City) > 50 {
 		errs = append(errs, errors.New("City length cannot exceed 50 characters."))
 	}
 	if len(entity.Region) > 50 {
@@ -84,7 +90,7 @@ func (entity *Entity) Validate() []error {
 	if len(entity.PostalCode) > 10 {
 		errs = append(errs, errors.New("Postal code length cannot exceed 10 characters."))
 	}
-	if len(entity.Country) > 10 {
+	if len(entity.Country) > 50 {
 		errs = append(errs, errors.New("Country length cannot exceed 50 characters."))
 	}
 	return errs

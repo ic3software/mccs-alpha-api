@@ -15,7 +15,7 @@ import (
 
 // Run performs the daily email notification.
 func Run() {
-	users, err := logic.User.FindByDailyNotification()
+	entities, err := logic.Entity.FindByDailyNotification()
 	if err != nil {
 		l.Logger.Error("dailyemail failed", zap.Error(err))
 		return
@@ -24,50 +24,38 @@ func Run() {
 	viper.SetDefault("concurrency_num", 1)
 	pool := NewPool(viper.GetInt("concurrency_num"))
 
-	for _, user := range users {
-		worker := createEmailWorker(user)
+	for _, entity := range entities {
+		worker := createEmailWorker(entity)
 		pool.Run(worker)
 	}
 
 	pool.Shutdown()
 }
 
-func createEmailWorker(u *types.User) func() {
+func createEmailWorker(entity *types.Entity) func() {
 	return func() {
-		if (len(u.Entities)) == 0 {
+		if !util.IsAcceptedStatus(entity.Status) {
 			return
 		}
 
-		for _, entityID := range u.Entities {
-			entity, err := getEntity(entityID)
-			if err != nil {
-				l.Logger.Error("dailyemail failed", zap.Error(err))
-				return
-			}
+		matchedTags, err := getMatchTags(entity, entity.LastNotificationSentDate)
+		if err != nil {
+			l.Logger.Error("dailyemail failed", zap.Error(err))
+			return
+		}
 
-			if !util.IsAcceptedStatus(entity.Status) {
-				return
-			}
+		if len(matchedTags.MatchedOffers) == 0 && len(matchedTags.MatchedWants) == 0 {
+			return
+		}
 
-			matchedTags, err := getMatchTags(entity, u.LastNotificationSentDate)
-			if err != nil {
-				l.Logger.Error("dailyemail failed", zap.Error(err))
-				return
-			}
+		err = email.SendDailyEmailList(entity, matchedTags, entity.LastNotificationSentDate)
+		if err != nil {
+			l.Logger.Error("dailyemail failed", zap.Error(err))
+		}
 
-			if len(matchedTags.MatchedOffers) == 0 && len(matchedTags.MatchedWants) == 0 {
-				return
-			}
-
-			err = email.SendDailyEmailList(entity, matchedTags, u.LastNotificationSentDate)
-			if err != nil {
-				l.Logger.Error("dailyemail failed", zap.Error(err))
-			}
-
-			err = logic.User.UpdateLastNotificationSentDate(u.ID)
-			if err != nil {
-				l.Logger.Error("dailyemail failed", zap.Error(err))
-			}
+		err = logic.Entity.UpdateLastNotificationSentDate(entity.ID)
+		if err != nil {
+			l.Logger.Error("dailyemail failed", zap.Error(err))
 		}
 	}
 }

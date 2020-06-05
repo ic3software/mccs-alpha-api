@@ -5,8 +5,7 @@
         "email": "api-test-user01@ic3.dev",
         "password": "password1!",
         "telephone": "+442083232323",
-        "createdAt": "2020-02-16T08:40:10.249Z",
-        "dailyNotification": true
+        "createdAt": "2020-02-16T08:40:10.249Z"
     },
     {
         "firstName": "Charlie",
@@ -14,8 +13,7 @@
         "email": "api-test-user02@ic3.dev",
         "password": "password1!",
         "telephone": "+442079191919",
-        "createdAt": "2020-02-16T08:35:55.849Z",
-        "dailyNotification": true
+        "createdAt": "2020-02-16T08:35:55.849Z"
     },
     {
         "firstName": "Fred",
@@ -23,8 +21,7 @@
         "email": "api-test-user03@ic3.dev",
         "password": "password1!",
         "telephone": "+4420812312312",
-        "createdAt": "2020-02-20T06:45:55.849Z",
-        "dailyNotification": true
+        "createdAt": "2020-02-20T06:45:55.849Z"
     },
     {
         "firstName": "Betty",
@@ -32,8 +29,7 @@
         "email": "api-test-user04@ic3.dev",
         "password": "password1!",
         "telephone": "+442086666888",
-        "createdAt": "2020-02-24T09:45:52.849Z",
-        "dailyNotification": true
+        "createdAt": "2020-02-24T09:45:52.849Z"
     },
     {
         "firstName": "Herbie",
@@ -41,55 +37,48 @@
         "email": "api-test-user05@ic3.dev",
         "password": "password1!",
         "telephone": "+442044442222",
-        "createdAt": "2020-02-27T17:12:30.849Z",
-        "dailyNotification": true
+        "createdAt": "2020-02-27T17:12:30.849Z"
     },
     {
         "firstName": "A",
         "lastName": "A",
         "email": "api-test-user06@ic3.dev",
         "password": "password1!",
-        "createdAt": "2020-02-28T17:12:30.849Z",
-        "dailyNotification": true
+        "createdAt": "2020-02-28T17:12:30.849Z"
     },
     {
         "firstName": "D",
         "lastName": "D",
         "email": "api-test-user07@ic3.dev",
         "password": "password1!",
-        "createdAt": "2020-02-29T17:12:30.849Z",
-        "dailyNotification": true
+        "createdAt": "2020-02-29T17:12:30.849Z"
     },
     {
         "firstName": "E",
         "lastName": "E",
         "email": "api-test-user08@ic3.dev",
         "password": "password1!",
-        "createdAt": "2020-03-01T17:12:30.849Z",
-        "dailyNotification": true
+        "createdAt": "2020-03-01T17:12:30.849Z"
     },
     {
         "firstName": "G",
         "lastName": "G",
         "email": "api-test-user09@ic3.dev",
         "password": "password1!",
-        "createdAt": "2020-03-02T17:12:30.849Z",
-        "dailyNotification": true
+        "createdAt": "2020-03-02T17:12:30.849Z"
     },
     {
         "firstName": "I",
         "lastName": "I",
         "email": "api-test-user10@ic3.dev",
         "password": "password1!",
-        "createdAt": "2020-03-03T07:12:30.849Z",
-        "dailyNotification": true
+        "createdAt": "2020-03-03T07:12:30.849Z"
     },
     {
         "firstName": "J",
         "lastName": "J",
         "email": "api-test-user11@ic3.dev",
         "password": "password1!",
-        "createdAt": "2020-03-03T07:13:30.849Z",
-        "dailyNotification": true
+        "createdAt": "2020-03-03T07:13:30.849Z"
     }
 ]

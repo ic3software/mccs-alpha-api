@@ -164,7 +164,7 @@ func (_ *entity) AddToFavoriteEntities(req *types.AddToFavoriteReq) error {
 	return nil
 }
 
-func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
+func (e *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) error {
 	err := es.Entity.UpdateAllTagsCreatedAt(id, t)
 	if err != nil {
 		return err
@@ -176,7 +176,7 @@ func (b *entity) UpdateAllTagsCreatedAt(id primitive.ObjectID, t time.Time) erro
 	return nil
 }
 
-func (b *entity) SetMemberStartedAt(id primitive.ObjectID) error {
+func (e *entity) SetMemberStartedAt(id primitive.ObjectID) error {
 	err := mongo.Entity.SetMemberStartedAt(id)
 	if err != nil {
 		return err
@@ -184,7 +184,7 @@ func (b *entity) SetMemberStartedAt(id primitive.ObjectID) error {
 	return nil
 }
 
-func (b *entity) RenameCategory(old string, new string) error {
+func (e *entity) RenameCategory(old string, new string) error {
 	err := es.Entity.RenameCategory(old, new)
 	if err != nil {
 		return err
@@ -196,7 +196,7 @@ func (b *entity) RenameCategory(old string, new string) error {
 	return nil
 }
 
-func (b *entity) DeleteCategory(name string) error {
+func (e *entity) DeleteCategory(name string) error {
 	err := es.Entity.DeleteCategory(name)
 	if err != nil {
 		return err
@@ -208,7 +208,7 @@ func (b *entity) DeleteCategory(name string) error {
 	return nil
 }
 
-func (b *entity) RenameTag(old string, new string) error {
+func (e *entity) RenameTag(old string, new string) error {
 	err := es.Entity.RenameTag(old, new)
 	if err != nil {
 		return err
@@ -220,12 +220,30 @@ func (b *entity) RenameTag(old string, new string) error {
 	return nil
 }
 
-func (b *entity) DeleteTag(name string) error {
+func (e *entity) DeleteTag(name string) error {
 	err := es.Entity.DeleteTag(name)
 	if err != nil {
 		return err
 	}
 	err = mongo.Entity.DeleteTag(name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// daily_email_schedule
+
+func (e *entity) FindByDailyNotification() ([]*types.Entity, error) {
+	entities, err := mongo.Entity.FindByDailyNotification()
+	if err != nil {
+		return nil, err
+	}
+	return entities, nil
+}
+
+func (e *entity) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
+	err := mongo.Entity.UpdateLastNotificationSentDate(id)
 	if err != nil {
 		return err
 	}

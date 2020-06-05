@@ -152,6 +152,12 @@ func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity
 	if req.LocationPostalCode != "" {
 		update["postalCode"] = req.LocationPostalCode
 	}
+	if req.DailyEmailMatchNotification != nil {
+		update["receiveDailyNotificationEmail"] = *req.DailyEmailMatchNotification
+	}
+	if req.ShowTagsMatchedSinceLastLogin != nil {
+		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
+	}
 	updates = append(updates, bson.M{"$set": update})
 
 	push := bson.M{}
@@ -249,6 +255,12 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	}
 	if req.Status != "" {
 		update["status"] = req.Status
+	}
+	if req.DailyEmailMatchNotification != nil {
+		update["receiveDailyNotificationEmail"] = *req.DailyEmailMatchNotification
+	}
+	if req.ShowTagsMatchedSinceLastLogin != nil {
+		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
 	}
 	// TODO
 	// This is a trick to prevent setting nothing for the entity.
@@ -614,6 +626,54 @@ func (e *entity) removeAssociatedUser(entityIDs []primitive.ObjectID, userID pri
 	}
 
 	_, err := e.c.BulkWrite(context.Background(), writes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// daily_email_schedule
+
+func (e *entity) FindByDailyNotification() ([]*types.Entity, error) {
+	filter := bson.M{
+		"receiveDailyNotificationEmail": true,
+		"deletedAt":                     bson.M{"$exists": false},
+	}
+	cur, err := e.c.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var entities []*types.Entity
+	for cur.Next(context.TODO()) {
+		var elem types.Entity
+		err := cur.Decode(&elem)
+		if err != nil {
+			return nil, err
+		}
+		entities = append(entities, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	cur.Close(context.TODO())
+
+	return entities, nil
+}
+
+// daily_email_schedule
+
+func (e *entity) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
+	filter := bson.M{"_id": id}
+	update := bson.M{"$set": bson.M{
+		"lastNotificationSentDate": time.Now(),
+		"updatedAt":                time.Now(),
+	}}
+	_, err := e.c.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
 	if err != nil {
 		return err
 	}

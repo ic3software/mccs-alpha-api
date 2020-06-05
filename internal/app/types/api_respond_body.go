@@ -12,28 +12,24 @@ import (
 
 func NewUserRespond(user *User) *UserRespond {
 	return &UserRespond{
-		ID:                            user.ID.Hex(),
-		Email:                         user.Email,
-		UserPhone:                     user.Telephone,
-		FirstName:                     user.FirstName,
-		LastName:                      user.LastName,
-		LastLoginIP:                   user.LastLoginIP,
-		LastLoginDate:                 user.LastLoginDate,
-		DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
-		ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
+		ID:            user.ID.Hex(),
+		Email:         user.Email,
+		UserPhone:     user.Telephone,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		LastLoginIP:   user.LastLoginIP,
+		LastLoginDate: user.LastLoginDate,
 	}
 }
 
 type UserRespond struct {
-	ID                            string    `json:"id"`
-	Email                         string    `json:"email"`
-	FirstName                     string    `json:"firstName"`
-	LastName                      string    `json:"lastName"`
-	UserPhone                     string    `json:"userPhone"`
-	LastLoginIP                   string    `json:"lastLoginIP"`
-	LastLoginDate                 time.Time `json:"lastLoginDate"`
-	DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
-	ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
+	ID            string    `json:"id"`
+	Email         string    `json:"email"`
+	FirstName     string    `json:"firstName"`
+	LastName      string    `json:"lastName"`
+	UserPhone     string    `json:"userPhone"`
+	LastLoginIP   string    `json:"lastLoginIP"`
+	LastLoginDate time.Time `json:"lastLoginDate"`
 }
 
 // GET /user/entities
@@ -58,6 +54,9 @@ func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
 		Status:             entity.Status,
 		Offers:             TagFieldToNames(entity.Offers),
 		Wants:              TagFieldToNames(entity.Wants),
+		// flags
+		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
+		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
 	}
 }
 
@@ -80,6 +79,9 @@ func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
 		Status:             entity.Status,
 		Offers:             TagFieldToNames(entity.Offers),
 		Wants:              TagFieldToNames(entity.Wants),
+		// flags
+		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
+		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
 	}
 }
 
@@ -102,6 +104,9 @@ type EntityRespond struct {
 	Status             string   `json:"status"`
 	Offers             []string `json:"offers"`
 	Wants              []string `json:"wants"`
+	// flags
+	DailyEmailMatchNotification   bool `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin bool `json:"showTagsMatchedSinceLastLogin"`
 }
 
 func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favoriteEntities []primitive.ObjectID) *SearchEntityRespond {
@@ -237,74 +242,74 @@ type SearchTransferRespond struct {
 
 func NewAdminEntityRespond(entity *Entity) *AdminEntityRespond {
 	return &AdminEntityRespond{
-		ID:                 entity.ID.Hex(),
-		AccountNumber:      entity.AccountNumber,
-		EntityName:         entity.Name,
-		Email:              entity.Email,
-		EntityPhone:        entity.Telephone,
-		IncType:            entity.IncType,
-		CompanyNumber:      entity.CompanyNumber,
-		Website:            entity.Website,
-		Turnover:           entity.DeclaredTurnover,
-		Description:        entity.Description,
-		LocationAddress:    entity.Address,
-		LocationCity:       entity.City,
-		LocationRegion:     entity.Region,
-		LocationPostalCode: entity.PostalCode,
-		LocationCountry:    entity.Country,
-		Status:             entity.Status,
-		Offers:             TagFieldToNames(entity.Offers),
-		Wants:              TagFieldToNames(entity.Wants),
-		Categories:         entity.Categories,
+		ID:                            entity.ID.Hex(),
+		AccountNumber:                 entity.AccountNumber,
+		EntityName:                    entity.Name,
+		Email:                         entity.Email,
+		EntityPhone:                   entity.Telephone,
+		IncType:                       entity.IncType,
+		CompanyNumber:                 entity.CompanyNumber,
+		Website:                       entity.Website,
+		Turnover:                      entity.DeclaredTurnover,
+		Description:                   entity.Description,
+		LocationAddress:               entity.Address,
+		LocationCity:                  entity.City,
+		LocationRegion:                entity.Region,
+		LocationPostalCode:            entity.PostalCode,
+		LocationCountry:               entity.Country,
+		Status:                        entity.Status,
+		Offers:                        TagFieldToNames(entity.Offers),
+		Wants:                         TagFieldToNames(entity.Wants),
+		Categories:                    entity.Categories,
+		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
+		ReceiveDailyNotificationEmail: util.ToBool(entity.ReceiveDailyNotificationEmail),
 	}
 }
 
 type AdminEntityRespond struct {
-	ID                 string   `json:"id"`
-	AccountNumber      string   `json:"accountNumber"`
-	EntityName         string   `json:"entityName"`
-	Email              string   `json:"email,omitempty"`
-	EntityPhone        string   `json:"entityPhone"`
-	IncType            string   `json:"incType"`
-	CompanyNumber      string   `json:"companyNumber"`
-	Website            string   `json:"website"`
-	Turnover           *int     `json:"turnover"`
-	Description        string   `json:"description"`
-	LocationAddress    string   `json:"locationAddress"`
-	LocationCity       string   `json:"locationCity"`
-	LocationRegion     string   `json:"locationRegion"`
-	LocationPostalCode string   `json:"locationPostalCode"`
-	LocationCountry    string   `json:"locationCountry"`
-	Status             string   `json:"status"`
-	Offers             []string `json:"offers,omitempty"`
-	Wants              []string `json:"wants,omitempty"`
-	Categories         []string `json:"categories,omitempty"`
+	ID                            string   `json:"id"`
+	AccountNumber                 string   `json:"accountNumber"`
+	EntityName                    string   `json:"entityName"`
+	Email                         string   `json:"email,omitempty"`
+	EntityPhone                   string   `json:"entityPhone"`
+	IncType                       string   `json:"incType"`
+	CompanyNumber                 string   `json:"companyNumber"`
+	Website                       string   `json:"website"`
+	Turnover                      *int     `json:"turnover"`
+	Description                   string   `json:"description"`
+	LocationAddress               string   `json:"locationAddress"`
+	LocationCity                  string   `json:"locationCity"`
+	LocationRegion                string   `json:"locationRegion"`
+	LocationPostalCode            string   `json:"locationPostalCode"`
+	LocationCountry               string   `json:"locationCountry"`
+	Status                        string   `json:"status"`
+	Offers                        []string `json:"offers,omitempty"`
+	Wants                         []string `json:"wants,omitempty"`
+	Categories                    []string `json:"categories,omitempty"`
+	ShowTagsMatchedSinceLastLogin bool     `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyNotificationEmail bool     `json:"receiveDailyNotificationEmail"`
 }
 
 func NewAdminUserRespond(user *User) *AdminUserRespond {
 	return &AdminUserRespond{
-		ID:                            user.ID.Hex(),
-		Email:                         user.Email,
-		UserPhone:                     user.Telephone,
-		FirstName:                     user.FirstName,
-		LastName:                      user.LastName,
-		LastLoginIP:                   user.LastLoginIP,
-		LastLoginDate:                 user.LastLoginDate,
-		DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
-		ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
+		ID:            user.ID.Hex(),
+		Email:         user.Email,
+		UserPhone:     user.Telephone,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		LastLoginIP:   user.LastLoginIP,
+		LastLoginDate: user.LastLoginDate,
 	}
 }
 
 type AdminUserRespond struct {
-	ID                            string    `json:"id"`
-	Email                         string    `json:"email"`
-	FirstName                     string    `json:"firstName"`
-	LastName                      string    `json:"lastName"`
-	UserPhone                     string    `json:"userPhone"`
-	LastLoginIP                   string    `json:"lastLoginIP"`
-	LastLoginDate                 time.Time `json:"lastLoginDate"`
-	DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
-	ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
+	ID            string    `json:"id"`
+	Email         string    `json:"email"`
+	FirstName     string    `json:"firstName"`
+	LastName      string    `json:"lastName"`
+	UserPhone     string    `json:"userPhone"`
+	LastLoginIP   string    `json:"lastLoginIP"`
+	LastLoginDate time.Time `json:"lastLoginDate"`
 }
 
 // Category
@@ -367,58 +372,50 @@ func NewAdminGetUserRespond(user *User, entities []*Entity) *AdminGetUserRespond
 	}
 
 	return &AdminGetUserRespond{
-		ID:                            user.ID.Hex(),
-		Email:                         user.Email,
-		UserPhone:                     user.Telephone,
-		FirstName:                     user.FirstName,
-		LastName:                      user.LastName,
-		LastLoginIP:                   user.LastLoginIP,
-		LastLoginDate:                 user.LastLoginDate,
-		DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
-		ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
-		Entities:                      adminEntityResponds,
+		ID:            user.ID.Hex(),
+		Email:         user.Email,
+		UserPhone:     user.Telephone,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		LastLoginIP:   user.LastLoginIP,
+		LastLoginDate: user.LastLoginDate,
+		Entities:      adminEntityResponds,
 	}
 }
 
 type AdminGetUserRespond struct {
-	ID                            string                `json:"id"`
-	Email                         string                `json:"email"`
-	FirstName                     string                `json:"firstName"`
-	LastName                      string                `json:"lastName"`
-	UserPhone                     string                `json:"userPhone"`
-	LastLoginIP                   string                `json:"lastLoginIP"`
-	LastLoginDate                 time.Time             `json:"lastLoginDate"`
-	DailyEmailMatchNotification   bool                  `json:"dailyEmailMatchNotification"`
-	ShowTagsMatchedSinceLastLogin bool                  `json:"showTagsMatchedSinceLastLogin"`
-	Entities                      []*AdminEntityRespond `json:"entities"`
+	ID            string                `json:"id"`
+	Email         string                `json:"email"`
+	FirstName     string                `json:"firstName"`
+	LastName      string                `json:"lastName"`
+	UserPhone     string                `json:"userPhone"`
+	LastLoginIP   string                `json:"lastLoginIP"`
+	LastLoginDate time.Time             `json:"lastLoginDate"`
+	Entities      []*AdminEntityRespond `json:"entities"`
 }
 
 // DELETE /admin/users/{userID}
 
 func NewAdminDeleteUserRespond(user *User) *AdminDeleteUserRespond {
 	return &AdminDeleteUserRespond{
-		ID:                            user.ID.Hex(),
-		Email:                         user.Email,
-		UserPhone:                     user.Telephone,
-		FirstName:                     user.FirstName,
-		LastName:                      user.LastName,
-		LastLoginIP:                   user.LastLoginIP,
-		LastLoginDate:                 user.LastLoginDate,
-		DailyEmailMatchNotification:   util.ToBool(user.DailyNotification),
-		ShowTagsMatchedSinceLastLogin: util.ToBool(user.ShowRecentMatchedTags),
+		ID:            user.ID.Hex(),
+		Email:         user.Email,
+		UserPhone:     user.Telephone,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		LastLoginIP:   user.LastLoginIP,
+		LastLoginDate: user.LastLoginDate,
 	}
 }
 
 type AdminDeleteUserRespond struct {
-	ID                            string    `json:"id"`
-	Email                         string    `json:"email"`
-	FirstName                     string    `json:"firstName"`
-	LastName                      string    `json:"lastName"`
-	UserPhone                     string    `json:"userPhone"`
-	LastLoginIP                   string    `json:"lastLoginIP"`
-	LastLoginDate                 time.Time `json:"lastLoginDate"`
-	DailyEmailMatchNotification   bool      `json:"dailyEmailMatchNotification"`
-	ShowTagsMatchedSinceLastLogin bool      `json:"showTagsMatchedSinceLastLogin"`
+	ID            string    `json:"id"`
+	Email         string    `json:"email"`
+	FirstName     string    `json:"firstName"`
+	LastName      string    `json:"lastName"`
+	UserPhone     string    `json:"userPhone"`
+	LastLoginIP   string    `json:"lastLoginIP"`
+	LastLoginDate time.Time `json:"lastLoginDate"`
 }
 
 // GET /admin/entities
@@ -502,58 +499,62 @@ func NewAdminGetEntityRespond(
 	}
 
 	return &AdminGetEntityRespond{
-		ID:                 entity.ID.Hex(),
-		AccountNumber:      entity.AccountNumber,
-		EntityName:         entity.Name,
-		Email:              entity.Email,
-		EntityPhone:        entity.Telephone,
-		IncType:            entity.IncType,
-		CompanyNumber:      entity.CompanyNumber,
-		Website:            entity.Website,
-		Turnover:           entity.DeclaredTurnover,
-		Description:        entity.Description,
-		LocationAddress:    entity.Address,
-		LocationCity:       entity.City,
-		LocationRegion:     entity.Region,
-		LocationPostalCode: entity.PostalCode,
-		LocationCountry:    entity.Country,
-		Status:             entity.Status,
-		Offers:             TagFieldToNames(entity.Offers),
-		Wants:              TagFieldToNames(entity.Wants),
-		Categories:         entity.Categories,
-		Balance:            account.Balance,
-		MaxNegativeBalance: balanceLimit.MaxNegBal,
-		MaxPositiveBalance: balanceLimit.MaxPosBal,
-		PendingTransfers:   pendingTransfers,
-		Users:              adminUserResponds,
+		ID:                            entity.ID.Hex(),
+		AccountNumber:                 entity.AccountNumber,
+		EntityName:                    entity.Name,
+		Email:                         entity.Email,
+		EntityPhone:                   entity.Telephone,
+		IncType:                       entity.IncType,
+		CompanyNumber:                 entity.CompanyNumber,
+		Website:                       entity.Website,
+		Turnover:                      entity.DeclaredTurnover,
+		Description:                   entity.Description,
+		LocationAddress:               entity.Address,
+		LocationCity:                  entity.City,
+		LocationRegion:                entity.Region,
+		LocationPostalCode:            entity.PostalCode,
+		LocationCountry:               entity.Country,
+		Status:                        entity.Status,
+		Offers:                        TagFieldToNames(entity.Offers),
+		Wants:                         TagFieldToNames(entity.Wants),
+		Categories:                    entity.Categories,
+		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
+		ReceiveDailyNotificationEmail: util.ToBool(entity.ReceiveDailyNotificationEmail),
+		Balance:                       account.Balance,
+		MaxNegativeBalance:            balanceLimit.MaxNegBal,
+		MaxPositiveBalance:            balanceLimit.MaxPosBal,
+		PendingTransfers:              pendingTransfers,
+		Users:                         adminUserResponds,
 	}
 }
 
 type AdminGetEntityRespond struct {
-	ID                 string                  `json:"id"`
-	AccountNumber      string                  `json:"accountNumber"`
-	EntityName         string                  `json:"entityName"`
-	Email              string                  `json:"email,omitempty"`
-	EntityPhone        string                  `json:"entityPhone"`
-	IncType            string                  `json:"incType"`
-	CompanyNumber      string                  `json:"companyNumber"`
-	Website            string                  `json:"website"`
-	Turnover           *int                    `json:"turnover"`
-	Description        string                  `json:"description"`
-	LocationAddress    string                  `json:"locationAddress"`
-	LocationCity       string                  `json:"locationCity"`
-	LocationRegion     string                  `json:"locationRegion"`
-	LocationPostalCode string                  `json:"locationPostalCode"`
-	LocationCountry    string                  `json:"locationCountry"`
-	Status             string                  `json:"status"`
-	Offers             []string                `json:"offers,omitempty"`
-	Wants              []string                `json:"wants,omitempty"`
-	Categories         []string                `json:"categories,omitempty"`
-	Balance            float64                 `json:"balance"`
-	MaxPositiveBalance float64                 `json:"maxPositiveBalance"`
-	MaxNegativeBalance float64                 `json:"maxNegativeBalance"`
-	PendingTransfers   []*AdminTransferRespond `json:"pendingTransfers"`
-	Users              []*AdminUserRespond     `json:"users"`
+	ID                            string                  `json:"id"`
+	AccountNumber                 string                  `json:"accountNumber"`
+	EntityName                    string                  `json:"entityName"`
+	Email                         string                  `json:"email,omitempty"`
+	EntityPhone                   string                  `json:"entityPhone"`
+	IncType                       string                  `json:"incType"`
+	CompanyNumber                 string                  `json:"companyNumber"`
+	Website                       string                  `json:"website"`
+	Turnover                      *int                    `json:"turnover"`
+	Description                   string                  `json:"description"`
+	LocationAddress               string                  `json:"locationAddress"`
+	LocationCity                  string                  `json:"locationCity"`
+	LocationRegion                string                  `json:"locationRegion"`
+	LocationPostalCode            string                  `json:"locationPostalCode"`
+	LocationCountry               string                  `json:"locationCountry"`
+	Status                        string                  `json:"status"`
+	Offers                        []string                `json:"offers,omitempty"`
+	Wants                         []string                `json:"wants,omitempty"`
+	Categories                    []string                `json:"categories,omitempty"`
+	ShowTagsMatchedSinceLastLogin bool                    `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyNotificationEmail bool                    `json:"receiveDailyNotificationEmail"`
+	Balance                       float64                 `json:"balance"`
+	MaxPositiveBalance            float64                 `json:"maxPositiveBalance"`
+	MaxNegativeBalance            float64                 `json:"maxNegativeBalance"`
+	PendingTransfers              []*AdminTransferRespond `json:"pendingTransfers"`
+	Users                         []*AdminUserRespond     `json:"users"`
 }
 
 // PATCH /admin/entities/{entityID}
@@ -587,6 +588,9 @@ func NewAdminUpdateEntityRespond(users []*User, entity *Entity, balanceLimit *Ba
 		MaxNegativeBalance: balanceLimit.MaxNegBal,
 		Users:              adminUserResponds,
 		BalanceLimit:       balanceLimit,
+		// flags
+		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
+		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
 	}
 	return respond
 }
@@ -614,6 +618,9 @@ type AdminUpdateEntityRespond struct {
 	MaxPositiveBalance float64             `json:"maxPositiveBalance"`
 	MaxNegativeBalance float64             `json:"maxNegativeBalance"`
 	Users              []*AdminUserRespond `json:"users"`
+	// flags
+	DailyEmailMatchNotification   bool `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin bool `json:"showTagsMatchedSinceLastLogin"`
 	// To log user action.
 	BalanceLimit *BalanceLimit `json:"-"`
 }

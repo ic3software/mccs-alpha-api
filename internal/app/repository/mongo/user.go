@@ -197,15 +197,7 @@ func (u *user) UpdatePassword(user *types.User) error {
 func (u *user) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types.LoginInfo, error) {
 	old := &types.LoginInfo{}
 	filter := bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}
-	projection := bson.M{
-		"currentLoginIP":   1,
-		"currentLoginDate": 1,
-		"lastLoginIP":      1,
-		"lastLoginDate":    1,
-	}
-	findOneOptions := options.FindOne()
-	findOneOptions.SetProjection(projection)
-	err := u.c.FindOne(context.Background(), filter, findOneOptions).Decode(&old)
+	err := u.c.FindOne(context.Background(), filter).Decode(&old)
 	if err != nil {
 		return nil, err
 	}
@@ -257,12 +249,6 @@ func (u *user) AdminFindOneAndUpdate(req *types.AdminUpdateUserReq) (*types.User
 	}
 	if req.Password != "" {
 		update["password"] = req.Password
-	}
-	if req.DailyEmailMatchNotification != nil {
-		update["dailyNotification"] = *req.DailyEmailMatchNotification
-	}
-	if req.ShowTagsMatchedSinceLastLogin != nil {
-		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
 	}
 	if req.Entity != nil {
 		update["entities"] = util.ToObjectIDs(*req.Entity)
@@ -366,101 +352,6 @@ func (u *user) removeAssociatedEntity(userIDs []primitive.ObjectID, entityID pri
 	}
 
 	_, err := u.c.BulkWrite(context.Background(), writes)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// daily_email_schedule
-
-func (u *user) FindByDailyNotification() ([]*types.User, error) {
-	filter := bson.M{
-		"dailyNotification": true,
-		"deletedAt":         bson.M{"$exists": false},
-	}
-	projection := bson.M{
-		"_id":                      1,
-		"entities":                 1,
-		"dailyNotification":        1,
-		"lastNotificationSentDate": 1,
-	}
-	findOptions := options.Find()
-	findOptions.SetProjection(projection)
-	cur, err := u.c.Find(context.TODO(), filter, findOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	var users []*types.User
-	for cur.Next(context.TODO()) {
-		var elem types.User
-		err := cur.Decode(&elem)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, &elem)
-	}
-	if err := cur.Err(); err != nil {
-		return nil, err
-	}
-	cur.Close(context.TODO())
-
-	return users, nil
-}
-
-func (u *user) UpdateUserInfo(user *types.User) error {
-	user.Email = strings.ToLower(user.Email)
-
-	filter := bson.M{"_id": user.ID}
-	update := bson.M{"$set": bson.M{
-		"email":             user.Email,
-		"firstName":         user.FirstName,
-		"lastName":          user.LastName,
-		"telephone":         user.Telephone,
-		"dailyNotification": user.DailyNotification,
-		"updatedAt":         time.Now(),
-	}}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (u *user) GetLoginInfo(id primitive.ObjectID) (*types.LoginInfo, error) {
-	loginInfo := &types.LoginInfo{}
-	filter := bson.M{"_id": id}
-	projection := bson.M{
-		"currentLoginIP":   1,
-		"currentLoginDate": 1,
-		"lastLoginIP":      1,
-		"lastLoginDate":    1,
-	}
-	findOneOptions := options.FindOne()
-	findOneOptions.SetProjection(projection)
-	err := u.c.FindOne(context.Background(), filter, findOneOptions).Decode(&loginInfo)
-	if err != nil {
-		return nil, err
-	}
-	return loginInfo, nil
-}
-
-func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
-	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{
-		"lastNotificationSentDate": time.Now(),
-		"updatedAt":                time.Now(),
-	}}
-	_, err := u.c.UpdateOne(
-		context.Background(),
-		filter,
-		update,
-	)
 	if err != nil {
 		return err
 	}

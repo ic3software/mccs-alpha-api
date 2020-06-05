@@ -52,6 +52,16 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 	return nil
 }
 
+func (u *user) UserEmailExists(email string) bool {
+	_, err := mongo.User.FindByEmail(email)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// POST /login
+
 func (u *user) Login(email string, password string) (*types.User, error) {
 	user, err := mongo.User.FindByEmail(email)
 	if err != nil {
@@ -218,30 +228,4 @@ func (u *user) AdminSearchUser(req *types.AdminSearchUserReq) (*types.SearchUser
 		NumberOfResults: result.NumberOfResults,
 		TotalPages:      result.TotalPages,
 	}, nil
-}
-
-// daily_email_schedule
-
-func (u *user) FindByDailyNotification() ([]*types.User, error) {
-	users, err := mongo.User.FindByDailyNotification()
-	if err != nil {
-		return nil, err
-	}
-	return users, nil
-}
-
-func (u *user) UpdateLastNotificationSentDate(id primitive.ObjectID) error {
-	err := mongo.User.UpdateLastNotificationSentDate(id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (u *user) UserEmailExists(email string) bool {
-	_, err := mongo.User.FindByEmail(email)
-	if err != nil {
-		return false
-	}
-	return true
 }

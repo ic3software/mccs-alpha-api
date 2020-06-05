@@ -26,10 +26,6 @@ type User struct {
 	CurrentLoginDate time.Time `json:"currentLoginDate,omitempty" bson:"currentLoginDate,omitempty"`
 	LastLoginIP      string    `json:"lastLoginIP,omitempty" bson:"lastLoginIP,omitempty"`
 	LastLoginDate    time.Time `json:"lastLoginDate,omitempty" bson:"lastLoginDate,omitempty"`
-
-	ShowRecentMatchedTags    *bool     `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
-	DailyNotification        *bool     `json:"dailyNotification,omitempty" bson:"dailyNotification,omitempty"`
-	LastNotificationSentDate time.Time `json:"lastNotificationSentDate,omitempty" bson:"lastNotificationSentDate,omitempty"`
 }
 
 func (user *User) Validate() []error {

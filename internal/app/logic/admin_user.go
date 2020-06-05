@@ -75,6 +75,8 @@ func (u *adminUser) IncLoginAttempts(email string) error {
 	return nil
 }
 
+// POST /admin/login
+
 func (a *adminUser) UpdateLoginInfo(id primitive.ObjectID, ip string) (*types.LoginInfo, error) {
 	info, err := mongo.AdminUser.UpdateLoginInfo(id, ip)
 	if err != nil {

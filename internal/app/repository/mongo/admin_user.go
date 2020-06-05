@@ -10,7 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type adminUser struct {
@@ -21,6 +20,19 @@ var AdminUser = &adminUser{}
 
 func (u *adminUser) Register(db *mongo.Database) {
 	u.c = db.Collection("adminUsers")
+}
+
+func (u *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
+	adminUser := types.AdminUser{}
+	filter := bson.M{
+		"_id":       id,
+		"deletedAt": bson.M{"$exists": false},
+	}
+	err := u.c.FindOne(context.Background(), filter).Decode(&adminUser)
+	if err != nil {
+		return nil, errors.New("Email address not found.")
+	}
+	return &adminUser, nil
 }
 
 func (u *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
@@ -41,18 +53,12 @@ func (u *adminUser) FindByEmail(email string) (*types.AdminUser, error) {
 	return &user, nil
 }
 
+// POST /admin/login
+
 func (u *adminUser) UpdateLoginInfo(id primitive.ObjectID, newLoginIP string) (*types.LoginInfo, error) {
 	old := &types.LoginInfo{}
 	filter := bson.M{"_id": id}
-	projection := bson.M{
-		"currentLoginIP":   1,
-		"currentLoginDate": 1,
-		"lastLoginIP":      1,
-		"lastLoginDate":    1,
-	}
-	findOneOptions := options.FindOne()
-	findOneOptions.SetProjection(projection)
-	err := u.c.FindOne(context.Background(), filter, findOneOptions).Decode(&old)
+	err := u.c.FindOne(context.Background(), filter).Decode(&old)
 	if err != nil {
 		return nil, err
 	}
@@ -96,19 +102,4 @@ func (u *adminUser) UpdatePassword(user *types.AdminUser) error {
 		return err
 	}
 	return nil
-}
-
-// TO BE REMOVED
-
-func (u *adminUser) FindByID(id primitive.ObjectID) (*types.AdminUser, error) {
-	adminUser := types.AdminUser{}
-	filter := bson.M{
-		"_id":       id,
-		"deletedAt": bson.M{"$exists": false},
-	}
-	err := u.c.FindOne(context.Background(), filter).Decode(&adminUser)
-	if err != nil {
-		return nil, errors.New("Email address not found.")
-	}
-	return &adminUser, nil
 }
