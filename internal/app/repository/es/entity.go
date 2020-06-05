@@ -68,9 +68,9 @@ func (es *entity) Update(req *types.UpdateUserEntityReq) error {
 		Name:  req.EntityName,
 		Email: req.Email,
 		// Address
-		City:    req.LocationCity,
-		Region:  req.LocationRegion,
-		Country: req.LocationCountry,
+		City:    req.City,
+		Region:  req.Region,
+		Country: req.Country,
 	}
 
 	script := es.getUpateTagScript(req.AddedOffers, req.AddedWants, req.RemovedOffers, req.RemovedWants)
@@ -104,9 +104,9 @@ func (es *entity) AdminUpdate(req *types.AdminUpdateEntityReq) error {
 		Email:  req.Email,
 		Status: req.Status,
 		// Address
-		City:    req.LocationCity,
-		Region:  req.LocationRegion,
-		Country: req.LocationCountry,
+		City:    req.City,
+		Region:  req.Region,
+		Country: req.Country,
 		// Account
 		MaxNegBal: req.MaxNegBal,
 		MaxPosBal: req.MaxPosBal,
@@ -205,8 +205,8 @@ func (es *entity) Search(req *types.SearchEntityReq) (*types.ESSearchEntityResul
 	seachByStatus(q, req.Statuses)
 	seachbyNameEmailAndAddress(q, &byNameAndAddress{
 		Name:    req.EntityName,
-		City:    req.LocationCity,
-		Country: req.LocationCountry,
+		City:    req.City,
+		Country: req.Country,
 	})
 	seachByTags(q, &byTag{
 		Offers:      req.Offers,

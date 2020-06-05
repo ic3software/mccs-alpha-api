@@ -137,20 +137,20 @@ func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity
 	if req.Turnover != nil {
 		update["declaredTurnover"] = *req.Turnover
 	}
-	if req.LocationAddress != "" {
-		update["address"] = req.LocationAddress
+	if req.Address != "" {
+		update["address"] = req.Address
 	}
-	if req.LocationCity != "" {
-		update["city"] = req.LocationCity
+	if req.City != "" {
+		update["city"] = req.City
 	}
-	if req.LocationRegion != "" {
-		update["region"] = req.LocationRegion
+	if req.Region != "" {
+		update["region"] = req.Region
 	}
-	if req.LocationCountry != "" {
-		update["country"] = req.LocationCountry
+	if req.Country != "" {
+		update["country"] = req.Country
 	}
-	if req.LocationPostalCode != "" {
-		update["postalCode"] = req.LocationPostalCode
+	if req.PostalCode != "" {
+		update["postalCode"] = req.PostalCode
 	}
 	if req.DailyEmailMatchNotification != nil {
 		update["receiveDailyNotificationEmail"] = *req.DailyEmailMatchNotification
@@ -232,20 +232,20 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	if req.Turnover != nil {
 		update["declaredTurnover"] = *req.Turnover
 	}
-	if req.LocationAddress != "" {
-		update["address"] = req.LocationAddress
+	if req.Address != "" {
+		update["address"] = req.Address
 	}
-	if req.LocationCity != "" {
-		update["city"] = req.LocationCity
+	if req.City != "" {
+		update["city"] = req.City
 	}
-	if req.LocationRegion != "" {
-		update["region"] = req.LocationRegion
+	if req.Region != "" {
+		update["region"] = req.Region
 	}
-	if req.LocationCountry != "" {
-		update["country"] = req.LocationCountry
+	if req.Country != "" {
+		update["country"] = req.Country
 	}
-	if req.LocationPostalCode != "" {
-		update["postalCode"] = req.LocationPostalCode
+	if req.PostalCode != "" {
+		update["postalCode"] = req.PostalCode
 	}
 	if req.Categories != nil {
 		update["categories"] = util.FormatTags(*req.Categories)

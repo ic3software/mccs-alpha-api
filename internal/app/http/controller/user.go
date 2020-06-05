@@ -165,25 +165,25 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		if logic.User.UserEmailExists(req.Email) {
+		if logic.User.UserEmailExists(req.UserEmail) {
 			api.Respond(w, r, http.StatusBadRequest, errors.New("Email address is already registered."))
 			return
 		}
 
 		createdEntity, err := logic.Entity.Create(&types.Entity{
 			Name:                          req.EntityName,
-			Email:                         req.Email,
+			Email:                         req.EntityEmail,
 			IncType:                       req.IncType,
 			CompanyNumber:                 req.CompanyNumber,
 			Telephone:                     req.EntityPhone,
 			Website:                       req.Website,
 			DeclaredTurnover:              req.Turnover,
 			Description:                   req.Description,
-			Address:                       req.LocationAddress,
-			City:                          req.LocationCity,
-			Region:                        req.LocationRegion,
-			PostalCode:                    req.LocationPostalCode,
-			Country:                       req.LocationCountry,
+			Address:                       req.Address,
+			City:                          req.City,
+			Region:                        req.Region,
+			PostalCode:                    req.PostalCode,
+			Country:                       req.Country,
 			Offers:                        types.ToTagFields(req.Offers),
 			Wants:                         types.ToTagFields(req.Wants),
 			ShowRecentMatchedTags:         req.ShowTagsMatchedSinceLastLogin,
@@ -195,7 +195,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 		createdUser, err := logic.User.Create(&types.User{
-			Email:     req.Email,
+			Email:     req.UserEmail,
 			Password:  req.Password,
 			FirstName: req.FirstName,
 			LastName:  req.LastName,

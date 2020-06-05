@@ -68,7 +68,7 @@ var indexMappings = map[string]string{
 						}
 					}
 				},
-				"entityName": {
+				"name": {
 					"type": "text",
 					"fields": {
 						"keyword": {
@@ -77,7 +77,7 @@ var indexMappings = map[string]string{
 						}
 					}
 				},
-				"entityEmail": {
+				"email": {
 					"type": "keyword"
 				},
 				"status": {
@@ -129,7 +129,7 @@ var indexMappings = map[string]string{
 						}
 					}
 				},
-				"locationCity": {
+				"city": {
 					"type": "text",
 					"fields": {
 						"keyword": {
@@ -138,7 +138,7 @@ var indexMappings = map[string]string{
 						}
 					}
 				},
-				"locationRegion": {
+				"region": {
 					"type": "text",
 					"fields": {
 						"keyword": {
@@ -147,7 +147,7 @@ var indexMappings = map[string]string{
 						}
 					}
 				},
-				"locationCountry": {
+				"country": {
 					"type": "text",
 					"fields": {
 						"keyword": {

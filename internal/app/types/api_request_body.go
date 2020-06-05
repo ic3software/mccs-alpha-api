@@ -34,25 +34,26 @@ func NewSignupReq(r *http.Request) (*SignupReq, []error) {
 }
 
 type SignupReq struct {
-	Email              string   `json:"email"`
-	Password           string   `json:"password"`
-	FirstName          string   `json:"firstName"`
-	LastName           string   `json:"lastName"`
-	UserPhone          string   `json:"userPhone"`
-	EntityName         string   `json:"entityName"`
-	IncType            string   `json:"incType"`
-	CompanyNumber      string   `json:"companyNumber"`
-	EntityPhone        string   `json:"entityPhone"`
-	Website            string   `json:"website"`
-	Turnover           *int     `json:"turnover"`
-	Description        string   `json:"description"`
-	LocationAddress    string   `json:"locationAddress"`
-	LocationCity       string   `json:"locationCity"`
-	LocationRegion     string   `json:"locationRegion"`
-	LocationPostalCode string   `json:"locationPostalCode"`
-	LocationCountry    string   `json:"locationCountry"`
-	Offers             []string `json:"offers"`
-	Wants              []string `json:"wants"`
+	UserEmail     string   `json:"userEmail"`
+	EntityEmail   string   `json:"entityEmail"`
+	Password      string   `json:"password"`
+	FirstName     string   `json:"firstName"`
+	LastName      string   `json:"lastName"`
+	UserPhone     string   `json:"userPhone"`
+	EntityName    string   `json:"entityName"`
+	IncType       string   `json:"incType"`
+	CompanyNumber string   `json:"companyNumber"`
+	EntityPhone   string   `json:"entityPhone"`
+	Website       string   `json:"website"`
+	Turnover      *int     `json:"turnover"`
+	Description   string   `json:"description"`
+	Address       string   `json:"address"`
+	City          string   `json:"city"`
+	Region        string   `json:"region"`
+	PostalCode    string   `json:"postalCode"`
+	Country       string   `json:"country"`
+	Offers        []string `json:"offers"`
+	Wants         []string `json:"wants"`
 	// flags
 	ShowTagsMatchedSinceLastLogin *bool `json:"showTagsMatchedSinceLastLogin"`
 	DailyEmailMatchNotification   *bool `json:"dailyEmailMatchNotification"`
@@ -61,17 +62,17 @@ type SignupReq struct {
 func (req *SignupReq) validate() []error {
 	errs := []error{}
 
-	errs = append(errs, util.ValidateEmail(req.Email)...)
+	errs = append(errs, util.ValidateEmail(req.UserEmail)...)
 	errs = append(errs, validatePassword(req.Password)...)
 
 	user := User{
-		Email:     req.Email,
+		Email:     req.UserEmail,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Telephone: req.UserPhone,
 	}
 	entity := Entity{
-		Email:            req.Email,
+		Email:            req.EntityEmail,
 		Name:             req.EntityName,
 		Telephone:        req.EntityPhone,
 		IncType:          req.IncType,
@@ -79,11 +80,11 @@ func (req *SignupReq) validate() []error {
 		Website:          req.Website,
 		DeclaredTurnover: req.Turnover,
 		Description:      req.Description,
-		City:             req.LocationCity,
-		Country:          req.LocationCountry,
-		Address:          req.LocationAddress,
-		Region:           req.LocationRegion,
-		PostalCode:       req.LocationPostalCode,
+		City:             req.City,
+		Country:          req.Country,
+		Address:          req.Address,
+		Region:           req.Region,
+		PostalCode:       req.PostalCode,
 	}
 
 	errs = append(errs, user.Validate()...)
@@ -217,11 +218,11 @@ func NewUpdateUserEntityReq(j UpdateUserEntityJSON, originEntity *Entity) (*Upda
 		AddedWants:    addedWants,
 		RemovedWants:  removedWants,
 		// Address
-		LocationAddress:    j.LocationAddress,
-		LocationCity:       j.LocationCity,
-		LocationRegion:     j.LocationRegion,
-		LocationPostalCode: j.LocationPostalCode,
-		LocationCountry:    j.LocationCountry,
+		Address:    j.Address,
+		City:       j.City,
+		Region:     j.Region,
+		PostalCode: j.PostalCode,
+		Country:    j.Country,
 		// flags
 		ShowTagsMatchedSinceLastLogin: j.ShowTagsMatchedSinceLastLogin,
 		DailyEmailMatchNotification:   j.DailyEmailMatchNotification,
@@ -231,20 +232,21 @@ func NewUpdateUserEntityReq(j UpdateUserEntityJSON, originEntity *Entity) (*Upda
 }
 
 type UpdateUserEntityReq struct {
-	OriginEntity       *Entity
-	EntityName         string
-	Email              string
-	EntityPhone        string
-	IncType            string
-	CompanyNumber      string
-	Website            string
-	Turnover           *int
-	Description        string
-	LocationAddress    string
-	LocationCity       string
-	LocationRegion     string
-	LocationPostalCode string
-	LocationCountry    string
+	OriginEntity  *Entity
+	EntityName    string
+	Email         string
+	EntityPhone   string
+	IncType       string
+	CompanyNumber string
+	Website       string
+	Turnover      *int
+	Description   string
+	// Address
+	Address    string
+	City       string
+	Region     string
+	PostalCode string
+	Country    string
 	// Tags
 	Offers        *[]string
 	AddedOffers   []string
@@ -258,19 +260,19 @@ type UpdateUserEntityReq struct {
 }
 
 type UpdateUserEntityJSON struct {
-	EntityName         string `json:"entityName"`
-	Email              string `json:"email"`
-	EntityPhone        string `json:"entityPhone"`
-	IncType            string `json:"incType"`
-	CompanyNumber      string `json:"companyNumber"`
-	Website            string `json:"website"`
-	Turnover           *int   `json:"turnover"`
-	Description        string `json:"description"`
-	LocationAddress    string `json:"locationAddress"`
-	LocationCity       string `json:"locationCity"`
-	LocationRegion     string `json:"locationRegion"`
-	LocationPostalCode string `json:"locationPostalCode"`
-	LocationCountry    string `json:"locationCountry"`
+	EntityName    string `json:"entityName"`
+	Email         string `json:"email"`
+	EntityPhone   string `json:"entityPhone"`
+	IncType       string `json:"incType"`
+	CompanyNumber string `json:"companyNumber"`
+	Website       string `json:"website"`
+	Turnover      *int   `json:"turnover"`
+	Description   string `json:"description"`
+	Address       string `json:"address"`
+	City          string `json:"city"`
+	Region        string `json:"region"`
+	PostalCode    string `json:"postalCode"`
+	Country       string `json:"country"`
 	// Tags
 	Offers *[]string `json:"offers"`
 	Wants  *[]string `json:"wants"`
@@ -301,11 +303,11 @@ func (req *UpdateUserEntityJSON) validate() []error {
 		Website:          req.Website,
 		DeclaredTurnover: req.Turnover,
 		Description:      req.Description,
-		City:             req.LocationCity,
-		Country:          req.LocationCountry,
-		Address:          req.LocationAddress,
-		Region:           req.LocationRegion,
-		PostalCode:       req.LocationPostalCode,
+		City:             req.City,
+		Country:          req.Country,
+		Address:          req.Address,
+		Region:           req.Region,
+		PostalCode:       req.PostalCode,
 	}
 	errs = append(errs, entity.Validate()...)
 	if req.Offers != nil {
@@ -716,8 +718,8 @@ type SearchEntityReq struct {
 	TaggedSince      time.Time
 	Statuses         []string
 
-	LocationCountry string
-	LocationCity    string
+	Country string
+	City    string
 }
 
 func (query *SearchEntityReq) Validate() []error {
@@ -1258,11 +1260,11 @@ func NewAdminUpdateEntityReq(j AdminUpdateEntityJSON, originEntity *Entity, orig
 		RemovedWants:  removedWants,
 		Categories:    j.Categories,
 		// Address
-		LocationAddress:    j.LocationAddress,
-		LocationCity:       j.LocationCity,
-		LocationRegion:     j.LocationRegion,
-		LocationPostalCode: j.LocationPostalCode,
-		LocationCountry:    j.LocationCountry,
+		Address:    j.Address,
+		City:       j.City,
+		Region:     j.Region,
+		PostalCode: j.PostalCode,
+		Country:    j.Country,
 		// Account
 		MaxPosBal: j.MaxPosBal,
 		MaxNegBal: j.MaxNegBal,
@@ -1299,11 +1301,11 @@ type AdminUpdateEntityReq struct {
 	RemovedWants  []string
 	Categories    *[]string
 	// Address
-	LocationAddress    string
-	LocationCity       string
-	LocationRegion     string
-	LocationPostalCode string
-	LocationCountry    string
+	Address    string
+	City       string
+	Region     string
+	PostalCode string
+	Country    string
 	// Account
 	MaxPosBal *float64
 	MaxNegBal *float64
@@ -1325,11 +1327,11 @@ type AdminUpdateEntityJSON struct {
 	Wants      *[]string `json:"wants"`
 	Categories *[]string `json:"categories"`
 	// Address
-	LocationAddress    string `json:"locationAddress"`
-	LocationCity       string `json:"locationCity"`
-	LocationRegion     string `json:"locationRegion"`
-	LocationPostalCode string `json:"locationPostalCode"`
-	LocationCountry    string `json:"locationCountry"`
+	Address    string `json:"address"`
+	City       string `json:"city"`
+	Region     string `json:"region"`
+	PostalCode string `json:"postalCode"`
+	Country    string `json:"country"`
 	// flags
 	DailyEmailMatchNotification   *bool `json:"dailyEmailMatchNotification"`
 	ShowTagsMatchedSinceLastLogin *bool `json:"showTagsMatchedSinceLastLogin"`
@@ -1371,11 +1373,11 @@ func (req *AdminUpdateEntityJSON) validate() []error {
 		Website:          req.Website,
 		DeclaredTurnover: req.Turnover,
 		Description:      req.Description,
-		City:             req.LocationCity,
-		Country:          req.LocationCountry,
-		Address:          req.LocationAddress,
-		Region:           req.LocationRegion,
-		PostalCode:       req.LocationPostalCode,
+		City:             req.City,
+		Country:          req.Country,
+		Address:          req.Address,
+		Region:           req.Region,
+		PostalCode:       req.PostalCode,
 		Categories:       categories,
 		Status:           req.Status,
 	}

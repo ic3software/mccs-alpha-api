@@ -36,24 +36,24 @@ type UserRespond struct {
 
 func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
 	return &EntityRespond{
-		ID:                 entity.ID.Hex(),
-		AccountNumber:      entity.AccountNumber,
-		EntityName:         entity.Name,
-		Email:              entity.Email,
-		EntityPhone:        entity.Telephone,
-		IncType:            entity.IncType,
-		CompanyNumber:      entity.CompanyNumber,
-		Website:            entity.Website,
-		Turnover:           entity.DeclaredTurnover,
-		Description:        entity.Description,
-		LocationAddress:    entity.Address,
-		LocationCity:       entity.City,
-		LocationRegion:     entity.Region,
-		LocationPostalCode: entity.PostalCode,
-		LocationCountry:    entity.Country,
-		Status:             entity.Status,
-		Offers:             TagFieldToNames(entity.Offers),
-		Wants:              TagFieldToNames(entity.Wants),
+		ID:            entity.ID.Hex(),
+		AccountNumber: entity.AccountNumber,
+		EntityName:    entity.Name,
+		Email:         entity.Email,
+		EntityPhone:   entity.Telephone,
+		IncType:       entity.IncType,
+		CompanyNumber: entity.CompanyNumber,
+		Website:       entity.Website,
+		Turnover:      entity.DeclaredTurnover,
+		Description:   entity.Description,
+		Address:       entity.Address,
+		City:          entity.City,
+		Region:        entity.Region,
+		PostalCode:    entity.PostalCode,
+		Country:       entity.Country,
+		Status:        entity.Status,
+		Offers:        TagFieldToNames(entity.Offers),
+		Wants:         TagFieldToNames(entity.Wants),
 		// flags
 		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
 		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
@@ -62,23 +62,23 @@ func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
 
 func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
 	return &EntityRespond{
-		ID:                 entity.ID.Hex(),
-		AccountNumber:      entity.AccountNumber,
-		EntityName:         entity.Name,
-		EntityPhone:        entity.Telephone,
-		IncType:            entity.IncType,
-		CompanyNumber:      entity.CompanyNumber,
-		Website:            entity.Website,
-		Turnover:           entity.DeclaredTurnover,
-		Description:        entity.Description,
-		LocationAddress:    entity.Address,
-		LocationCity:       entity.City,
-		LocationRegion:     entity.Region,
-		LocationPostalCode: entity.PostalCode,
-		LocationCountry:    entity.Country,
-		Status:             entity.Status,
-		Offers:             TagFieldToNames(entity.Offers),
-		Wants:              TagFieldToNames(entity.Wants),
+		ID:            entity.ID.Hex(),
+		AccountNumber: entity.AccountNumber,
+		EntityName:    entity.Name,
+		EntityPhone:   entity.Telephone,
+		IncType:       entity.IncType,
+		CompanyNumber: entity.CompanyNumber,
+		Website:       entity.Website,
+		Turnover:      entity.DeclaredTurnover,
+		Description:   entity.Description,
+		Address:       entity.Address,
+		City:          entity.City,
+		Region:        entity.Region,
+		PostalCode:    entity.PostalCode,
+		Country:       entity.Country,
+		Status:        entity.Status,
+		Offers:        TagFieldToNames(entity.Offers),
+		Wants:         TagFieldToNames(entity.Wants),
 		// flags
 		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
 		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
@@ -86,24 +86,24 @@ func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
 }
 
 type EntityRespond struct {
-	ID                 string   `json:"id"`
-	AccountNumber      string   `json:"accountNumber"`
-	EntityName         string   `json:"entityName"`
-	Email              string   `json:"email,omitempty"`
-	EntityPhone        string   `json:"entityPhone"`
-	IncType            string   `json:"incType"`
-	CompanyNumber      string   `json:"companyNumber"`
-	Website            string   `json:"website"`
-	Turnover           *int     `json:"turnover"`
-	Description        string   `json:"description"`
-	LocationAddress    string   `json:"locationAddress"`
-	LocationCity       string   `json:"locationCity"`
-	LocationRegion     string   `json:"locationRegion"`
-	LocationPostalCode string   `json:"locationPostalCode"`
-	LocationCountry    string   `json:"locationCountry"`
-	Status             string   `json:"status"`
-	Offers             []string `json:"offers"`
-	Wants              []string `json:"wants"`
+	ID            string   `json:"id"`
+	AccountNumber string   `json:"accountNumber"`
+	EntityName    string   `json:"entityName"`
+	Email         string   `json:"email,omitempty"`
+	EntityPhone   string   `json:"entityPhone"`
+	IncType       string   `json:"incType"`
+	CompanyNumber string   `json:"companyNumber"`
+	Website       string   `json:"website"`
+	Turnover      *int     `json:"turnover"`
+	Description   string   `json:"description"`
+	Address       string   `json:"address"`
+	City          string   `json:"city"`
+	Region        string   `json:"region"`
+	PostalCode    string   `json:"postalCode"`
+	Country       string   `json:"country"`
+	Status        string   `json:"status"`
+	Offers        []string `json:"offers"`
+	Wants         []string `json:"wants"`
 	// flags
 	DailyEmailMatchNotification   bool `json:"dailyEmailMatchNotification"`
 	ShowTagsMatchedSinceLastLogin bool `json:"showTagsMatchedSinceLastLogin"`
@@ -115,50 +115,50 @@ func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favorit
 		email = entity.Email
 	}
 	return &SearchEntityRespond{
-		ID:                 entity.ID.Hex(),
-		AccountNumber:      entity.AccountNumber,
-		EntityName:         entity.Name,
-		Email:              email,
-		EntityPhone:        entity.Telephone,
-		IncType:            entity.IncType,
-		CompanyNumber:      entity.CompanyNumber,
-		Website:            entity.Website,
-		Turnover:           entity.DeclaredTurnover,
-		Description:        entity.Description,
-		LocationAddress:    entity.Address,
-		LocationCity:       entity.City,
-		LocationRegion:     entity.Region,
-		LocationPostalCode: entity.PostalCode,
-		LocationCountry:    entity.Country,
-		Status:             entity.Status,
-		Offers:             TagFieldToNames(entity.Offers),
-		Wants:              TagFieldToNames(entity.Wants),
-		IsFavorite:         util.ContainID(favoriteEntities, entity.ID.Hex()),
+		ID:            entity.ID.Hex(),
+		AccountNumber: entity.AccountNumber,
+		EntityName:    entity.Name,
+		Email:         email,
+		EntityPhone:   entity.Telephone,
+		IncType:       entity.IncType,
+		CompanyNumber: entity.CompanyNumber,
+		Website:       entity.Website,
+		Turnover:      entity.DeclaredTurnover,
+		Description:   entity.Description,
+		Address:       entity.Address,
+		City:          entity.City,
+		Region:        entity.Region,
+		PostalCode:    entity.PostalCode,
+		Country:       entity.Country,
+		Status:        entity.Status,
+		Offers:        TagFieldToNames(entity.Offers),
+		Wants:         TagFieldToNames(entity.Wants),
+		IsFavorite:    util.ContainID(favoriteEntities, entity.ID.Hex()),
 	}
 }
 
 // GET /entities
 
 type SearchEntityRespond struct {
-	ID                 string   `json:"id"`
-	AccountNumber      string   `json:"accountNumber"`
-	EntityName         string   `json:"entityName"`
-	Email              string   `json:"email,omitempty"`
-	EntityPhone        string   `json:"entityPhone"`
-	IncType            string   `json:"incType"`
-	CompanyNumber      string   `json:"companyNumber"`
-	Website            string   `json:"website"`
-	Turnover           *int     `json:"turnover"`
-	Description        string   `json:"description"`
-	LocationAddress    string   `json:"locationAddress"`
-	LocationCity       string   `json:"locationCity"`
-	LocationRegion     string   `json:"locationRegion"`
-	LocationPostalCode string   `json:"locationPostalCode"`
-	LocationCountry    string   `json:"locationCountry"`
-	Status             string   `json:"status"`
-	Offers             []string `json:"offers"`
-	Wants              []string `json:"wants"`
-	IsFavorite         bool     `json:"isFavorite"`
+	ID            string   `json:"id"`
+	AccountNumber string   `json:"accountNumber"`
+	EntityName    string   `json:"entityName"`
+	Email         string   `json:"email,omitempty"`
+	EntityPhone   string   `json:"entityPhone"`
+	IncType       string   `json:"incType"`
+	CompanyNumber string   `json:"companyNumber"`
+	Website       string   `json:"website"`
+	Turnover      *int     `json:"turnover"`
+	Description   string   `json:"description"`
+	Address       string   `json:"address"`
+	City          string   `json:"city"`
+	Region        string   `json:"region"`
+	PostalCode    string   `json:"postalCode"`
+	Country       string   `json:"country"`
+	Status        string   `json:"status"`
+	Offers        []string `json:"offers"`
+	Wants         []string `json:"wants"`
+	IsFavorite    bool     `json:"isFavorite"`
 }
 
 // POST /transfers
@@ -252,11 +252,11 @@ func NewAdminEntityRespond(entity *Entity) *AdminEntityRespond {
 		Website:                       entity.Website,
 		Turnover:                      entity.DeclaredTurnover,
 		Description:                   entity.Description,
-		LocationAddress:               entity.Address,
-		LocationCity:                  entity.City,
-		LocationRegion:                entity.Region,
-		LocationPostalCode:            entity.PostalCode,
-		LocationCountry:               entity.Country,
+		Address:                       entity.Address,
+		City:                          entity.City,
+		Region:                        entity.Region,
+		PostalCode:                    entity.PostalCode,
+		Country:                       entity.Country,
 		Status:                        entity.Status,
 		Offers:                        TagFieldToNames(entity.Offers),
 		Wants:                         TagFieldToNames(entity.Wants),
@@ -277,11 +277,11 @@ type AdminEntityRespond struct {
 	Website                       string   `json:"website"`
 	Turnover                      *int     `json:"turnover"`
 	Description                   string   `json:"description"`
-	LocationAddress               string   `json:"locationAddress"`
-	LocationCity                  string   `json:"locationCity"`
-	LocationRegion                string   `json:"locationRegion"`
-	LocationPostalCode            string   `json:"locationPostalCode"`
-	LocationCountry               string   `json:"locationCountry"`
+	Address                       string   `json:"address"`
+	City                          string   `json:"city"`
+	Region                        string   `json:"region"`
+	PostalCode                    string   `json:"postalCode"`
+	Country                       string   `json:"country"`
 	Status                        string   `json:"status"`
 	Offers                        []string `json:"offers,omitempty"`
 	Wants                         []string `json:"wants,omitempty"`
@@ -442,11 +442,11 @@ func NewAdminSearchEntityRespond(
 		Website:            entity.Website,
 		Turnover:           entity.DeclaredTurnover,
 		Description:        entity.Description,
-		LocationAddress:    entity.Address,
-		LocationCity:       entity.City,
-		LocationRegion:     entity.Region,
-		LocationPostalCode: entity.PostalCode,
-		LocationCountry:    entity.Country,
+		Address:            entity.Address,
+		City:               entity.City,
+		Region:             entity.Region,
+		PostalCode:         entity.PostalCode,
+		Country:            entity.Country,
 		Status:             entity.Status,
 		Offers:             TagFieldToNames(entity.Offers),
 		Wants:              TagFieldToNames(entity.Wants),
@@ -469,11 +469,11 @@ type AdminSearchEntityRespond struct {
 	Website            string              `json:"website"`
 	Turnover           *int                `json:"turnover"`
 	Description        string              `json:"description"`
-	LocationAddress    string              `json:"locationAddress"`
-	LocationCity       string              `json:"locationCity"`
-	LocationRegion     string              `json:"locationRegion"`
-	LocationPostalCode string              `json:"locationPostalCode"`
-	LocationCountry    string              `json:"locationCountry"`
+	Address            string              `json:"address"`
+	City               string              `json:"city"`
+	Region             string              `json:"region"`
+	PostalCode         string              `json:"postalCode"`
+	Country            string              `json:"country"`
 	Status             string              `json:"status"`
 	Offers             []string            `json:"offers,omitempty"`
 	Wants              []string            `json:"wants,omitempty"`
@@ -509,11 +509,11 @@ func NewAdminGetEntityRespond(
 		Website:                       entity.Website,
 		Turnover:                      entity.DeclaredTurnover,
 		Description:                   entity.Description,
-		LocationAddress:               entity.Address,
-		LocationCity:                  entity.City,
-		LocationRegion:                entity.Region,
-		LocationPostalCode:            entity.PostalCode,
-		LocationCountry:               entity.Country,
+		Address:                       entity.Address,
+		City:                          entity.City,
+		Region:                        entity.Region,
+		PostalCode:                    entity.PostalCode,
+		Country:                       entity.Country,
 		Status:                        entity.Status,
 		Offers:                        TagFieldToNames(entity.Offers),
 		Wants:                         TagFieldToNames(entity.Wants),
@@ -539,11 +539,11 @@ type AdminGetEntityRespond struct {
 	Website                       string                  `json:"website"`
 	Turnover                      *int                    `json:"turnover"`
 	Description                   string                  `json:"description"`
-	LocationAddress               string                  `json:"locationAddress"`
-	LocationCity                  string                  `json:"locationCity"`
-	LocationRegion                string                  `json:"locationRegion"`
-	LocationPostalCode            string                  `json:"locationPostalCode"`
-	LocationCountry               string                  `json:"locationCountry"`
+	Address                       string                  `json:"address"`
+	City                          string                  `json:"city"`
+	Region                        string                  `json:"region"`
+	PostalCode                    string                  `json:"postalCode"`
+	Country                       string                  `json:"country"`
 	Status                        string                  `json:"status"`
 	Offers                        []string                `json:"offers,omitempty"`
 	Wants                         []string                `json:"wants,omitempty"`
@@ -575,11 +575,11 @@ func NewAdminUpdateEntityRespond(users []*User, entity *Entity, balanceLimit *Ba
 		Website:            entity.Website,
 		Turnover:           entity.DeclaredTurnover,
 		Description:        entity.Description,
-		LocationAddress:    entity.Address,
-		LocationCity:       entity.City,
-		LocationRegion:     entity.Region,
-		LocationPostalCode: entity.PostalCode,
-		LocationCountry:    entity.Country,
+		Address:            entity.Address,
+		City:               entity.City,
+		Region:             entity.Region,
+		PostalCode:         entity.PostalCode,
+		Country:            entity.Country,
 		Status:             entity.Status,
 		Offers:             TagFieldToNames(entity.Offers),
 		Wants:              TagFieldToNames(entity.Wants),
@@ -606,11 +606,11 @@ type AdminUpdateEntityRespond struct {
 	Website            string              `json:"website"`
 	Turnover           *int                `json:"turnover"`
 	Description        string              `json:"description"`
-	LocationAddress    string              `json:"locationAddress"`
-	LocationCity       string              `json:"locationCity"`
-	LocationRegion     string              `json:"locationRegion"`
-	LocationPostalCode string              `json:"locationPostalCode"`
-	LocationCountry    string              `json:"locationCountry"`
+	Address            string              `json:"address"`
+	City               string              `json:"city"`
+	Region             string              `json:"region"`
+	PostalCode         string              `json:"postalCode"`
+	Country            string              `json:"country"`
 	Status             string              `json:"status"`
 	Offers             []string            `json:"offers,omitempty"`
 	Wants              []string            `json:"wants,omitempty"`
@@ -629,48 +629,48 @@ type AdminUpdateEntityRespond struct {
 
 func NewAdminDeleteEntityRespond(entity *Entity) *AdminDeleteEntityRespond {
 	return &AdminDeleteEntityRespond{
-		ID:                 entity.ID.Hex(),
-		AccountNumber:      entity.AccountNumber,
-		EntityName:         entity.Name,
-		Email:              entity.Email,
-		EntityPhone:        entity.Telephone,
-		IncType:            entity.IncType,
-		CompanyNumber:      entity.CompanyNumber,
-		Website:            entity.Website,
-		Turnover:           entity.DeclaredTurnover,
-		Description:        entity.Description,
-		LocationAddress:    entity.Address,
-		LocationCity:       entity.City,
-		LocationRegion:     entity.Region,
-		LocationPostalCode: entity.PostalCode,
-		LocationCountry:    entity.Country,
-		Status:             entity.Status,
-		Offers:             TagFieldToNames(entity.Offers),
-		Wants:              TagFieldToNames(entity.Wants),
-		Categories:         entity.Categories,
+		ID:            entity.ID.Hex(),
+		AccountNumber: entity.AccountNumber,
+		EntityName:    entity.Name,
+		Email:         entity.Email,
+		EntityPhone:   entity.Telephone,
+		IncType:       entity.IncType,
+		CompanyNumber: entity.CompanyNumber,
+		Website:       entity.Website,
+		Turnover:      entity.DeclaredTurnover,
+		Description:   entity.Description,
+		Address:       entity.Address,
+		City:          entity.City,
+		Region:        entity.Region,
+		PostalCode:    entity.PostalCode,
+		Country:       entity.Country,
+		Status:        entity.Status,
+		Offers:        TagFieldToNames(entity.Offers),
+		Wants:         TagFieldToNames(entity.Wants),
+		Categories:    entity.Categories,
 	}
 }
 
 type AdminDeleteEntityRespond struct {
-	ID                 string   `json:"id"`
-	AccountNumber      string   `json:"accountNumber"`
-	EntityName         string   `json:"entityName"`
-	Email              string   `json:"email,omitempty"`
-	EntityPhone        string   `json:"entityPhone"`
-	IncType            string   `json:"incType"`
-	CompanyNumber      string   `json:"companyNumber"`
-	Website            string   `json:"website"`
-	Turnover           *int     `json:"turnover"`
-	Description        string   `json:"description"`
-	LocationAddress    string   `json:"locationAddress"`
-	LocationCity       string   `json:"locationCity"`
-	LocationRegion     string   `json:"locationRegion"`
-	LocationPostalCode string   `json:"locationPostalCode"`
-	LocationCountry    string   `json:"locationCountry"`
-	Status             string   `json:"status"`
-	Offers             []string `json:"offers,omitempty"`
-	Wants              []string `json:"wants,omitempty"`
-	Categories         []string `json:"categories,omitempty"`
+	ID            string   `json:"id"`
+	AccountNumber string   `json:"accountNumber"`
+	EntityName    string   `json:"entityName"`
+	Email         string   `json:"email,omitempty"`
+	EntityPhone   string   `json:"entityPhone"`
+	IncType       string   `json:"incType"`
+	CompanyNumber string   `json:"companyNumber"`
+	Website       string   `json:"website"`
+	Turnover      *int     `json:"turnover"`
+	Description   string   `json:"description"`
+	Address       string   `json:"address"`
+	City          string   `json:"city"`
+	Region        string   `json:"region"`
+	PostalCode    string   `json:"postalCode"`
+	Country       string   `json:"country"`
+	Status        string   `json:"status"`
+	Offers        []string `json:"offers,omitempty"`
+	Wants         []string `json:"wants,omitempty"`
+	Categories    []string `json:"categories,omitempty"`
 }
 
 // admin/transfer
