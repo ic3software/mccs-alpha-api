@@ -177,7 +177,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			CompanyNumber:                 req.CompanyNumber,
 			Telephone:                     req.EntityPhone,
 			Website:                       req.Website,
-			DeclaredTurnover:              req.Turnover,
+			DeclaredTurnover:              req.DeclaredTurnover,
 			Description:                   req.Description,
 			Address:                       req.Address,
 			City:                          req.City,
@@ -187,7 +187,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			Offers:                        types.ToTagFields(req.Offers),
 			Wants:                         types.ToTagFields(req.Wants),
 			ShowRecentMatchedTags:         req.ShowTagsMatchedSinceLastLogin,
-			ReceiveDailyNotificationEmail: req.DailyEmailMatchNotification,
+			ReceiveDailyNotificationEmail: req.ReceiveDailyMatchNotificationEmail,
 		})
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))

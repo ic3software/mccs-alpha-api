@@ -65,7 +65,7 @@ func (es *entity) Create(id primitive.ObjectID, entity *types.Entity) error {
 
 func (es *entity) Update(req *types.UpdateUserEntityReq) error {
 	doc := types.EntityESRecord{
-		Name:  req.EntityName,
+		Name:  req.Name,
 		Email: req.Email,
 		// Address
 		City:    req.City,
@@ -100,7 +100,7 @@ func (es *entity) Update(req *types.UpdateUserEntityReq) error {
 
 func (es *entity) AdminUpdate(req *types.AdminUpdateEntityReq) error {
 	doc := types.EntityESRecord{
-		Name:   req.EntityName,
+		Name:   req.Name,
 		Email:  req.Email,
 		Status: req.Status,
 		// Address
@@ -204,7 +204,7 @@ func (es *entity) Search(req *types.SearchEntityReq) (*types.ESSearchEntityResul
 
 	seachByStatus(q, req.Statuses)
 	seachbyNameEmailAndAddress(q, &byNameAndAddress{
-		Name:    req.EntityName,
+		Name:    req.Name,
 		City:    req.City,
 		Country: req.Country,
 	})
@@ -351,8 +351,8 @@ func (es *entity) AdminSearch(req *types.AdminSearchEntityReq) (*types.ESSearchE
 
 	seachByStatus(q, req.Statuses)
 	seachbyNameEmailAndAddress(q, &byNameAndAddress{
-		Name:    req.EntityName,
-		Email:   req.EntityEmail,
+		Name:    req.Name,
+		Email:   req.Email,
 		City:    req.City,
 		Region:  req.Region,
 		Country: req.Country,

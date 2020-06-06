@@ -34,29 +34,29 @@ func NewSignupReq(r *http.Request) (*SignupReq, []error) {
 }
 
 type SignupReq struct {
-	UserEmail     string   `json:"userEmail"`
-	EntityEmail   string   `json:"entityEmail"`
-	Password      string   `json:"password"`
-	FirstName     string   `json:"firstName"`
-	LastName      string   `json:"lastName"`
-	UserPhone     string   `json:"userPhone"`
-	EntityName    string   `json:"entityName"`
-	IncType       string   `json:"incType"`
-	CompanyNumber string   `json:"companyNumber"`
-	EntityPhone   string   `json:"entityPhone"`
-	Website       string   `json:"website"`
-	Turnover      *int     `json:"turnover"`
-	Description   string   `json:"description"`
-	Address       string   `json:"address"`
-	City          string   `json:"city"`
-	Region        string   `json:"region"`
-	PostalCode    string   `json:"postalCode"`
-	Country       string   `json:"country"`
-	Offers        []string `json:"offers"`
-	Wants         []string `json:"wants"`
+	UserEmail        string   `json:"userEmail"`
+	EntityEmail      string   `json:"entityEmail"`
+	Password         string   `json:"password"`
+	FirstName        string   `json:"firstName"`
+	LastName         string   `json:"lastName"`
+	UserPhone        string   `json:"userPhone"`
+	EntityName       string   `json:"entityName"`
+	IncType          string   `json:"incType"`
+	CompanyNumber    string   `json:"companyNumber"`
+	EntityPhone      string   `json:"entityPhone"`
+	Website          string   `json:"website"`
+	DeclaredTurnover *int     `json:"declaredTurnover"`
+	Description      string   `json:"description"`
+	Address          string   `json:"address"`
+	City             string   `json:"city"`
+	Region           string   `json:"region"`
+	PostalCode       string   `json:"postalCode"`
+	Country          string   `json:"country"`
+	Offers           []string `json:"offers"`
+	Wants            []string `json:"wants"`
 	// flags
-	ShowTagsMatchedSinceLastLogin *bool `json:"showTagsMatchedSinceLastLogin"`
-	DailyEmailMatchNotification   *bool `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin      *bool `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyMatchNotificationEmail *bool `json:"receiveDailyMatchNotificationEmail"`
 }
 
 func (req *SignupReq) validate() []error {
@@ -78,7 +78,7 @@ func (req *SignupReq) validate() []error {
 		IncType:          req.IncType,
 		CompanyNumber:    req.CompanyNumber,
 		Website:          req.Website,
-		DeclaredTurnover: req.Turnover,
+		DeclaredTurnover: req.DeclaredTurnover,
 		Description:      req.Description,
 		City:             req.City,
 		Country:          req.Country,
@@ -201,15 +201,15 @@ func NewUpdateUserEntityReq(j UpdateUserEntityJSON, originEntity *Entity) (*Upda
 	}
 
 	req := UpdateUserEntityReq{
-		OriginEntity:  originEntity,
-		EntityName:    j.EntityName,
-		EntityPhone:   j.EntityPhone,
-		Email:         j.Email,
-		IncType:       j.IncType,
-		CompanyNumber: j.CompanyNumber,
-		Website:       j.Website,
-		Turnover:      j.Turnover,
-		Description:   j.Description,
+		OriginEntity:     originEntity,
+		Name:             j.Name,
+		Telephone:        j.Telephone,
+		Email:            j.Email,
+		IncType:          j.IncType,
+		CompanyNumber:    j.CompanyNumber,
+		Website:          j.Website,
+		DeclaredTurnover: j.DeclaredTurnover,
+		Description:      j.Description,
 		// Tags
 		Offers:        j.Offers,
 		AddedOffers:   addedOffers,
@@ -224,23 +224,23 @@ func NewUpdateUserEntityReq(j UpdateUserEntityJSON, originEntity *Entity) (*Upda
 		PostalCode: j.PostalCode,
 		Country:    j.Country,
 		// flags
-		ShowTagsMatchedSinceLastLogin: j.ShowTagsMatchedSinceLastLogin,
-		DailyEmailMatchNotification:   j.DailyEmailMatchNotification,
+		ShowTagsMatchedSinceLastLogin:      j.ShowTagsMatchedSinceLastLogin,
+		ReceiveDailyMatchNotificationEmail: j.ReceiveDailyMatchNotificationEmail,
 	}
 
 	return &req, nil
 }
 
 type UpdateUserEntityReq struct {
-	OriginEntity  *Entity
-	EntityName    string
-	Email         string
-	EntityPhone   string
-	IncType       string
-	CompanyNumber string
-	Website       string
-	Turnover      *int
-	Description   string
+	OriginEntity     *Entity
+	Name             string
+	Email            string
+	Telephone        string
+	IncType          string
+	CompanyNumber    string
+	Website          string
+	DeclaredTurnover *int
+	Description      string
 	// Address
 	Address    string
 	City       string
@@ -255,30 +255,30 @@ type UpdateUserEntityReq struct {
 	AddedWants    []string
 	RemovedWants  []string
 	// flags
-	ShowTagsMatchedSinceLastLogin *bool `json:"showTagsMatchedSinceLastLogin"`
-	DailyEmailMatchNotification   *bool `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin      *bool `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyMatchNotificationEmail *bool `json:"receiveDailyMatchNotificationEmail"`
 }
 
 type UpdateUserEntityJSON struct {
-	EntityName    string `json:"entityName"`
-	Email         string `json:"email"`
-	EntityPhone   string `json:"entityPhone"`
-	IncType       string `json:"incType"`
-	CompanyNumber string `json:"companyNumber"`
-	Website       string `json:"website"`
-	Turnover      *int   `json:"turnover"`
-	Description   string `json:"description"`
-	Address       string `json:"address"`
-	City          string `json:"city"`
-	Region        string `json:"region"`
-	PostalCode    string `json:"postalCode"`
-	Country       string `json:"country"`
+	Name             string `json:"name"`
+	Email            string `json:"email"`
+	Telephone        string `json:"telephone"`
+	IncType          string `json:"incType"`
+	CompanyNumber    string `json:"companyNumber"`
+	Website          string `json:"website"`
+	DeclaredTurnover *int   `json:"declaredTurnover"`
+	Description      string `json:"description"`
+	Address          string `json:"address"`
+	City             string `json:"city"`
+	Region           string `json:"region"`
+	PostalCode       string `json:"postalCode"`
+	Country          string `json:"country"`
 	// Tags
 	Offers *[]string `json:"offers"`
 	Wants  *[]string `json:"wants"`
 	// flags
-	ShowTagsMatchedSinceLastLogin *bool `json:"showTagsMatchedSinceLastLogin"`
-	DailyEmailMatchNotification   *bool `json:"dailyEmailMatchNotification"`
+	ShowTagsMatchedSinceLastLogin      *bool `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyMatchNotificationEmail *bool `json:"receiveDailyMatchNotificationEmail"`
 	// Not allow to change
 	ID     string `json:"id"`
 	Status string `json:"status"`
@@ -296,12 +296,12 @@ func (req *UpdateUserEntityJSON) validate() []error {
 
 	entity := Entity{
 		Email:            req.Email,
-		Name:             req.EntityName,
-		Telephone:        req.EntityPhone,
+		Name:             req.Name,
+		Telephone:        req.Telephone,
 		IncType:          req.IncType,
 		CompanyNumber:    req.CompanyNumber,
 		Website:          req.Website,
-		DeclaredTurnover: req.Turnover,
+		DeclaredTurnover: req.DeclaredTurnover,
 		Description:      req.Description,
 		City:             req.City,
 		Country:          req.Country,
@@ -690,7 +690,7 @@ func NewSearchEntityReq(q url.Values) (*SearchEntityReq, error) {
 		QueryingEntityID: q.Get("querying_entity_id"),
 		Page:             page,
 		PageSize:         pageSize,
-		EntityName:       q.Get("entity_name"),
+		Name:             q.Get("name"),
 		Category:         q.Get("category"),
 		Offers:           util.ToSearchTags(q.Get("offers")),
 		Wants:            util.ToSearchTags(q.Get("wants")),
@@ -709,7 +709,7 @@ type SearchEntityReq struct {
 	QueryingEntityID string
 	Page             int
 	PageSize         int
-	EntityName       string
+	Name             string
 	Wants            []string
 	Offers           []string
 	Category         string
@@ -1150,8 +1150,8 @@ func NewAdminSearchEntityReq(r *http.Request) (*AdminSearchEntityReq, []error) {
 	req := &AdminSearchEntityReq{
 		Page:          page,
 		PageSize:      pageSize,
-		EntityName:    q.Get("entity_name"),
-		EntityEmail:   q.Get("entity_email"),
+		Name:          q.Get("name"),
+		Email:         q.Get("email"),
 		Statuses:      statuses,
 		Offers:        util.ToSearchTags(q.Get("offers")),
 		Wants:         util.ToSearchTags(q.Get("wants")),
@@ -1172,8 +1172,8 @@ func NewAdminSearchEntityReq(r *http.Request) (*AdminSearchEntityReq, []error) {
 type AdminSearchEntityReq struct {
 	Page          int
 	PageSize      int
-	EntityName    string
-	EntityEmail   string
+	Name          string
+	Email         string
 	Statuses      []string
 	Offers        []string
 	Wants         []string
@@ -1235,18 +1235,18 @@ func NewAdminUpdateEntityReq(j AdminUpdateEntityJSON, originEntity *Entity, orig
 	}
 
 	req := AdminUpdateEntityReq{
-		OriginEntity:                  originEntity,
-		OriginBalanceLimit:            originBalanceLimit,
-		EntityName:                    j.EntityName,
-		EntityPhone:                   j.EntityPhone,
-		Email:                         j.Email,
-		IncType:                       j.IncType,
-		CompanyNumber:                 j.CompanyNumber,
-		Website:                       j.Website,
-		Turnover:                      j.Turnover,
-		Description:                   j.Description,
-		DailyEmailMatchNotification:   j.DailyEmailMatchNotification,
-		ShowTagsMatchedSinceLastLogin: j.ShowTagsMatchedSinceLastLogin,
+		OriginEntity:                       originEntity,
+		OriginBalanceLimit:                 originBalanceLimit,
+		Name:                               j.Name,
+		Telephone:                          j.Telephone,
+		Email:                              j.Email,
+		IncType:                            j.IncType,
+		CompanyNumber:                      j.CompanyNumber,
+		Website:                            j.Website,
+		DeclaredTurnover:                   j.DeclaredTurnover,
+		Description:                        j.Description,
+		ReceiveDailyMatchNotificationEmail: j.ReceiveDailyMatchNotificationEmail,
+		ShowTagsMatchedSinceLastLogin:      j.ShowTagsMatchedSinceLastLogin,
 		// Users
 		Users:        j.Users,
 		AddedUsers:   util.ToObjectIDs(addedUsers),
@@ -1275,19 +1275,19 @@ func NewAdminUpdateEntityReq(j AdminUpdateEntityJSON, originEntity *Entity, orig
 }
 
 type AdminUpdateEntityReq struct {
-	OriginEntity                  *Entity
-	OriginBalanceLimit            *BalanceLimit
-	Status                        string
-	EntityName                    string
-	Email                         string
-	EntityPhone                   string
-	IncType                       string
-	CompanyNumber                 string
-	Website                       string
-	Turnover                      *int
-	Description                   string
-	DailyEmailMatchNotification   *bool
-	ShowTagsMatchedSinceLastLogin *bool
+	OriginEntity                       *Entity
+	OriginBalanceLimit                 *BalanceLimit
+	Status                             string
+	Name                               string
+	Email                              string
+	Telephone                          string
+	IncType                            string
+	CompanyNumber                      string
+	Website                            string
+	DeclaredTurnover                   *int
+	Description                        string
+	ReceiveDailyMatchNotificationEmail *bool
+	ShowTagsMatchedSinceLastLogin      *bool
 	// Users
 	Users        *[]string
 	AddedUsers   []primitive.ObjectID
@@ -1312,16 +1312,16 @@ type AdminUpdateEntityReq struct {
 }
 
 type AdminUpdateEntityJSON struct {
-	Status        string    `json:"status"`
-	EntityName    string    `json:"entityName"`
-	Email         string    `json:"email"`
-	EntityPhone   string    `json:"entityPhone"`
-	IncType       string    `json:"incType"`
-	CompanyNumber string    `json:"companyNumber"`
-	Website       string    `json:"website"`
-	Turnover      *int      `json:"turnover"`
-	Description   string    `json:"description"`
-	Users         *[]string `json:"users"`
+	Status           string    `json:"status"`
+	Name             string    `json:"name"`
+	Email            string    `json:"email"`
+	Telephone        string    `json:"telephone"`
+	IncType          string    `json:"incType"`
+	CompanyNumber    string    `json:"companyNumber"`
+	Website          string    `json:"website"`
+	DeclaredTurnover *int      `json:"declaredTurnover"`
+	Description      string    `json:"description"`
+	Users            *[]string `json:"users"`
 	// Tags
 	Offers     *[]string `json:"offers"`
 	Wants      *[]string `json:"wants"`
@@ -1333,8 +1333,8 @@ type AdminUpdateEntityJSON struct {
 	PostalCode string `json:"postalCode"`
 	Country    string `json:"country"`
 	// flags
-	DailyEmailMatchNotification   *bool `json:"dailyEmailMatchNotification"`
-	ShowTagsMatchedSinceLastLogin *bool `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyMatchNotificationEmail *bool `json:"receiveDailyMatchNotificationEmail"`
+	ShowTagsMatchedSinceLastLogin      *bool `json:"showTagsMatchedSinceLastLogin"`
 	// Account
 	MaxPosBal *float64 `json:"maxPositiveBalance"`
 	MaxNegBal *float64 `json:"maxNegativeBalance"`
@@ -1366,12 +1366,12 @@ func (req *AdminUpdateEntityJSON) validate() []error {
 
 	entity := Entity{
 		Email:            req.Email,
-		Name:             req.EntityName,
-		Telephone:        req.EntityPhone,
+		Name:             req.Name,
+		Telephone:        req.Telephone,
 		IncType:          req.IncType,
 		CompanyNumber:    req.CompanyNumber,
 		Website:          req.Website,
-		DeclaredTurnover: req.Turnover,
+		DeclaredTurnover: req.DeclaredTurnover,
 		Description:      req.Description,
 		City:             req.City,
 		Country:          req.Country,

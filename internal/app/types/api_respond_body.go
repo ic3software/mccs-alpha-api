@@ -36,77 +36,77 @@ type UserRespond struct {
 
 func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
 	return &EntityRespond{
-		ID:            entity.ID.Hex(),
-		AccountNumber: entity.AccountNumber,
-		EntityName:    entity.Name,
-		Email:         entity.Email,
-		EntityPhone:   entity.Telephone,
-		IncType:       entity.IncType,
-		CompanyNumber: entity.CompanyNumber,
-		Website:       entity.Website,
-		Turnover:      entity.DeclaredTurnover,
-		Description:   entity.Description,
-		Address:       entity.Address,
-		City:          entity.City,
-		Region:        entity.Region,
-		PostalCode:    entity.PostalCode,
-		Country:       entity.Country,
-		Status:        entity.Status,
-		Offers:        TagFieldToNames(entity.Offers),
-		Wants:         TagFieldToNames(entity.Wants),
+		ID:               entity.ID.Hex(),
+		AccountNumber:    entity.AccountNumber,
+		Name:             entity.Name,
+		Email:            entity.Email,
+		Telephone:        entity.Telephone,
+		IncType:          entity.IncType,
+		CompanyNumber:    entity.CompanyNumber,
+		Website:          entity.Website,
+		DeclaredTurnover: entity.DeclaredTurnover,
+		Description:      entity.Description,
+		Address:          entity.Address,
+		City:             entity.City,
+		Region:           entity.Region,
+		PostalCode:       entity.PostalCode,
+		Country:          entity.Country,
+		Status:           entity.Status,
+		Offers:           TagFieldToNames(entity.Offers),
+		Wants:            TagFieldToNames(entity.Wants),
 		// flags
-		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
-		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
+		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyNotificationEmail),
+		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowRecentMatchedTags),
 	}
 }
 
 func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
 	return &EntityRespond{
-		ID:            entity.ID.Hex(),
-		AccountNumber: entity.AccountNumber,
-		EntityName:    entity.Name,
-		EntityPhone:   entity.Telephone,
-		IncType:       entity.IncType,
-		CompanyNumber: entity.CompanyNumber,
-		Website:       entity.Website,
-		Turnover:      entity.DeclaredTurnover,
-		Description:   entity.Description,
-		Address:       entity.Address,
-		City:          entity.City,
-		Region:        entity.Region,
-		PostalCode:    entity.PostalCode,
-		Country:       entity.Country,
-		Status:        entity.Status,
-		Offers:        TagFieldToNames(entity.Offers),
-		Wants:         TagFieldToNames(entity.Wants),
+		ID:               entity.ID.Hex(),
+		AccountNumber:    entity.AccountNumber,
+		Name:             entity.Name,
+		Telephone:        entity.Telephone,
+		IncType:          entity.IncType,
+		CompanyNumber:    entity.CompanyNumber,
+		Website:          entity.Website,
+		DeclaredTurnover: entity.DeclaredTurnover,
+		Description:      entity.Description,
+		Address:          entity.Address,
+		City:             entity.City,
+		Region:           entity.Region,
+		PostalCode:       entity.PostalCode,
+		Country:          entity.Country,
+		Status:           entity.Status,
+		Offers:           TagFieldToNames(entity.Offers),
+		Wants:            TagFieldToNames(entity.Wants),
 		// flags
-		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
-		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
+		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyNotificationEmail),
+		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowRecentMatchedTags),
 	}
 }
 
 type EntityRespond struct {
-	ID            string   `json:"id"`
-	AccountNumber string   `json:"accountNumber"`
-	EntityName    string   `json:"entityName"`
-	Email         string   `json:"email,omitempty"`
-	EntityPhone   string   `json:"entityPhone"`
-	IncType       string   `json:"incType"`
-	CompanyNumber string   `json:"companyNumber"`
-	Website       string   `json:"website"`
-	Turnover      *int     `json:"turnover"`
-	Description   string   `json:"description"`
-	Address       string   `json:"address"`
-	City          string   `json:"city"`
-	Region        string   `json:"region"`
-	PostalCode    string   `json:"postalCode"`
-	Country       string   `json:"country"`
-	Status        string   `json:"status"`
-	Offers        []string `json:"offers"`
-	Wants         []string `json:"wants"`
+	ID               string   `json:"id"`
+	AccountNumber    string   `json:"accountNumber"`
+	Name             string   `json:"name"`
+	Email            string   `json:"email,omitempty"`
+	Telephone        string   `json:"telephone"`
+	IncType          string   `json:"incType"`
+	CompanyNumber    string   `json:"companyNumber"`
+	Website          string   `json:"website"`
+	DeclaredTurnover *int     `json:"declaredTurnover"`
+	Description      string   `json:"description"`
+	Address          string   `json:"address"`
+	City             string   `json:"city"`
+	Region           string   `json:"region"`
+	PostalCode       string   `json:"postalCode"`
+	Country          string   `json:"country"`
+	Status           string   `json:"status"`
+	Offers           []string `json:"offers"`
+	Wants            []string `json:"wants"`
 	// flags
-	DailyEmailMatchNotification   bool `json:"dailyEmailMatchNotification"`
-	ShowTagsMatchedSinceLastLogin bool `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyMatchNotificationEmail bool `json:"receiveDailyMatchNotificationEmail"`
+	ShowTagsMatchedSinceLastLogin      bool `json:"showTagsMatchedSinceLastLogin"`
 }
 
 func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favoriteEntities []primitive.ObjectID) *SearchEntityRespond {
@@ -115,50 +115,50 @@ func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favorit
 		email = entity.Email
 	}
 	return &SearchEntityRespond{
-		ID:            entity.ID.Hex(),
-		AccountNumber: entity.AccountNumber,
-		EntityName:    entity.Name,
-		Email:         email,
-		EntityPhone:   entity.Telephone,
-		IncType:       entity.IncType,
-		CompanyNumber: entity.CompanyNumber,
-		Website:       entity.Website,
-		Turnover:      entity.DeclaredTurnover,
-		Description:   entity.Description,
-		Address:       entity.Address,
-		City:          entity.City,
-		Region:        entity.Region,
-		PostalCode:    entity.PostalCode,
-		Country:       entity.Country,
-		Status:        entity.Status,
-		Offers:        TagFieldToNames(entity.Offers),
-		Wants:         TagFieldToNames(entity.Wants),
-		IsFavorite:    util.ContainID(favoriteEntities, entity.ID.Hex()),
+		ID:               entity.ID.Hex(),
+		AccountNumber:    entity.AccountNumber,
+		Name:             entity.Name,
+		Email:            email,
+		Telephone:        entity.Telephone,
+		IncType:          entity.IncType,
+		CompanyNumber:    entity.CompanyNumber,
+		Website:          entity.Website,
+		DeclaredTurnover: entity.DeclaredTurnover,
+		Description:      entity.Description,
+		Address:          entity.Address,
+		City:             entity.City,
+		Region:           entity.Region,
+		PostalCode:       entity.PostalCode,
+		Country:          entity.Country,
+		Status:           entity.Status,
+		Offers:           TagFieldToNames(entity.Offers),
+		Wants:            TagFieldToNames(entity.Wants),
+		IsFavorite:       util.ContainID(favoriteEntities, entity.ID.Hex()),
 	}
 }
 
 // GET /entities
 
 type SearchEntityRespond struct {
-	ID            string   `json:"id"`
-	AccountNumber string   `json:"accountNumber"`
-	EntityName    string   `json:"entityName"`
-	Email         string   `json:"email,omitempty"`
-	EntityPhone   string   `json:"entityPhone"`
-	IncType       string   `json:"incType"`
-	CompanyNumber string   `json:"companyNumber"`
-	Website       string   `json:"website"`
-	Turnover      *int     `json:"turnover"`
-	Description   string   `json:"description"`
-	Address       string   `json:"address"`
-	City          string   `json:"city"`
-	Region        string   `json:"region"`
-	PostalCode    string   `json:"postalCode"`
-	Country       string   `json:"country"`
-	Status        string   `json:"status"`
-	Offers        []string `json:"offers"`
-	Wants         []string `json:"wants"`
-	IsFavorite    bool     `json:"isFavorite"`
+	ID               string   `json:"id"`
+	AccountNumber    string   `json:"accountNumber"`
+	Name             string   `json:"name"`
+	Email            string   `json:"email,omitempty"`
+	Telephone        string   `json:"telephone"`
+	IncType          string   `json:"incType"`
+	CompanyNumber    string   `json:"companyNumber"`
+	Website          string   `json:"website"`
+	DeclaredTurnover *int     `json:"declaredTurnover"`
+	Description      string   `json:"description"`
+	Address          string   `json:"address"`
+	City             string   `json:"city"`
+	Region           string   `json:"region"`
+	PostalCode       string   `json:"postalCode"`
+	Country          string   `json:"country"`
+	Status           string   `json:"status"`
+	Offers           []string `json:"offers"`
+	Wants            []string `json:"wants"`
+	IsFavorite       bool     `json:"isFavorite"`
 }
 
 // POST /transfers
@@ -244,13 +244,13 @@ func NewAdminEntityRespond(entity *Entity) *AdminEntityRespond {
 	return &AdminEntityRespond{
 		ID:                            entity.ID.Hex(),
 		AccountNumber:                 entity.AccountNumber,
-		EntityName:                    entity.Name,
+		Name:                          entity.Name,
 		Email:                         entity.Email,
-		EntityPhone:                   entity.Telephone,
+		Telephone:                     entity.Telephone,
 		IncType:                       entity.IncType,
 		CompanyNumber:                 entity.CompanyNumber,
 		Website:                       entity.Website,
-		Turnover:                      entity.DeclaredTurnover,
+		DeclaredTurnover:              entity.DeclaredTurnover,
 		Description:                   entity.Description,
 		Address:                       entity.Address,
 		City:                          entity.City,
@@ -269,13 +269,13 @@ func NewAdminEntityRespond(entity *Entity) *AdminEntityRespond {
 type AdminEntityRespond struct {
 	ID                            string   `json:"id"`
 	AccountNumber                 string   `json:"accountNumber"`
-	EntityName                    string   `json:"entityName"`
+	Name                          string   `json:"name"`
 	Email                         string   `json:"email,omitempty"`
-	EntityPhone                   string   `json:"entityPhone"`
+	Telephone                     string   `json:"telephone"`
 	IncType                       string   `json:"incType"`
 	CompanyNumber                 string   `json:"companyNumber"`
 	Website                       string   `json:"website"`
-	Turnover                      *int     `json:"turnover"`
+	DeclaredTurnover              *int     `json:"declaredTurnover"`
 	Description                   string   `json:"description"`
 	Address                       string   `json:"address"`
 	City                          string   `json:"city"`
@@ -434,13 +434,13 @@ func NewAdminSearchEntityRespond(
 	return &AdminSearchEntityRespond{
 		ID:                 entity.ID.Hex(),
 		AccountNumber:      entity.AccountNumber,
-		EntityName:         entity.Name,
+		Name:               entity.Name,
 		Email:              entity.Email,
-		EntityPhone:        entity.Telephone,
+		Telephone:          entity.Telephone,
 		IncType:            entity.IncType,
 		CompanyNumber:      entity.CompanyNumber,
 		Website:            entity.Website,
-		Turnover:           entity.DeclaredTurnover,
+		DeclaredTurnover:   entity.DeclaredTurnover,
 		Description:        entity.Description,
 		Address:            entity.Address,
 		City:               entity.City,
@@ -461,13 +461,13 @@ func NewAdminSearchEntityRespond(
 type AdminSearchEntityRespond struct {
 	ID                 string              `json:"id"`
 	AccountNumber      string              `json:"accountNumber"`
-	EntityName         string              `json:"entityName"`
+	Name               string              `json:"name"`
 	Email              string              `json:"email,omitempty"`
-	EntityPhone        string              `json:"entityPhone"`
+	Telephone          string              `json:"telephone"`
 	IncType            string              `json:"incType"`
 	CompanyNumber      string              `json:"companyNumber"`
 	Website            string              `json:"website"`
-	Turnover           *int                `json:"turnover"`
+	DeclaredTurnover   *int                `json:"declaredTurnover"`
 	Description        string              `json:"description"`
 	Address            string              `json:"address"`
 	City               string              `json:"city"`
@@ -501,13 +501,13 @@ func NewAdminGetEntityRespond(
 	return &AdminGetEntityRespond{
 		ID:                            entity.ID.Hex(),
 		AccountNumber:                 entity.AccountNumber,
-		EntityName:                    entity.Name,
+		Name:                          entity.Name,
 		Email:                         entity.Email,
-		EntityPhone:                   entity.Telephone,
+		Telephone:                     entity.Telephone,
 		IncType:                       entity.IncType,
 		CompanyNumber:                 entity.CompanyNumber,
 		Website:                       entity.Website,
-		Turnover:                      entity.DeclaredTurnover,
+		DeclaredTurnover:              entity.DeclaredTurnover,
 		Description:                   entity.Description,
 		Address:                       entity.Address,
 		City:                          entity.City,
@@ -531,13 +531,13 @@ func NewAdminGetEntityRespond(
 type AdminGetEntityRespond struct {
 	ID                            string                  `json:"id"`
 	AccountNumber                 string                  `json:"accountNumber"`
-	EntityName                    string                  `json:"entityName"`
+	Name                          string                  `json:"name"`
 	Email                         string                  `json:"email,omitempty"`
-	EntityPhone                   string                  `json:"entityPhone"`
+	Telephone                     string                  `json:"telephone"`
 	IncType                       string                  `json:"incType"`
 	CompanyNumber                 string                  `json:"companyNumber"`
 	Website                       string                  `json:"website"`
-	Turnover                      *int                    `json:"turnover"`
+	DeclaredTurnover              *int                    `json:"declaredTurnover"`
 	Description                   string                  `json:"description"`
 	Address                       string                  `json:"address"`
 	City                          string                  `json:"city"`
@@ -567,13 +567,13 @@ func NewAdminUpdateEntityRespond(users []*User, entity *Entity, balanceLimit *Ba
 	respond := &AdminUpdateEntityRespond{
 		ID:                 entity.ID.Hex(),
 		AccountNumber:      entity.AccountNumber,
-		EntityName:         entity.Name,
+		Name:               entity.Name,
 		Email:              entity.Email,
-		EntityPhone:        entity.Telephone,
+		Telephone:          entity.Telephone,
 		IncType:            entity.IncType,
 		CompanyNumber:      entity.CompanyNumber,
 		Website:            entity.Website,
-		Turnover:           entity.DeclaredTurnover,
+		DeclaredTurnover:   entity.DeclaredTurnover,
 		Description:        entity.Description,
 		Address:            entity.Address,
 		City:               entity.City,
@@ -589,8 +589,8 @@ func NewAdminUpdateEntityRespond(users []*User, entity *Entity, balanceLimit *Ba
 		Users:              adminUserResponds,
 		BalanceLimit:       balanceLimit,
 		// flags
-		DailyEmailMatchNotification:   util.ToBool(entity.ReceiveDailyNotificationEmail),
-		ShowTagsMatchedSinceLastLogin: util.ToBool(entity.ShowRecentMatchedTags),
+		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyNotificationEmail),
+		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowRecentMatchedTags),
 	}
 	return respond
 }
@@ -598,13 +598,13 @@ func NewAdminUpdateEntityRespond(users []*User, entity *Entity, balanceLimit *Ba
 type AdminUpdateEntityRespond struct {
 	ID                 string              `json:"id"`
 	AccountNumber      string              `json:"accountNumber"`
-	EntityName         string              `json:"entityName"`
+	Name               string              `json:"name"`
 	Email              string              `json:"email,omitempty"`
-	EntityPhone        string              `json:"entityPhone"`
+	Telephone          string              `json:"telephone"`
 	IncType            string              `json:"incType"`
 	CompanyNumber      string              `json:"companyNumber"`
 	Website            string              `json:"website"`
-	Turnover           *int                `json:"turnover"`
+	DeclaredTurnover   *int                `json:"declaredTurnover"`
 	Description        string              `json:"description"`
 	Address            string              `json:"address"`
 	City               string              `json:"city"`
@@ -619,8 +619,8 @@ type AdminUpdateEntityRespond struct {
 	MaxNegativeBalance float64             `json:"maxNegativeBalance"`
 	Users              []*AdminUserRespond `json:"users"`
 	// flags
-	DailyEmailMatchNotification   bool `json:"dailyEmailMatchNotification"`
-	ShowTagsMatchedSinceLastLogin bool `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyMatchNotificationEmail bool `json:"receiveDailyMatchNotificationEmail"`
+	ShowTagsMatchedSinceLastLogin      bool `json:"showTagsMatchedSinceLastLogin"`
 	// To log user action.
 	BalanceLimit *BalanceLimit `json:"-"`
 }
@@ -629,48 +629,48 @@ type AdminUpdateEntityRespond struct {
 
 func NewAdminDeleteEntityRespond(entity *Entity) *AdminDeleteEntityRespond {
 	return &AdminDeleteEntityRespond{
-		ID:            entity.ID.Hex(),
-		AccountNumber: entity.AccountNumber,
-		EntityName:    entity.Name,
-		Email:         entity.Email,
-		EntityPhone:   entity.Telephone,
-		IncType:       entity.IncType,
-		CompanyNumber: entity.CompanyNumber,
-		Website:       entity.Website,
-		Turnover:      entity.DeclaredTurnover,
-		Description:   entity.Description,
-		Address:       entity.Address,
-		City:          entity.City,
-		Region:        entity.Region,
-		PostalCode:    entity.PostalCode,
-		Country:       entity.Country,
-		Status:        entity.Status,
-		Offers:        TagFieldToNames(entity.Offers),
-		Wants:         TagFieldToNames(entity.Wants),
-		Categories:    entity.Categories,
+		ID:               entity.ID.Hex(),
+		AccountNumber:    entity.AccountNumber,
+		EntityName:       entity.Name,
+		Email:            entity.Email,
+		Telephone:        entity.Telephone,
+		IncType:          entity.IncType,
+		CompanyNumber:    entity.CompanyNumber,
+		Website:          entity.Website,
+		DeclaredTurnover: entity.DeclaredTurnover,
+		Description:      entity.Description,
+		Address:          entity.Address,
+		City:             entity.City,
+		Region:           entity.Region,
+		PostalCode:       entity.PostalCode,
+		Country:          entity.Country,
+		Status:           entity.Status,
+		Offers:           TagFieldToNames(entity.Offers),
+		Wants:            TagFieldToNames(entity.Wants),
+		Categories:       entity.Categories,
 	}
 }
 
 type AdminDeleteEntityRespond struct {
-	ID            string   `json:"id"`
-	AccountNumber string   `json:"accountNumber"`
-	EntityName    string   `json:"entityName"`
-	Email         string   `json:"email,omitempty"`
-	EntityPhone   string   `json:"entityPhone"`
-	IncType       string   `json:"incType"`
-	CompanyNumber string   `json:"companyNumber"`
-	Website       string   `json:"website"`
-	Turnover      *int     `json:"turnover"`
-	Description   string   `json:"description"`
-	Address       string   `json:"address"`
-	City          string   `json:"city"`
-	Region        string   `json:"region"`
-	PostalCode    string   `json:"postalCode"`
-	Country       string   `json:"country"`
-	Status        string   `json:"status"`
-	Offers        []string `json:"offers,omitempty"`
-	Wants         []string `json:"wants,omitempty"`
-	Categories    []string `json:"categories,omitempty"`
+	ID               string   `json:"id"`
+	AccountNumber    string   `json:"accountNumber"`
+	EntityName       string   `json:"entityName"`
+	Email            string   `json:"email,omitempty"`
+	Telephone        string   `json:"telephone"`
+	IncType          string   `json:"incType"`
+	CompanyNumber    string   `json:"companyNumber"`
+	Website          string   `json:"website"`
+	DeclaredTurnover *int     `json:"declaredTurnover"`
+	Description      string   `json:"description"`
+	Address          string   `json:"address"`
+	City             string   `json:"city"`
+	Region           string   `json:"region"`
+	PostalCode       string   `json:"postalCode"`
+	Country          string   `json:"country"`
+	Status           string   `json:"status"`
+	Offers           []string `json:"offers,omitempty"`
+	Wants            []string `json:"wants,omitempty"`
+	Categories       []string `json:"categories,omitempty"`
 }
 
 // admin/transfer
