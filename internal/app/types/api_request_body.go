@@ -160,7 +160,7 @@ type UpdateUserReq struct {
 	Email     string `json:"email"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
-	UserPhone string `json:"userPhone"`
+	Telephone string `json:"telephone"`
 }
 
 func (req *UpdateUserReq) validate() []error {
@@ -176,7 +176,7 @@ func (req *UpdateUserReq) validate() []error {
 	user := User{
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
-		Telephone: req.UserPhone,
+		Telephone: req.Telephone,
 	}
 	errs = append(errs, user.Validate()...)
 
@@ -1006,7 +1006,7 @@ func NewAdminUpdateUserReq(j AdminUpdateUserJSON, originUser *User) (*AdminUpdat
 		Email:           j.Email,
 		FirstName:       j.FirstName,
 		LastName:        j.LastName,
-		UserPhone:       j.UserPhone,
+		Telephone:       j.Telephone,
 		Password:        j.Password,
 		Entity:          j.Entities,
 		AddedEntities:   util.ToObjectIDs(addedEntities),
@@ -1029,7 +1029,7 @@ type AdminUpdateUserReq struct {
 	Email      string
 	FirstName  string
 	LastName   string
-	UserPhone  string
+	Telephone  string
 	Password   string
 	// Entity
 	Entity          *[]string
@@ -1041,7 +1041,7 @@ type AdminUpdateUserJSON struct {
 	Email     string    `json:"email"`
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
-	UserPhone string    `json:"userPhone"`
+	Telephone string    `json:"telephone"`
 	Password  string    `json:"password"`
 	Entities  *[]string `json:"entities"`
 }
@@ -1057,7 +1057,7 @@ func (req *AdminUpdateUserJSON) validate() []error {
 		Email:     req.Email,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
-		Telephone: req.UserPhone,
+		Telephone: req.Telephone,
 	}
 	errs = append(errs, user.Validate()...)
 

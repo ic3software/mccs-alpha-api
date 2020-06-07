@@ -34,7 +34,7 @@
         "country": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-16T08:40:10.249Z",
-        "receiveDailyNotificationEmail": true,
+        "receiveDailyMatchNotificationEmail": true,
         "showRecentMatchedTags": true
     },
     {
@@ -76,7 +76,7 @@
         "country": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-16T08:35:55.758Z",
-        "receiveDailyNotificationEmail": true,
+        "receiveDailyMatchNotificationEmail": true,
         "showRecentMatchedTags": true
     },
     {
@@ -122,7 +122,7 @@
         "country": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-20T06:45:55.849Z",
-        "receiveDailyNotificationEmail": true,
+        "receiveDailyMatchNotificationEmail": true,
         "showRecentMatchedTags": true
     },
     {
@@ -168,7 +168,7 @@
         "country": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-24T09:45:52.849Z",
-        "receiveDailyNotificationEmail": true,
+        "receiveDailyMatchNotificationEmail": true,
         "showRecentMatchedTags": true
     },
     {
@@ -215,7 +215,7 @@
         "country": "England",
         "status": "tradingAccepted",
         "createdAt": "2020-02-27T17:12:30.849Z",
-        "receiveDailyNotificationEmail": true,
+        "receiveDailyMatchNotificationEmail": true,
         "showRecentMatchedTags": true
     },
     {
@@ -223,7 +223,7 @@
         "email": "api-test-user06@ic3.dev",
         "status": "rejected",
         "createdAt": "2020-02-28T17:12:30.849Z",
-        "receiveDailyNotificationEmail": false,
+        "receiveDailyMatchNotificationEmail": false,
         "showRecentMatchedTags": false
     },
     {
@@ -231,7 +231,7 @@
         "email": "api-test-user07@ic3.dev",
         "status": "pending",
         "createdAt": "2020-02-29T17:12:30.849Z",
-        "receiveDailyNotificationEmail": false,
+        "receiveDailyMatchNotificationEmail": false,
         "showRecentMatchedTags": false
     },
     {
@@ -239,7 +239,7 @@
         "email": "api-test-user08@ic3.dev",
         "status": "accepted",
         "createdAt": "2020-03-01T17:12:30.849Z",
-        "receiveDailyNotificationEmail": false,
+        "receiveDailyMatchNotificationEmail": false,
         "showRecentMatchedTags": false
     },
     {
@@ -247,7 +247,7 @@
         "email": "api-test-user09@ic3.dev",
         "status": "tradingRejected",
         "createdAt": "2020-03-02T17:12:30.849Z",
-        "receiveDailyNotificationEmail": false,
+        "receiveDailyMatchNotificationEmail": false,
         "showRecentMatchedTags": false
     },
     {
@@ -255,7 +255,7 @@
         "email": "api-test-user10@ic3.dev",
         "status": "tradingPending",
         "createdAt": "2020-03-03T07:12:30.849Z",
-        "receiveDailyNotificationEmail": false,
+        "receiveDailyMatchNotificationEmail": false,
         "showRecentMatchedTags": false
     },
     {
@@ -263,7 +263,7 @@
         "email": "api-test-user11@ic3.dev",
         "status": "accepted",
         "createdAt": "2020-03-03T07:13:30.849Z",
-        "receiveDailyNotificationEmail": false,
+        "receiveDailyMatchNotificationEmail": false,
         "showRecentMatchedTags": false
     }
 ]

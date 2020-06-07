@@ -153,7 +153,7 @@ func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity
 		update["postalCode"] = req.PostalCode
 	}
 	if req.ReceiveDailyMatchNotificationEmail != nil {
-		update["receiveDailyNotificationEmail"] = *req.ReceiveDailyMatchNotificationEmail
+		update["receiveDailyMatchNotificationEmail"] = *req.ReceiveDailyMatchNotificationEmail
 	}
 	if req.ShowTagsMatchedSinceLastLogin != nil {
 		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
@@ -257,7 +257,7 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 		update["status"] = req.Status
 	}
 	if req.ReceiveDailyMatchNotificationEmail != nil {
-		update["receiveDailyNotificationEmail"] = *req.ReceiveDailyMatchNotificationEmail
+		update["receiveDailyMatchNotificationEmail"] = *req.ReceiveDailyMatchNotificationEmail
 	}
 	if req.ShowTagsMatchedSinceLastLogin != nil {
 		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
@@ -636,8 +636,8 @@ func (e *entity) removeAssociatedUser(entityIDs []primitive.ObjectID, userID pri
 
 func (e *entity) FindByDailyNotification() ([]*types.Entity, error) {
 	filter := bson.M{
-		"receiveDailyNotificationEmail": true,
-		"deletedAt":                     bson.M{"$exists": false},
+		"receiveDailyMatchNotificationEmail": true,
+		"deletedAt":                          bson.M{"$exists": false},
 	}
 	cur, err := e.c.Find(context.TODO(), filter)
 	if err != nil {

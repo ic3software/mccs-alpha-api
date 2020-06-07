@@ -38,8 +38,8 @@ type Entity struct {
 	MemberStartedAt time.Time `json:"memberStartedAt,omitempty" bson:"memberStartedAt,omitempty"`
 
 	// flags
-	ShowRecentMatchedTags         *bool `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
-	ReceiveDailyNotificationEmail *bool `json:"receiveDailyNotificationEmail,omitempty" bson:"receiveDailyNotificationEmail,omitempty"`
+	ShowRecentMatchedTags              *bool `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
+	ReceiveDailyMatchNotificationEmail *bool `json:"receiveDailyMatchNotificationEmail,omitempty" bson:"receiveDailyMatchNotificationEmail,omitempty"`
 
 	LastNotificationSentDate time.Time `json:"lastNotificationSentDate,omitempty" bson:"lastNotificationSentDate,omitempty"`
 
