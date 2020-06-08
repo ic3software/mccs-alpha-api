@@ -244,8 +244,8 @@ func (u *user) AdminFindOneAndUpdate(req *types.AdminUpdateUserReq) (*types.User
 	if req.LastName != "" {
 		update["lastName"] = req.LastName
 	}
-	if req.UserPhone != "" {
-		update["telephone"] = req.UserPhone
+	if req.Telephone != "" {
+		update["telephone"] = req.Telephone
 	}
 	if req.Password != "" {
 		update["password"] = req.Password

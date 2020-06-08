@@ -38,8 +38,8 @@ type Entity struct {
 	MemberStartedAt time.Time `json:"memberStartedAt,omitempty" bson:"memberStartedAt,omitempty"`
 
 	// flags
-	ShowRecentMatchedTags         *bool `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
-	ReceiveDailyNotificationEmail *bool `json:"receiveDailyNotificationEmail,omitempty" bson:"receiveDailyNotificationEmail,omitempty"`
+	ShowRecentMatchedTags              *bool `json:"showRecentMatchedTags,omitempty" bson:"showRecentMatchedTags,omitempty"`
+	ReceiveDailyMatchNotificationEmail *bool `json:"receiveDailyMatchNotificationEmail,omitempty" bson:"receiveDailyMatchNotificationEmail,omitempty"`
 
 	LastNotificationSentDate time.Time `json:"lastNotificationSentDate,omitempty" bson:"lastNotificationSentDate,omitempty"`
 
@@ -73,7 +73,7 @@ func (entity *Entity) Validate() []error {
 		errs = append(errs, errors.New("Website URL length cannot exceed 100 characters."))
 	}
 	if entity.DeclaredTurnover != nil && *entity.DeclaredTurnover < 0 {
-		errs = append(errs, errors.New("Turnover should be a positive number."))
+		errs = append(errs, errors.New("Declared turnover should be a positive number."))
 	}
 	if len(entity.Description) > 500 {
 		errs = append(errs, errors.New("Description length cannot exceed 500 characters."))

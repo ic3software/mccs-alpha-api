@@ -65,12 +65,12 @@ func (es *entity) Create(id primitive.ObjectID, entity *types.Entity) error {
 
 func (es *entity) Update(req *types.UpdateUserEntityReq) error {
 	doc := types.EntityESRecord{
-		Name:  req.EntityName,
+		Name:  req.Name,
 		Email: req.Email,
 		// Address
-		City:    req.LocationCity,
-		Region:  req.LocationRegion,
-		Country: req.LocationCountry,
+		City:    req.City,
+		Region:  req.Region,
+		Country: req.Country,
 	}
 
 	script := es.getUpateTagScript(req.AddedOffers, req.AddedWants, req.RemovedOffers, req.RemovedWants)
@@ -100,13 +100,13 @@ func (es *entity) Update(req *types.UpdateUserEntityReq) error {
 
 func (es *entity) AdminUpdate(req *types.AdminUpdateEntityReq) error {
 	doc := types.EntityESRecord{
-		Name:   req.EntityName,
+		Name:   req.Name,
 		Email:  req.Email,
 		Status: req.Status,
 		// Address
-		City:    req.LocationCity,
-		Region:  req.LocationRegion,
-		Country: req.LocationCountry,
+		City:    req.City,
+		Region:  req.Region,
+		Country: req.Country,
 		// Account
 		MaxNegBal: req.MaxNegBal,
 		MaxPosBal: req.MaxPosBal,
@@ -204,9 +204,9 @@ func (es *entity) Search(req *types.SearchEntityReq) (*types.ESSearchEntityResul
 
 	seachByStatus(q, req.Statuses)
 	seachbyNameEmailAndAddress(q, &byNameAndAddress{
-		Name:    req.EntityName,
-		City:    req.LocationCity,
-		Country: req.LocationCountry,
+		Name:    req.Name,
+		City:    req.City,
+		Country: req.Country,
 	})
 	seachByTags(q, &byTag{
 		Offers:      req.Offers,
@@ -351,8 +351,8 @@ func (es *entity) AdminSearch(req *types.AdminSearchEntityReq) (*types.ESSearchE
 
 	seachByStatus(q, req.Statuses)
 	seachbyNameEmailAndAddress(q, &byNameAndAddress{
-		Name:    req.EntityName,
-		Email:   req.EntityEmail,
+		Name:    req.Name,
+		Email:   req.Email,
 		City:    req.City,
 		Region:  req.Region,
 		Country: req.Country,

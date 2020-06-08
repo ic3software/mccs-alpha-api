@@ -165,29 +165,29 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		if logic.User.UserEmailExists(req.Email) {
+		if logic.User.UserEmailExists(req.UserEmail) {
 			api.Respond(w, r, http.StatusBadRequest, errors.New("Email address is already registered."))
 			return
 		}
 
 		createdEntity, err := logic.Entity.Create(&types.Entity{
-			Name:                          req.EntityName,
-			Email:                         req.Email,
-			IncType:                       req.IncType,
-			CompanyNumber:                 req.CompanyNumber,
-			Telephone:                     req.EntityPhone,
-			Website:                       req.Website,
-			DeclaredTurnover:              req.Turnover,
-			Description:                   req.Description,
-			Address:                       req.LocationAddress,
-			City:                          req.LocationCity,
-			Region:                        req.LocationRegion,
-			PostalCode:                    req.LocationPostalCode,
-			Country:                       req.LocationCountry,
-			Offers:                        types.ToTagFields(req.Offers),
-			Wants:                         types.ToTagFields(req.Wants),
-			ShowRecentMatchedTags:         req.ShowTagsMatchedSinceLastLogin,
-			ReceiveDailyNotificationEmail: req.DailyEmailMatchNotification,
+			Name:                               req.EntityName,
+			Email:                              req.EntityEmail,
+			IncType:                            req.IncType,
+			CompanyNumber:                      req.CompanyNumber,
+			Telephone:                          req.EntityPhone,
+			Website:                            req.Website,
+			DeclaredTurnover:                   req.DeclaredTurnover,
+			Description:                        req.Description,
+			Address:                            req.Address,
+			City:                               req.City,
+			Region:                             req.Region,
+			PostalCode:                         req.PostalCode,
+			Country:                            req.Country,
+			Offers:                             types.ToTagFields(req.Offers),
+			Wants:                              types.ToTagFields(req.Wants),
+			ShowRecentMatchedTags:              req.ShowTagsMatchedSinceLastLogin,
+			ReceiveDailyMatchNotificationEmail: req.ReceiveDailyMatchNotificationEmail,
 		})
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
@@ -195,7 +195,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 		createdUser, err := logic.User.Create(&types.User{
-			Email:     req.Email,
+			Email:     req.UserEmail,
 			Password:  req.Password,
 			FirstName: req.FirstName,
 			LastName:  req.LastName,
@@ -439,7 +439,7 @@ func (handler *userHandler) updateUser() func(http.ResponseWriter, *http.Request
 		updated, err := logic.User.FindOneAndUpdate(originUser.ID, &types.User{
 			FirstName: req.FirstName,
 			LastName:  req.LastName,
-			Telephone: req.UserPhone,
+			Telephone: req.Telephone,
 		})
 		if err != nil {
 			l.Logger.Info("[INFO] UserHandler.updateUser failed:", zap.Error(err))

@@ -113,11 +113,11 @@ func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity
 	updates := []bson.M{}
 
 	update := bson.M{"updatedAt": time.Now()}
-	if req.EntityName != "" {
-		update["name"] = req.EntityName
+	if req.Name != "" {
+		update["name"] = req.Name
 	}
-	if req.EntityPhone != "" {
-		update["telephone"] = req.EntityPhone
+	if req.Telephone != "" {
+		update["telephone"] = req.Telephone
 	}
 	if req.Email != "" {
 		update["email"] = req.Email
@@ -134,26 +134,26 @@ func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity
 	if req.Description != "" {
 		update["description"] = req.Description
 	}
-	if req.Turnover != nil {
-		update["declaredTurnover"] = *req.Turnover
+	if req.DeclaredTurnover != nil {
+		update["declaredTurnover"] = *req.DeclaredTurnover
 	}
-	if req.LocationAddress != "" {
-		update["address"] = req.LocationAddress
+	if req.Address != "" {
+		update["address"] = req.Address
 	}
-	if req.LocationCity != "" {
-		update["city"] = req.LocationCity
+	if req.City != "" {
+		update["city"] = req.City
 	}
-	if req.LocationRegion != "" {
-		update["region"] = req.LocationRegion
+	if req.Region != "" {
+		update["region"] = req.Region
 	}
-	if req.LocationCountry != "" {
-		update["country"] = req.LocationCountry
+	if req.Country != "" {
+		update["country"] = req.Country
 	}
-	if req.LocationPostalCode != "" {
-		update["postalCode"] = req.LocationPostalCode
+	if req.PostalCode != "" {
+		update["postalCode"] = req.PostalCode
 	}
-	if req.DailyEmailMatchNotification != nil {
-		update["receiveDailyNotificationEmail"] = *req.DailyEmailMatchNotification
+	if req.ReceiveDailyMatchNotificationEmail != nil {
+		update["receiveDailyMatchNotificationEmail"] = *req.ReceiveDailyMatchNotificationEmail
 	}
 	if req.ShowTagsMatchedSinceLastLogin != nil {
 		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
@@ -208,11 +208,11 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	updates := []bson.M{}
 
 	update := bson.M{"updatedAt": time.Now()}
-	if req.EntityName != "" {
-		update["name"] = req.EntityName
+	if req.Name != "" {
+		update["name"] = req.Name
 	}
-	if req.EntityPhone != "" {
-		update["telephone"] = req.EntityPhone
+	if req.Telephone != "" {
+		update["telephone"] = req.Telephone
 	}
 	if req.Email != "" {
 		update["email"] = req.Email
@@ -229,23 +229,23 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	if req.Description != "" {
 		update["description"] = req.Description
 	}
-	if req.Turnover != nil {
-		update["declaredTurnover"] = *req.Turnover
+	if req.DeclaredTurnover != nil {
+		update["declaredTurnover"] = *req.DeclaredTurnover
 	}
-	if req.LocationAddress != "" {
-		update["address"] = req.LocationAddress
+	if req.Address != "" {
+		update["address"] = req.Address
 	}
-	if req.LocationCity != "" {
-		update["city"] = req.LocationCity
+	if req.City != "" {
+		update["city"] = req.City
 	}
-	if req.LocationRegion != "" {
-		update["region"] = req.LocationRegion
+	if req.Region != "" {
+		update["region"] = req.Region
 	}
-	if req.LocationCountry != "" {
-		update["country"] = req.LocationCountry
+	if req.Country != "" {
+		update["country"] = req.Country
 	}
-	if req.LocationPostalCode != "" {
-		update["postalCode"] = req.LocationPostalCode
+	if req.PostalCode != "" {
+		update["postalCode"] = req.PostalCode
 	}
 	if req.Categories != nil {
 		update["categories"] = util.FormatTags(*req.Categories)
@@ -256,8 +256,8 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	if req.Status != "" {
 		update["status"] = req.Status
 	}
-	if req.DailyEmailMatchNotification != nil {
-		update["receiveDailyNotificationEmail"] = *req.DailyEmailMatchNotification
+	if req.ReceiveDailyMatchNotificationEmail != nil {
+		update["receiveDailyMatchNotificationEmail"] = *req.ReceiveDailyMatchNotificationEmail
 	}
 	if req.ShowTagsMatchedSinceLastLogin != nil {
 		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
@@ -266,7 +266,7 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 	// This is a trick to prevent setting nothing for the entity.
 	// If we don't do this then it will throw this error:
 	// (FailedToParse) '$set' is empty. You must specify a field like so: {$set: {<field>: ...}}
-	if req.EntityName == "" {
+	if req.Name == "" {
 		update["name"] = req.OriginEntity.Name
 	}
 	updates = append(updates, bson.M{"$set": update})
@@ -636,8 +636,8 @@ func (e *entity) removeAssociatedUser(entityIDs []primitive.ObjectID, userID pri
 
 func (e *entity) FindByDailyNotification() ([]*types.Entity, error) {
 	filter := bson.M{
-		"receiveDailyNotificationEmail": true,
-		"deletedAt":                     bson.M{"$exists": false},
+		"receiveDailyMatchNotificationEmail": true,
+		"deletedAt":                          bson.M{"$exists": false},
 	}
 	cur, err := e.c.Find(context.TODO(), filter)
 	if err != nil {
