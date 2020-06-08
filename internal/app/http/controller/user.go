@@ -186,7 +186,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			Country:                            req.Country,
 			Offers:                             types.ToTagFields(req.Offers),
 			Wants:                              types.ToTagFields(req.Wants),
-			ShowRecentMatchedTags:              req.ShowTagsMatchedSinceLastLogin,
+			ShowTagsMatchedSinceLastLogin:      req.ShowTagsMatchedSinceLastLogin,
 			ReceiveDailyMatchNotificationEmail: req.ReceiveDailyMatchNotificationEmail,
 		})
 		if err != nil {

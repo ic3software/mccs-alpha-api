@@ -56,7 +56,7 @@ func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
 		Wants:            TagFieldToNames(entity.Wants),
 		// flags
 		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
-		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowRecentMatchedTags),
+		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowTagsMatchedSinceLastLogin),
 	}
 }
 
@@ -81,7 +81,7 @@ func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
 		Wants:            TagFieldToNames(entity.Wants),
 		// flags
 		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
-		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowRecentMatchedTags),
+		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowTagsMatchedSinceLastLogin),
 	}
 }
 
@@ -261,7 +261,7 @@ func NewAdminEntityRespond(entity *Entity) *AdminEntityRespond {
 		Offers:                             TagFieldToNames(entity.Offers),
 		Wants:                              TagFieldToNames(entity.Wants),
 		Categories:                         entity.Categories,
-		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowRecentMatchedTags),
+		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowTagsMatchedSinceLastLogin),
 		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
 	}
 }
@@ -518,7 +518,7 @@ func NewAdminGetEntityRespond(
 		Offers:                             TagFieldToNames(entity.Offers),
 		Wants:                              TagFieldToNames(entity.Wants),
 		Categories:                         entity.Categories,
-		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowRecentMatchedTags),
+		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowTagsMatchedSinceLastLogin),
 		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
 		Balance:                            account.Balance,
 		MaxNegativeBalance:                 balanceLimit.MaxNegBal,
@@ -590,7 +590,7 @@ func NewAdminUpdateEntityRespond(users []*User, entity *Entity, balanceLimit *Ba
 		BalanceLimit:       balanceLimit,
 		// flags
 		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
-		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowRecentMatchedTags),
+		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowTagsMatchedSinceLastLogin),
 	}
 	return respond
 }
