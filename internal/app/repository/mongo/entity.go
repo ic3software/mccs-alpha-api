@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/global/constant"
@@ -101,6 +102,23 @@ func (e *entity) FindByAccountNumber(accountNumber string) (*types.Entity, error
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, errors.New("Entity not found.")
+		}
+		return nil, err
+	}
+	return &entity, nil
+}
+
+func (e *entity) FindByEmail(email string) (*types.Entity, error) {
+	if email == "" {
+		return nil, errors.New("Please specify an email address.")
+	}
+	email = strings.ToLower(email)
+	entity := types.Entity{}
+	filter := bson.M{"email": email, "deletedAt": bson.M{"$exists": false}}
+	err := e.c.FindOne(context.Background(), filter).Decode(&Entity)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("The specified entity could not be found.")
 		}
 		return nil, err
 	}

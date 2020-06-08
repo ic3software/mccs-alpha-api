@@ -48,11 +48,10 @@ func (u *user) Create(update *types.User) (*types.User, error) {
 }
 
 func (u *user) FindByEmail(email string) (*types.User, error) {
-	email = strings.ToLower(email)
 	if email == "" {
-		return &types.User{}, errors.New("Please specify an email address.")
+		return nil, errors.New("Please specify an email address.")
 	}
-
+	email = strings.ToLower(email)
 	user := types.User{}
 	filter := bson.M{"email": email, "deletedAt": bson.M{"$exists": false}}
 	err := u.c.FindOne(context.Background(), filter).Decode(&user)

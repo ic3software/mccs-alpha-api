@@ -74,6 +74,14 @@ func (_ *entity) FindByStringID(id string) (*types.Entity, error) {
 	return entity, nil
 }
 
+func (_ *entity) EmailExists(email string) bool {
+	_, err := mongo.Entity.FindByEmail(email)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 // PATCH /user/entities/{entityID}
 
 func (_ *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity, error) {
