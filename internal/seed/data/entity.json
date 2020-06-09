@@ -35,7 +35,7 @@
         "status": "tradingAccepted",
         "createdAt": "2020-02-16T08:40:10.249Z",
         "receiveDailyMatchNotificationEmail": true,
-        "showRecentMatchedTags": true
+        "showTagsMatchedSinceLastLogin": true
     },
     {
         "name": "Joe's Woodworking",
@@ -77,7 +77,7 @@
         "status": "tradingAccepted",
         "createdAt": "2020-02-16T08:35:55.758Z",
         "receiveDailyMatchNotificationEmail": true,
-        "showRecentMatchedTags": true
+        "showTagsMatchedSinceLastLogin": true
     },
     {
         "name": "Farmer Freddy's Veg",
@@ -123,7 +123,7 @@
         "status": "tradingAccepted",
         "createdAt": "2020-02-20T06:45:55.849Z",
         "receiveDailyMatchNotificationEmail": true,
-        "showRecentMatchedTags": true
+        "showTagsMatchedSinceLastLogin": true
     },
     {
         "name": "Betty's Baked Goods",
@@ -169,7 +169,7 @@
         "status": "tradingAccepted",
         "createdAt": "2020-02-24T09:45:52.849Z",
         "receiveDailyMatchNotificationEmail": true,
-        "showRecentMatchedTags": true
+        "showTagsMatchedSinceLastLogin": true
     },
     {
         "name": "Herbie's Hipster Brews",
@@ -216,7 +216,7 @@
         "status": "tradingAccepted",
         "createdAt": "2020-02-27T17:12:30.849Z",
         "receiveDailyMatchNotificationEmail": true,
-        "showRecentMatchedTags": true
+        "showTagsMatchedSinceLastLogin": true
     },
     {
         "name": "AA",
@@ -224,7 +224,7 @@
         "status": "rejected",
         "createdAt": "2020-02-28T17:12:30.849Z",
         "receiveDailyMatchNotificationEmail": false,
-        "showRecentMatchedTags": false
+        "showTagsMatchedSinceLastLogin": false
     },
     {
         "name": "DD",
@@ -232,7 +232,7 @@
         "status": "pending",
         "createdAt": "2020-02-29T17:12:30.849Z",
         "receiveDailyMatchNotificationEmail": false,
-        "showRecentMatchedTags": false
+        "showTagsMatchedSinceLastLogin": false
     },
     {
         "name": "EE",
@@ -240,7 +240,7 @@
         "status": "accepted",
         "createdAt": "2020-03-01T17:12:30.849Z",
         "receiveDailyMatchNotificationEmail": false,
-        "showRecentMatchedTags": false
+        "showTagsMatchedSinceLastLogin": false
     },
     {
         "name": "GG",
@@ -248,7 +248,7 @@
         "status": "tradingRejected",
         "createdAt": "2020-03-02T17:12:30.849Z",
         "receiveDailyMatchNotificationEmail": false,
-        "showRecentMatchedTags": false
+        "showTagsMatchedSinceLastLogin": false
     },
     {
         "name": "II",
@@ -256,7 +256,7 @@
         "status": "tradingPending",
         "createdAt": "2020-03-03T07:12:30.849Z",
         "receiveDailyMatchNotificationEmail": false,
-        "showRecentMatchedTags": false
+        "showTagsMatchedSinceLastLogin": false
     },
     {
         "name": "JJ",
@@ -264,6 +264,6 @@
         "status": "accepted",
         "createdAt": "2020-03-03T07:13:30.849Z",
         "receiveDailyMatchNotificationEmail": false,
-        "showRecentMatchedTags": false
+        "showTagsMatchedSinceLastLogin": false
     }
 ]

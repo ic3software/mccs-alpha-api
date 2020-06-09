@@ -174,7 +174,7 @@ func (e *entity) FindOneAndUpdate(req *types.UpdateUserEntityReq) (*types.Entity
 		update["receiveDailyMatchNotificationEmail"] = *req.ReceiveDailyMatchNotificationEmail
 	}
 	if req.ShowTagsMatchedSinceLastLogin != nil {
-		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
+		update["showTagsMatchedSinceLastLogin"] = *req.ShowTagsMatchedSinceLastLogin
 	}
 	updates = append(updates, bson.M{"$set": update})
 
@@ -278,7 +278,7 @@ func (e *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 		update["receiveDailyMatchNotificationEmail"] = *req.ReceiveDailyMatchNotificationEmail
 	}
 	if req.ShowTagsMatchedSinceLastLogin != nil {
-		update["showRecentMatchedTags"] = *req.ShowTagsMatchedSinceLastLogin
+		update["showTagsMatchedSinceLastLogin"] = *req.ShowTagsMatchedSinceLastLogin
 	}
 	// TODO
 	// This is a trick to prevent setting nothing for the entity.
