@@ -72,11 +72,20 @@ func (e *Email) send(d emailData) error {
 
 // External APIs
 
-// SendWelcomeEmail sends the welcome email once a new account is created.
-func SendWelcomeEmail(entityName string, user *types.User) error {
-	return e.sendWelcomeEmail(entityName, user)
+type WelcomeEmail struct {
+	EntityName string
+	Email      string
+	Receiver   string
 }
-func (e *Email) sendWelcomeEmail(entityName string, user *types.User) error {
+
+// SendWelcomeEmail sends the welcome email once a new account is created.
+func SendWelcomeEmail(input WelcomeEmail) error {
+	if !viper.GetBool("receive_email.signup_notifications") {
+		return nil
+	}
+	return e.sendWelcomeEmail(input)
+}
+func (e *Email) sendWelcomeEmail(input WelcomeEmail) error {
 	t, err := template.NewEmailView("welcome")
 	if err != nil {
 		return err
@@ -85,7 +94,7 @@ func (e *Email) sendWelcomeEmail(entityName string, user *types.User) error {
 	data := struct {
 		EntityName string
 	}{
-		EntityName: entityName,
+		EntityName: input.EntityName,
 	}
 
 	var tpl bytes.Buffer
@@ -95,8 +104,8 @@ func (e *Email) sendWelcomeEmail(entityName string, user *types.User) error {
 	html := tpl.String()
 
 	d := emailData{
-		receiver:      user.FirstName + " " + user.LastName,
-		receiverEmail: user.Email,
+		receiver:      input.Receiver,
+		receiverEmail: input.Email,
 		subject:       "Welcome to The Open Credit Network directory!",
 		text:          "Welcome to The Open Credit Network directory!",
 		html:          html,
@@ -266,7 +275,7 @@ func (e *Email) sendContactEntity(receiver, receiverEmail, replyToName, replyToE
 
 	// Send a copy of the email to the sengrid: sender_email address.
 	go func() {
-		if !viper.GetBool("receive_trade_contact_emails") {
+		if !viper.GetBool("receive_email.trade_contact_emails") {
 			return
 		}
 		d := emailData{

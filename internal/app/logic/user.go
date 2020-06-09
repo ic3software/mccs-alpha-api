@@ -52,7 +52,7 @@ func (u *user) AssociateEntity(userID, entityID primitive.ObjectID) error {
 	return nil
 }
 
-func (u *user) UserEmailExists(email string) bool {
+func (u *user) EmailExists(email string) bool {
 	_, err := mongo.User.FindByEmail(email)
 	if err != nil {
 		return false

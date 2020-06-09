@@ -10,8 +10,10 @@ email_from: MCCS localhost dev
 daily_email_schedule: "* * 1 * * *"
 balance_check_schedule: "* * 1 * * *"
 concurrency_num: 3
-receive_trade_contact_emails: true
-receive_signup_notifications: true
+
+receive_email:
+  trade_contact_emails: true
+  signup_notifications: true
 
 login_attempts:
   limit: 3     # number of attempts before applying login_attempts_timeout
