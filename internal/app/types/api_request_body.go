@@ -27,6 +27,11 @@ func NewSignupReq(r *http.Request) (*SignupReq, []error) {
 	var req SignupReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
+	// Use the email address provided for userEmail to populate entityEmail
+	// if an email address for entityEmail is not provided by the user.
+	if req.EntityEmail == "" {
+		req.EntityEmail = req.UserEmail
+	}
 	if err != nil {
 		return nil, []error{err}
 	}
