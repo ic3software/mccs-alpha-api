@@ -117,60 +117,6 @@ func (e *Email) sendWelcomeEmail(input WelcomeEmail) error {
 	return nil
 }
 
-// SendThankYouEmail sends the thank you email once the user completes the trading member signup form.
-func SendThankYouEmail(firstName, lastName, email string) error {
-	return e.sendThankYouEmail(firstName, lastName, email)
-}
-func (e *Email) sendThankYouEmail(firstName, lastName, email string) error {
-	t, err := template.NewEmailView("thankYou")
-	if err != nil {
-		return err
-	}
-
-	data := struct {
-		FirstName string
-	}{
-		FirstName: firstName,
-	}
-
-	var tpl bytes.Buffer
-	if err := t.ExecuteTemplate(&tpl, "thankYou", data); err != nil {
-		return err
-	}
-	html := tpl.String()
-
-	d := emailData{
-		receiver:      firstName + " " + lastName,
-		receiverEmail: email,
-		subject:       "Thank You for Your Application",
-		text:          "Thank You for Your Application",
-		html:          html,
-	}
-
-	if err := e.send(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// SendNewMemberSignupEmail sends the email to the OCN Admin email address.
-func SendNewMemberSignupEmail(entityName, email string) error {
-	return e.sendNewMemberSignupEmail(entityName, email)
-}
-func (e *Email) sendNewMemberSignupEmail(entityName, email string) error {
-	d := emailData{
-		receiver:      viper.GetString("email_from"),
-		receiverEmail: viper.GetString("sendgrid.sender_email"),
-		subject:       "New Trading Member Application",
-		text:          "New Trading Member Application",
-		html:          "Entity Name: " + entityName + ", Email Address: " + email,
-	}
-	if err := e.send(d); err != nil {
-		return err
-	}
-	return nil
-}
-
 // SendResetEmail sends the reset email.
 func SendResetEmail(receiver string, email string, token string) error {
 	return e.sendResetEmail(receiver, email, token)
