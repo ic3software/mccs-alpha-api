@@ -38,16 +38,23 @@ func (tr *transfer) Initiate(req *types.TransferReq) {
 	}
 }
 
-func (tr *transfer) Accept(j *types.Journal) {
-	info := tr.getEmailInfo(j)
+type TransferEmailInfo struct {
+	TransferDirection   string
+	InitiatorEmail      string
+	InitiatorEntityName string
+	ReceiverEmail       string
+	ReceiverEntityName  string
+	Reason              string
+	Amount              float64
+}
 
+func (tr *transfer) Accept(info *TransferEmailInfo) {
 	var body string
-	if j.InitiatedBy == j.FromAccountNumber {
-		body = info.ReceiverEntityName + " has accepted the transaction you initiated for -" + fmt.Sprintf("%.2f", j.Amount) + " Credits."
+	if info.TransferDirection == "out" {
+		body = info.ReceiverEntityName + " has accepted the transaction you initiated for -" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
 	} else {
-		body = info.ReceiverEntityName + " has accepted the transaction you initiated for +" + fmt.Sprintf("%.2f", j.Amount) + " Credits."
+		body = info.ReceiverEntityName + " has accepted the transaction you initiated for +" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
 	}
-
 	d := emailData{
 		receiver:      info.InitiatorEntityName,
 		receiverEmail: info.InitiatorEmail,
@@ -61,18 +68,16 @@ func (tr *transfer) Accept(j *types.Journal) {
 	}
 }
 
-func (tr *transfer) Reject(j *types.Journal, reason string) {
-	info := tr.getEmailInfo(j)
-
+func (tr *transfer) Reject(info *TransferEmailInfo) {
 	var body string
-	if j.InitiatedBy == j.FromAccountNumber {
-		body = info.ReceiverEntityName + " has rejected the transaction you initiated for -" + fmt.Sprintf("%.2f", j.Amount) + " Credits."
+	if info.TransferDirection == "out" {
+		body = info.ReceiverEntityName + " has rejected the transaction you initiated for -" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
 	} else {
-		body = info.ReceiverEntityName + " has rejected the transaction you initiated for +" + fmt.Sprintf("%.2f", j.Amount) + " Credits."
+		body = info.ReceiverEntityName + " has rejected the transaction you initiated for +" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
 	}
 
-	if reason != "" {
-		body += "<br/><br/> Reason: <br/><br/>" + reason
+	if info.Reason != "" {
+		body += "<br/><br/> Reason: <br/><br/>" + info.Reason
 	}
 
 	d := emailData{
@@ -88,18 +93,16 @@ func (tr *transfer) Reject(j *types.Journal, reason string) {
 	}
 }
 
-func (tr *transfer) Cancel(j *types.Journal, reason string) {
-	info := tr.getEmailInfo(j)
-
+func (tr *transfer) Cancel(info *TransferEmailInfo) {
 	var body string
-	if j.InitiatedBy == j.FromAccountNumber {
-		body = info.InitiatorEntityName + " has cancelled the transaction it initiated for +" + fmt.Sprintf("%.2f", j.Amount) + " Credits."
+	if info.TransferDirection == "out" {
+		body = info.InitiatorEntityName + " has cancelled the transaction it initiated for +" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
 	} else {
-		body = info.InitiatorEntityName + " has cancelled the transaction it initiated for -" + fmt.Sprintf("%.2f", j.Amount) + " Credits."
+		body = info.InitiatorEntityName + " has cancelled the transaction it initiated for -" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
 	}
 
-	if reason != "" {
-		body += "<br/><br/> Reason: <br/><br/>" + reason
+	if info.Reason != "" {
+		body += "<br/><br/> Reason: <br/><br/>" + info.Reason
 	}
 
 	d := emailData{
@@ -115,44 +118,17 @@ func (tr *transfer) Cancel(j *types.Journal, reason string) {
 	}
 }
 
-func (tr *transfer) CancelBySystem(j *types.Journal, reason string) error {
-	proposal := tr.getEmailInfo(j)
-
-	body := "The system has cancelled the transaction you initiated with " + proposal.ReceiverEntityName + " for the following reason: " + reason
+func (tr *transfer) CancelBySystem(info *TransferEmailInfo) {
+	body := "The system has cancelled the transaction you initiated with " + info.ReceiverEntityName + " for the following reason: " + info.Reason
 	d := emailData{
-		receiver:      proposal.InitiatorEntityName,
-		receiverEmail: proposal.InitiatorEmail,
+		receiver:      info.InitiatorEntityName,
+		receiverEmail: info.InitiatorEmail,
 		subject:       "OCN Transaction Cancelled",
 		text:          body,
 		html:          body,
 	}
 	err := e.send(d)
 	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type emailInfo struct {
-	InitiatorEmail,
-	InitiatorEntityName,
-	ReceiverEmail,
-	ReceiverEntityName string
-}
-
-func (tr *transfer) getEmailInfo(j *types.Journal) *emailInfo {
-	var initiatorEmail, initiatorEntityName, receiverEmail, receiverEntityName string
-	if j.InitiatedBy == j.FromAccountNumber {
-		initiatorEntityName = j.FromEntityName
-		receiverEntityName = j.ToEntityName
-	} else {
-		initiatorEntityName = j.ToEntityName
-		receiverEntityName = j.FromEntityName
-	}
-	return &emailInfo{
-		initiatorEmail,
-		initiatorEntityName,
-		receiverEmail,
-		receiverEntityName,
+		l.Logger.Error("email.Transfer.CancelBySystem failed", zap.Error(err))
 	}
 }
