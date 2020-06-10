@@ -169,7 +169,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			api.Respond(w, r, http.StatusBadRequest, errors.New("User email address is already registered."))
 			return
 		}
-		if logic.Entity.EmailExists(req.UserEmail) {
+		if logic.Entity.EmailExists(req.EntityEmail) {
 			api.Respond(w, r, http.StatusBadRequest, errors.New("Entity email address is already registered."))
 			return
 		}
