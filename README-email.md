@@ -19,19 +19,6 @@ Email Type | Sent To | Description
 [Password reset](/internal/pkg/email/email.go) | User or admin email | Users and admins can request a reset of their password when they forgot it. A coded URL is sent by email that the user or admin can click on to start the reset process. The front end app needs to handle the receipt of the code in the URL and initiate through the API the password reset with the new password.
 [Signup notification](/internal/pkg/email/email.go) | Admin email | An email is sent to admins whenever a new user signs up in MCCS.
 
-### Deprecated/To Be Changed - TODO
-
-These are from the old signup process and should be removed.
-
-- SendThankYouEmail - sends the thank you email once the user completes the trading member signup form
-- SendNewMemberSignupEmail - sends admins an email notification as each new trading member application occurs
-
-
-**[YAGNI Alert](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it)** -> Consider adding two new emails that can be manually triggered by an admin:
-
-- Confirmation of being added to directory
-- Confirmation of being able to make MC transfers
-
 ## Email Environment Variables
 
 There are a few email-related environment variables in the [example configuration file](/configs/development-example.yaml):
