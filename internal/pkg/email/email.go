@@ -80,9 +80,6 @@ type WelcomeEmail struct {
 
 // SendWelcomeEmail sends the welcome email once a new account is created.
 func SendWelcomeEmail(input WelcomeEmail) error {
-	if !viper.GetBool("receive_email.signup_notifications") {
-		return nil
-	}
 	return e.sendWelcomeEmail(input)
 }
 func (e *Email) sendWelcomeEmail(input WelcomeEmail) error {
@@ -296,6 +293,9 @@ func (e *Email) sendContactEntity(receiver, receiverEmail, replyToName, replyToE
 
 // SendSignupNotification sends an email notification as each new signup occurs.
 func SendSignupNotification(entityName string, contactEmail string) error {
+	if !viper.GetBool("receive_email.signup_notifications") {
+		return nil
+	}
 	return e.sendSignupNotification(entityName, contactEmail)
 }
 func (e *Email) sendSignupNotification(entityName string, contactEmail string) error {
