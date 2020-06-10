@@ -227,32 +227,18 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		}
 
 		go logic.UserAction.Signup(createdUser, createdEntity)
-		go handler.sendWelcomeEmail(req)
-		go handler.sendSignupNotification(req)
+		go email.SendWelcomeEmail(email.WelcomeEmail{
+			EntityName: req.EntityName,
+			Email:      req.EntityEmail,
+			Receiver:   req.FirstName + " " + req.LastName,
+		})
+		go email.SendSignupNotification(req.EntityName, req.EntityEmail)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: data{
 			UserID:   createdUser.ID.Hex(),
 			EntityID: createdEntity.ID.Hex(),
 			Token:    token,
 		}})
-	}
-}
-
-func (handler *userHandler) sendWelcomeEmail(req *types.SignupReq) {
-	err := email.SendWelcomeEmail(email.WelcomeEmail{
-		EntityName: req.EntityName,
-		Email:      req.EntityEmail,
-		Receiver:   req.FirstName + " " + req.LastName,
-	})
-	if err != nil {
-		l.Logger.Error("email.SendWelcomeEmail failed", zap.Error(err))
-	}
-}
-
-func (handler *userHandler) sendSignupNotification(req *types.SignupReq) {
-	err := email.SendSignupNotification(req.EntityName, req.EntityEmail)
-	if err != nil {
-		l.Logger.Error("email.sendSignupNotification failed", zap.Error(err))
 	}
 }
 

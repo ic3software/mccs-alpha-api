@@ -79,13 +79,13 @@ type WelcomeEmail struct {
 }
 
 // SendWelcomeEmail sends the welcome email once a new account is created.
-func SendWelcomeEmail(input WelcomeEmail) error {
-	return e.sendWelcomeEmail(input)
+func SendWelcomeEmail(input WelcomeEmail) {
+	e.sendWelcomeEmail(input)
 }
-func (e *Email) sendWelcomeEmail(input WelcomeEmail) error {
+func (e *Email) sendWelcomeEmail(input WelcomeEmail) {
 	t, err := template.NewEmailView("welcome")
 	if err != nil {
-		return err
+		l.Logger.Error("email.sendWelcomeEmail failed", zap.Error(err))
 	}
 
 	data := struct {
@@ -95,8 +95,9 @@ func (e *Email) sendWelcomeEmail(input WelcomeEmail) error {
 	}
 
 	var tpl bytes.Buffer
-	if err := t.ExecuteTemplate(&tpl, "welcome", data); err != nil {
-		return err
+	err = t.ExecuteTemplate(&tpl, "welcome", data)
+	if err != nil {
+		l.Logger.Error("email.sendWelcomeEmail failed", zap.Error(err))
 	}
 	html := tpl.String()
 
@@ -107,11 +108,10 @@ func (e *Email) sendWelcomeEmail(input WelcomeEmail) error {
 		text:          "Welcome to The Open Credit Network directory!",
 		html:          html,
 	}
-
-	if err := e.send(d); err != nil {
-		return err
+	err = e.send(d)
+	if err != nil {
+		l.Logger.Error("email.sendWelcomeEmail failed", zap.Error(err))
 	}
-	return nil
 }
 
 // SendThankYouEmail sends the thank you email once the user completes the trading member signup form.
@@ -292,13 +292,13 @@ func (e *Email) sendContactEntity(receiver, receiverEmail, replyToName, replyToE
 }
 
 // SendSignupNotification sends an email notification as each new signup occurs.
-func SendSignupNotification(entityName string, contactEmail string) error {
+func SendSignupNotification(entityName string, contactEmail string) {
 	if !viper.GetBool("receive_email.signup_notifications") {
-		return nil
+		return
 	}
-	return e.sendSignupNotification(entityName, contactEmail)
+	e.sendSignupNotification(entityName, contactEmail)
 }
-func (e *Email) sendSignupNotification(entityName string, contactEmail string) error {
+func (e *Email) sendSignupNotification(entityName string, contactEmail string) {
 	body := "Entity Name: " + entityName + ", Contact Email: " + contactEmail
 	d := emailData{
 		receiver:      viper.GetString("email_from"),
@@ -309,7 +309,6 @@ func (e *Email) sendSignupNotification(entityName string, contactEmail string) e
 	}
 	err := e.send(d)
 	if err != nil {
-		return err
+		l.Logger.Error("email.SendSignupNotification failed", zap.Error(err))
 	}
-	return nil
 }
