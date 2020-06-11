@@ -26,7 +26,7 @@ func (tr *transfer) Initiate(req *types.TransferReq) {
 	}
 
 	d := emailData{
-		receiver:      req.ReceiverEntityName,
+		receiver:      req.ReceiverEntityName + " ",
 		receiverEmail: req.ReceiverEmail,
 		subject:       "OCN Transaction Requiring Your Approval",
 		text:          body,
@@ -56,7 +56,7 @@ func (tr *transfer) Accept(info *TransferEmailInfo) {
 		body = info.ReceiverEntityName + " has accepted the transaction you initiated for +" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
 	}
 	d := emailData{
-		receiver:      info.InitiatorEntityName,
+		receiver:      info.InitiatorEntityName + " ",
 		receiverEmail: info.InitiatorEmail,
 		subject:       "OCN Transaction Accepted",
 		text:          body,
@@ -81,7 +81,7 @@ func (tr *transfer) Reject(info *TransferEmailInfo) {
 	}
 
 	d := emailData{
-		receiver:      info.InitiatorEntityName,
+		receiver:      info.InitiatorEntityName + " ",
 		receiverEmail: info.InitiatorEmail,
 		subject:       "OCN Transaction Rejected",
 		text:          body,
@@ -106,7 +106,7 @@ func (tr *transfer) Cancel(info *TransferEmailInfo) {
 	}
 
 	d := emailData{
-		receiver:      info.ReceiverEntityName,
+		receiver:      info.ReceiverEntityName + " ",
 		receiverEmail: info.ReceiverEmail,
 		subject:       "OCN Transaction Cancelled",
 		text:          body,
@@ -121,7 +121,7 @@ func (tr *transfer) Cancel(info *TransferEmailInfo) {
 func (tr *transfer) CancelBySystem(info *TransferEmailInfo) {
 	body := "The system has cancelled the transaction you initiated with " + info.ReceiverEntityName + " for the following reason: " + info.Reason
 	d := emailData{
-		receiver:      info.InitiatorEntityName,
+		receiver:      info.InitiatorEntityName + " ",
 		receiverEmail: info.InitiatorEmail,
 		subject:       "OCN Transaction Cancelled",
 		text:          body,
