@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -82,11 +81,6 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewProposeTransferRespond(journal)})
 
 		go logic.UserAction.ProposeTransfer(r.Header.Get("userID"), req)
-
-		fmt.Printf("============================= \n")
-		fmt.Printf("%+v \n", req)
-		fmt.Printf("============================= \n")
-
 		go logic.Email.Transfer.Initiate(req)
 	}
 }
