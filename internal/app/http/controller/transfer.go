@@ -12,7 +12,6 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
-	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/ic3network/mccs-alpha-api/util/l"
 
@@ -82,7 +81,7 @@ func (handler *transferHandler) proposeTransfer() func(http.ResponseWriter, *htt
 		api.Respond(w, r, http.StatusOK, respond{Data: types.NewProposeTransferRespond(journal)})
 
 		go logic.UserAction.ProposeTransfer(r.Header.Get("userID"), req)
-		go email.Transfer.Initiate(req)
+		go logic.Email.Transfer.Initiate(req)
 	}
 }
 
@@ -305,12 +304,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReq) erro
 			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 			return err
 		}
-		go func() {
-			err := email.Transfer.CancelBySystem(req.Journal, reason)
-			if err != nil {
-				l.Logger.Error("[Error] email.Transfer.CancelBySystem failed:", zap.Error(err))
-			}
-		}()
+		go logic.Email.Transfer.CancelBySystem(req.Journal, reason)
 		return errors.New(reason)
 	}
 
@@ -325,12 +319,7 @@ func (handler *transferHandler) checkBalances(req *types.UpdateTransferReq) erro
 			l.Logger.Error("[Error] TransferHandler.updateTransfer failed:", zap.Error(err))
 			return err
 		}
-		go func() {
-			err := email.Transfer.CancelBySystem(req.Journal, reason)
-			if err != nil {
-				l.Logger.Error("[Error] email.Transfer.CancelBySystem failed:", zap.Error(err))
-			}
-		}()
+		go logic.Email.Transfer.CancelBySystem(req.Journal, reason)
 		return errors.New(reason)
 	}
 
@@ -342,7 +331,7 @@ func (handler *transferHandler) acceptTransfer(j *types.Journal) (*types.Journal
 	if err != nil {
 		return nil, err
 	}
-	go email.Transfer.Accept(j)
+	go logic.Email.Transfer.Accept(j)
 	return updated, nil
 }
 
@@ -351,7 +340,7 @@ func (handler *transferHandler) rejectTransfer(j *types.Journal, reason string) 
 	if err != nil {
 		return nil, err
 	}
-	go email.Transfer.Reject(j, reason)
+	go logic.Email.Transfer.Reject(j, reason)
 	return updated, nil
 }
 
@@ -360,7 +349,7 @@ func (handler *transferHandler) cancelTransfer(j *types.Journal, reason string) 
 	if err != nil {
 		return nil, err
 	}
-	go email.Transfer.Cancel(j, reason)
+	go logic.Email.Transfer.Cancel(j, reason)
 	return updated, nil
 }
 
