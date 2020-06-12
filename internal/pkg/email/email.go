@@ -70,6 +70,23 @@ func (e *Email) send(d emailData) error {
 	return nil
 }
 
+func (_ *Email) newEmail() *mail.SGMailV3 {
+	m := mail.NewV3Mail()
+	e := mail.NewEmail(viper.GetString("email_from"), viper.GetString("sendgrid.sender_email"))
+	m.SetFrom(e)
+	m.SetTemplateID(viper.GetString("sendgrid.welcome_template_id"))
+	return m
+}
+
+func (_ *Email) sendV2(m *mail.SGMailV3) error {
+	request := sendgrid.GetRequest(viper.GetString("sendgrid.key"), "/v3/mail/send", "https://api.sendgrid.com")
+	request.Method = "POST"
+	var Body = mail.GetRequestBody(m)
+	request.Body = Body
+	_, err := sendgrid.API(request)
+	return err
+}
+
 // External APIs
 
 type WelcomeEmail struct {
@@ -82,33 +99,19 @@ type WelcomeEmail struct {
 func SendWelcomeEmail(input WelcomeEmail) {
 	e.sendWelcomeEmail(input)
 }
-func (e *Email) sendWelcomeEmail(input WelcomeEmail) {
-	t, err := template.NewEmailView("welcome")
-	if err != nil {
-		l.Logger.Error("email.sendWelcomeEmail failed", zap.Error(err))
-	}
+func (email *Email) sendWelcomeEmail(input WelcomeEmail) {
+	m := email.newEmail()
 
-	data := struct {
-		EntityName string
-	}{
-		EntityName: input.EntityName,
+	p := mail.NewPersonalization()
+	tos := []*mail.Email{
+		mail.NewEmail(input.Receiver, input.Email),
 	}
+	p.AddTos(tos...)
 
-	var tpl bytes.Buffer
-	err = t.ExecuteTemplate(&tpl, "welcome", data)
-	if err != nil {
-		l.Logger.Error("email.sendWelcomeEmail failed", zap.Error(err))
-	}
-	html := tpl.String()
+	p.SetDynamicTemplateData("entityName", input.EntityName)
+	m.AddPersonalizations(p)
 
-	d := emailData{
-		receiver:      input.Receiver,
-		receiverEmail: input.Email,
-		subject:       "Welcome to The Open Credit Network directory!",
-		text:          "Welcome to The Open Credit Network directory!",
-		html:          html,
-	}
-	err = e.send(d)
+	err := email.sendV2(m)
 	if err != nil {
 		l.Logger.Error("email.sendWelcomeEmail failed", zap.Error(err))
 	}
