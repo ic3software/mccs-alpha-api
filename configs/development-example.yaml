@@ -65,3 +65,4 @@ jwt:
 sendgrid:
   key: xxx
   sender_email: xxx
+  welcome_email_template_id: xxx

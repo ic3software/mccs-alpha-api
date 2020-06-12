@@ -70,11 +70,11 @@ func (e *Email) send(d emailData) error {
 	return nil
 }
 
-func (_ *Email) newEmail() *mail.SGMailV3 {
+func (_ *Email) newEmail(templateID string) *mail.SGMailV3 {
 	m := mail.NewV3Mail()
 	e := mail.NewEmail(viper.GetString("email_from"), viper.GetString("sendgrid.sender_email"))
 	m.SetFrom(e)
-	m.SetTemplateID(viper.GetString("sendgrid.welcome_template_id"))
+	m.SetTemplateID(templateID)
 	return m
 }
 
@@ -100,7 +100,7 @@ func SendWelcomeEmail(input WelcomeEmail) {
 	e.sendWelcomeEmail(input)
 }
 func (email *Email) sendWelcomeEmail(input WelcomeEmail) {
-	m := email.newEmail()
+	m := email.newEmail(viper.GetString("sendgrid.welcome_email_template_id"))
 
 	p := mail.NewPersonalization()
 	tos := []*mail.Email{
