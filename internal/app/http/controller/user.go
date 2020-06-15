@@ -227,12 +227,15 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		}
 
 		go logic.UserAction.Signup(createdUser, createdEntity)
-		go email.SendWelcomeEmail(email.WelcomeEmail{
+		go email.Notification.Welcome(&email.WelcomeEmail{
 			EntityName: req.EntityName,
 			Email:      req.EntityEmail,
 			Receiver:   req.FirstName + " " + req.LastName,
 		})
-		go email.SendSignupNotification(req.EntityName, req.EntityEmail)
+		go email.Notification.Signup(&email.SignupNotificationEmail{
+			EntityName:   req.EntityName,
+			ContactEmail: req.EntityEmail,
+		})
 
 		api.Respond(w, r, http.StatusOK, respond{Data: data{
 			UserID:   createdUser.ID.Hex(),

@@ -36,6 +36,6 @@ type FindTagResult struct {
 }
 
 type MatchedTags struct {
-	MatchedOffers map[string][]string
-	MatchedWants  map[string][]string
+	MatchedOffers map[string][]string `json:"matchedOffers,omitempty"`
+	MatchedWants  map[string][]string `json:"matchedWants,omitempty"`
 }

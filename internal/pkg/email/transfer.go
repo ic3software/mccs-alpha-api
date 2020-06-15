@@ -6,6 +6,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/global/constant"
 	"github.com/ic3network/mccs-alpha-api/internal/app/types"
 	"github.com/ic3network/mccs-alpha-api/util/l"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -14,25 +15,33 @@ type transfer struct{}
 
 var Transfer = &transfer{}
 
+// Transfer initiated
+
 func (tr *transfer) Initiate(req *types.TransferReq) {
 	url := viper.GetString("url") + "/pending-transfers"
 
-	var body string
+	var action string
 	if req.TransferDirection == constant.TransferDirection.Out {
-		body = req.InitiatorEntityName + " wants to send " + fmt.Sprintf("%.2f", req.Amount) + " Credits to you. <a href=" + url + ">Click here to review this pending transaction</a>."
+		action = "send " + fmt.Sprintf("%.2f", req.Amount) + " Credits to you"
 	}
 	if req.TransferDirection == constant.TransferDirection.In {
-		body = req.InitiatorEntityName + " wants to receive " + fmt.Sprintf("%.2f", req.Amount) + " Credits from you. <a href=" + url + ">Click here to review this pending transaction</a>."
+		action = "receive " + fmt.Sprintf("%.2f", req.Amount) + " Credits from you"
 	}
 
-	d := emailData{
-		receiver:      req.ReceiverEntityName + " ",
-		receiverEmail: req.ReceiverEmail,
-		subject:       "OCN Transaction Requiring Your Approval",
-		text:          body,
-		html:          body,
+	m := e.newEmail(viper.GetString("sendgrid.template_id.transfer_initiated"))
+
+	p := mail.NewPersonalization()
+	tos := []*mail.Email{
+		mail.NewEmail(req.ReceiverEntityName+" ", req.ReceiverEmail),
 	}
-	err := e.send(d)
+	p.AddTos(tos...)
+
+	p.SetDynamicTemplateData("initiatorEntityName", req.InitiatorEntityName)
+	p.SetDynamicTemplateData("action", action)
+	p.SetDynamicTemplateData("url", url)
+	m.AddPersonalizations(p)
+
+	err := e.send(m)
 	if err != nil {
 		l.Logger.Error("email.Transfer.Initiate failed", zap.Error(err))
 	}
@@ -48,87 +57,103 @@ type TransferEmailInfo struct {
 	Amount              float64
 }
 
+// Transfer accepted
+
 func (tr *transfer) Accept(info *TransferEmailInfo) {
-	var body string
+	m := e.newEmail(viper.GetString("sendgrid.template_id.transfer_accepted"))
+
+	p := mail.NewPersonalization()
+	tos := []*mail.Email{
+		mail.NewEmail(info.InitiatorEntityName+" ", info.InitiatorEmail),
+	}
+	p.AddTos(tos...)
+
 	if info.TransferDirection == "out" {
-		body = info.ReceiverEntityName + " has accepted the transaction you initiated for -" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
+		p.SetDynamicTemplateData("transferDirection", "-")
 	} else {
-		body = info.ReceiverEntityName + " has accepted the transaction you initiated for +" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
+		p.SetDynamicTemplateData("transferDirection", "+")
 	}
-	d := emailData{
-		receiver:      info.InitiatorEntityName + " ",
-		receiverEmail: info.InitiatorEmail,
-		subject:       "OCN Transaction Accepted",
-		text:          body,
-		html:          body,
-	}
-	err := e.send(d)
+	p.SetDynamicTemplateData("receiverEntityName", info.ReceiverEntityName)
+	p.SetDynamicTemplateData("amount", fmt.Sprintf("%.2f", info.Amount))
+	m.AddPersonalizations(p)
+
+	err := e.send(m)
 	if err != nil {
 		l.Logger.Error("email.Transfer.Accept failed", zap.Error(err))
 	}
 }
 
+// Transfer rejected
+
 func (tr *transfer) Reject(info *TransferEmailInfo) {
-	var body string
+	m := e.newEmail(viper.GetString("sendgrid.template_id.transfer_rejected"))
+
+	p := mail.NewPersonalization()
+	tos := []*mail.Email{
+		mail.NewEmail(info.InitiatorEntityName+" ", info.InitiatorEmail),
+	}
+	p.AddTos(tos...)
+
 	if info.TransferDirection == "out" {
-		body = info.ReceiverEntityName + " has rejected the transaction you initiated for -" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
+		p.SetDynamicTemplateData("transferDirection", "-")
 	} else {
-		body = info.ReceiverEntityName + " has rejected the transaction you initiated for +" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
+		p.SetDynamicTemplateData("transferDirection", "+")
 	}
+	p.SetDynamicTemplateData("receiverEntityName", info.ReceiverEntityName)
+	p.SetDynamicTemplateData("amount", fmt.Sprintf("%.2f", info.Amount))
+	p.SetDynamicTemplateData("reason", info.Reason)
+	m.AddPersonalizations(p)
 
-	if info.Reason != "" {
-		body += "<br/><br/> Reason: <br/><br/>" + info.Reason
-	}
-
-	d := emailData{
-		receiver:      info.InitiatorEntityName + " ",
-		receiverEmail: info.InitiatorEmail,
-		subject:       "OCN Transaction Rejected",
-		text:          body,
-		html:          body,
-	}
-	err := e.send(d)
+	err := e.send(m)
 	if err != nil {
 		l.Logger.Error("email.Transfer.Reject failed", zap.Error(err))
 	}
 }
 
+// Transfer cancelled
+
 func (tr *transfer) Cancel(info *TransferEmailInfo) {
-	var body string
+	m := e.newEmail(viper.GetString("sendgrid.template_id.transfer_cancelled"))
+
+	p := mail.NewPersonalization()
+	tos := []*mail.Email{
+		mail.NewEmail(info.ReceiverEntityName+" ", info.ReceiverEmail),
+	}
+	p.AddTos(tos...)
+
 	if info.TransferDirection == "out" {
-		body = info.InitiatorEntityName + " has cancelled the transaction it initiated for +" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
+		p.SetDynamicTemplateData("transferDirection", "+")
 	} else {
-		body = info.InitiatorEntityName + " has cancelled the transaction it initiated for -" + fmt.Sprintf("%.2f", info.Amount) + " Credits."
+		p.SetDynamicTemplateData("transferDirection", "-")
 	}
+	p.SetDynamicTemplateData("initiatorEntityName", info.InitiatorEmail)
+	p.SetDynamicTemplateData("amount", fmt.Sprintf("%.2f", info.Amount))
+	p.SetDynamicTemplateData("reason", info.Reason)
+	m.AddPersonalizations(p)
 
-	if info.Reason != "" {
-		body += "<br/><br/> Reason: <br/><br/>" + info.Reason
-	}
-
-	d := emailData{
-		receiver:      info.ReceiverEntityName + " ",
-		receiverEmail: info.ReceiverEmail,
-		subject:       "OCN Transaction Cancelled",
-		text:          body,
-		html:          body,
-	}
-	err := e.send(d)
+	err := e.send(m)
 	if err != nil {
 		l.Logger.Error("email.Transfer.Cancel failed", zap.Error(err))
 	}
 }
 
+// Transfer cancelled by system
+
 func (tr *transfer) CancelBySystem(info *TransferEmailInfo) {
-	body := "The system has cancelled the transaction you initiated with " + info.ReceiverEntityName + " for the following reason: " + info.Reason
-	d := emailData{
-		receiver:      info.InitiatorEntityName + " ",
-		receiverEmail: info.InitiatorEmail,
-		subject:       "OCN Transaction Cancelled",
-		text:          body,
-		html:          body,
+	m := e.newEmail(viper.GetString("sendgrid.template_id.transfer_cancelled_by_system"))
+
+	p := mail.NewPersonalization()
+	tos := []*mail.Email{
+		mail.NewEmail(info.InitiatorEntityName+" ", info.InitiatorEmail),
 	}
-	err := e.send(d)
+	p.AddTos(tos...)
+
+	p.SetDynamicTemplateData("receiverEntityName", info.ReceiverEntityName)
+	p.SetDynamicTemplateData("reason", info.Reason)
+	m.AddPersonalizations(p)
+
+	err := e.send(m)
 	if err != nil {
-		l.Logger.Error("email.Transfer.CancelBySystem failed", zap.Error(err))
+		l.Logger.Error("email.Transfer.Cancel failed", zap.Error(err))
 	}
 }
