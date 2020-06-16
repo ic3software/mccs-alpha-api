@@ -44,7 +44,7 @@ func Welcome(input *WelcomeEmail) {
 	e.welcome(input)
 }
 func (_ *Email) welcome(input *WelcomeEmail) {
-	m := e.newEmail(viper.GetString("sendgrid.template_id.welcome"))
+	m := e.newEmail(viper.GetString("sendgrid.template_id.welcome_message"))
 
 	p := mail.NewPersonalization()
 	tos := []*mail.Email{
@@ -106,7 +106,7 @@ func PasswordReset(input *PasswordResetEmail) {
 	e.passwordReset(input)
 }
 func (_ *Email) passwordReset(input *PasswordResetEmail) {
-	m := e.newEmail(viper.GetString("sendgrid.template_id.password_reset"))
+	m := e.newEmail(viper.GetString("sendgrid.template_id.user_password_reset"))
 
 	p := mail.NewPersonalization()
 	tos := []*mail.Email{
@@ -136,7 +136,7 @@ func AdminPasswordReset(input *AdminPasswordResetEmail) {
 	e.adminPasswordReset(input)
 }
 func (_ *Email) adminPasswordReset(input *AdminPasswordResetEmail) {
-	m := e.newEmail(viper.GetString("sendgrid.template_id.admin_reset_password"))
+	m := e.newEmail(viper.GetString("sendgrid.template_id.admin_password_reset"))
 
 	p := mail.NewPersonalization()
 	tos := []*mail.Email{
