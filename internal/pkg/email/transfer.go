@@ -126,7 +126,7 @@ func (tr *transfer) Cancel(info *TransferEmailInfo) {
 	} else {
 		p.SetDynamicTemplateData("transferDirection", "-")
 	}
-	p.SetDynamicTemplateData("initiatorEntityName", info.InitiatorEmail)
+	p.SetDynamicTemplateData("initiatorEntityName", info.InitiatorEntityName)
 	p.SetDynamicTemplateData("amount", fmt.Sprintf("%.2f", info.Amount))
 	p.SetDynamicTemplateData("reason", info.Reason)
 	m.AddPersonalizations(p)

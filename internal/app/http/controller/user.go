@@ -275,30 +275,31 @@ func (handler *userHandler) requestPasswordReset() func(http.ResponseWriter, *ht
 			return
 		}
 
-		receiver := user.FirstName + " " + user.LastName
-
+		var token string
 		lostPassword, err := logic.Lostpassword.FindByEmail(req.Email)
 		if err == nil && logic.Lostpassword.IsTokenValid(lostPassword) {
-			email.SendResetEmail(receiver, req.Email, lostPassword.Token)
-			api.Respond(w, r, http.StatusOK)
-			return
+			token = lostPassword.Token
+		} else {
+			uid, err := uuid.NewV4()
+			if err != nil {
+				l.Logger.Error("[ERROR] UserHandler.requestPasswordReset failed:", zap.Error(err))
+				api.Respond(w, r, http.StatusInternalServerError, err)
+				return
+			}
+			err = logic.Lostpassword.Create(&types.LostPassword{Email: user.Email, Token: uid.String()})
+			if err != nil {
+				l.Logger.Error("[ERROR] UserHandler.requestPasswordReset failed:", zap.Error(err))
+				api.Respond(w, r, http.StatusInternalServerError, err)
+				return
+			}
+			token = uid.String()
 		}
 
-		uid, err := uuid.NewV4()
-		if err != nil {
-			l.Logger.Error("[ERROR] UserHandler.requestPasswordReset failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		err = logic.Lostpassword.Create(&types.LostPassword{Email: user.Email, Token: uid.String()})
-		if err != nil {
-			l.Logger.Error("[ERROR] UserHandler.requestPasswordReset failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusInternalServerError, err)
-			return
-		}
-
-		email.SendResetEmail(receiver, req.Email, uid.String())
+		go email.Notification.PasswordReset(&email.PasswordResetEmail{
+			Receiver:      user.FirstName + " " + user.LastName,
+			ReceiverEmail: req.Email,
+			Token:         token,
+		})
 
 		if viper.GetString("env") == "development" {
 			type data struct {
@@ -308,7 +309,7 @@ func (handler *userHandler) requestPasswordReset() func(http.ResponseWriter, *ht
 				Data data `json:"data"`
 			}
 			go logic.UserAction.LostPassword(user, util.IPAddress(r))
-			api.Respond(w, r, http.StatusOK, respond{Data: data{Token: uid.String()}})
+			api.Respond(w, r, http.StatusOK, respond{Data: data{Token: token}})
 			return
 		}
 

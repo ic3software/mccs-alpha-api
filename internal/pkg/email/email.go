@@ -49,7 +49,7 @@ func (_ *notification) Welcome(input *WelcomeEmail) {
 
 	p := mail.NewPersonalization()
 	tos := []*mail.Email{
-		mail.NewEmail(input.Receiver, input.Email),
+		mail.NewEmail(input.Receiver+" ", input.Email),
 	}
 	p.AddTos(tos...)
 
@@ -105,7 +105,7 @@ func (_ *notification) PasswordReset(input *PasswordResetEmail) {
 
 	p := mail.NewPersonalization()
 	tos := []*mail.Email{
-		mail.NewEmail(input.Receiver, input.ReceiverEmail),
+		mail.NewEmail(input.Receiver+" ", input.ReceiverEmail),
 	}
 	p.AddTos(tos...)
 
@@ -132,7 +132,7 @@ func (_ *notification) AdminPasswordReset(input *AdminPasswordResetEmail) {
 
 	p := mail.NewPersonalization()
 	tos := []*mail.Email{
-		mail.NewEmail(input.Receiver, input.ReceiverEmail),
+		mail.NewEmail(input.Receiver+" ", input.ReceiverEmail),
 	}
 	p.AddTos(tos...)
 
@@ -163,7 +163,7 @@ func (_ *notification) TradeContact(input *TradeContactEmail) {
 
 	p := mail.NewPersonalization()
 	tos := []*mail.Email{
-		mail.NewEmail(input.Receiver, input.ReceiverEmail),
+		mail.NewEmail(input.Receiver+" ", input.ReceiverEmail),
 	}
 	if viper.GetBool("receive_email.trade_contact_emails") {
 		tos = append(tos, mail.NewEmail(viper.GetString("email_from"), viper.GetString("sendgrid.sender_email")))
@@ -191,7 +191,7 @@ func (_ *notification) DailyMatch(input *DailyMatchNotification) {
 
 	p := mail.NewPersonalization()
 	tos := []*mail.Email{
-		mail.NewEmail(input.Entity.Name, input.Entity.Email),
+		mail.NewEmail(input.Entity.Name+" ", input.Entity.Email),
 	}
 	p.AddTos(tos...)
 
