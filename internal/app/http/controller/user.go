@@ -227,12 +227,12 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 		}
 
 		go logic.UserAction.Signup(createdUser, createdEntity)
-		go email.Notification.Welcome(&email.WelcomeEmail{
+		go email.Welcome(&email.WelcomeEmail{
 			EntityName: req.EntityName,
 			Email:      req.EntityEmail,
 			Receiver:   req.FirstName + " " + req.LastName,
 		})
-		go email.Notification.Signup(&email.SignupNotificationEmail{
+		go email.Signup(&email.SignupNotificationEmail{
 			EntityName:   req.EntityName,
 			ContactEmail: req.EntityEmail,
 		})
@@ -295,7 +295,7 @@ func (handler *userHandler) requestPasswordReset() func(http.ResponseWriter, *ht
 			token = uid.String()
 		}
 
-		go email.Notification.PasswordReset(&email.PasswordResetEmail{
+		go email.PasswordReset(&email.PasswordResetEmail{
 			Receiver:      user.FirstName + " " + user.LastName,
 			ReceiverEmail: req.Email,
 			Token:         token,

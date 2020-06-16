@@ -32,10 +32,6 @@ func (_ *Email) send(m *mail.SGMailV3) error {
 	return err
 }
 
-type notification struct{}
-
-var Notification = &notification{}
-
 // Welcome message
 
 type WelcomeEmail struct {
@@ -44,7 +40,10 @@ type WelcomeEmail struct {
 	Receiver   string
 }
 
-func (_ *notification) Welcome(input *WelcomeEmail) {
+func Welcome(input *WelcomeEmail) {
+	e.welcome(input)
+}
+func (_ *Email) welcome(input *WelcomeEmail) {
 	m := e.newEmail(viper.GetString("sendgrid.template_id.welcome"))
 
 	p := mail.NewPersonalization()
@@ -69,7 +68,10 @@ type SignupNotificationEmail struct {
 	ContactEmail string
 }
 
-func (_ *notification) Signup(input *SignupNotificationEmail) {
+func Signup(input *SignupNotificationEmail) {
+	e.signup(input)
+}
+func (_ *Email) signup(input *SignupNotificationEmail) {
 	if !viper.GetBool("receive_email.signup_notifications") {
 		return
 	}
@@ -88,7 +90,7 @@ func (_ *notification) Signup(input *SignupNotificationEmail) {
 
 	err := e.send(m)
 	if err != nil {
-		l.Logger.Error("email.Notification.Signup failed", zap.Error(err))
+		l.Logger.Error("email.Signup failed", zap.Error(err))
 	}
 }
 
@@ -100,7 +102,10 @@ type PasswordResetEmail struct {
 	Token         string
 }
 
-func (_ *notification) PasswordReset(input *PasswordResetEmail) {
+func PasswordReset(input *PasswordResetEmail) {
+	e.passwordReset(input)
+}
+func (_ *Email) passwordReset(input *PasswordResetEmail) {
 	m := e.newEmail(viper.GetString("sendgrid.template_id.password_reset"))
 
 	p := mail.NewPersonalization()
@@ -115,7 +120,7 @@ func (_ *notification) PasswordReset(input *PasswordResetEmail) {
 
 	err := e.send(m)
 	if err != nil {
-		l.Logger.Error("email.Notification.PasswordReset failed", zap.Error(err))
+		l.Logger.Error("email.PasswordReset failed", zap.Error(err))
 	}
 }
 
@@ -127,7 +132,10 @@ type AdminPasswordResetEmail struct {
 	Token         string
 }
 
-func (_ *notification) AdminPasswordReset(input *AdminPasswordResetEmail) {
+func AdminPasswordReset(input *AdminPasswordResetEmail) {
+	e.adminPasswordReset(input)
+}
+func (_ *Email) adminPasswordReset(input *AdminPasswordResetEmail) {
 	m := e.newEmail(viper.GetString("sendgrid.template_id.admin_reset_password"))
 
 	p := mail.NewPersonalization()
@@ -142,7 +150,7 @@ func (_ *notification) AdminPasswordReset(input *AdminPasswordResetEmail) {
 
 	err := e.send(m)
 	if err != nil {
-		l.Logger.Error("email.Notification.AdminPasswordReset failed", zap.Error(err))
+		l.Logger.Error("email.AdminPasswordReset failed", zap.Error(err))
 	}
 }
 
@@ -156,7 +164,10 @@ type TradeContactEmail struct {
 	Body          string
 }
 
-func (_ *notification) TradeContact(input *TradeContactEmail) {
+func TradeContact(input *TradeContactEmail) {
+	e.tradeContact(input)
+}
+func (_ *Email) tradeContact(input *TradeContactEmail) {
 	m := e.newEmail(viper.GetString("sendgrid.template_id.trade_contact"))
 	replyToEmail := mail.NewEmail(input.ReplyToName, input.ReplyToEmail)
 	m.SetReplyTo(replyToEmail)
@@ -175,7 +186,7 @@ func (_ *notification) TradeContact(input *TradeContactEmail) {
 
 	err := e.send(m)
 	if err != nil {
-		l.Logger.Error("email.Notification.TradeContact failed", zap.Error(err))
+		l.Logger.Error("email.TradeContact failed", zap.Error(err))
 	}
 }
 
@@ -186,7 +197,10 @@ type DailyMatchNotification struct {
 	MatchedTags *types.MatchedTags
 }
 
-func (_ *notification) DailyMatch(input *DailyMatchNotification) {
+func DailyMatch(input *DailyMatchNotification) {
+	e.dailyMatch(input)
+}
+func (_ *Email) dailyMatch(input *DailyMatchNotification) {
 	m := e.newEmail(viper.GetString("sendgrid.template_id.daily_match_notification"))
 
 	p := mail.NewPersonalization()
@@ -203,6 +217,6 @@ func (_ *notification) DailyMatch(input *DailyMatchNotification) {
 
 	err := e.send(m)
 	if err != nil {
-		l.Logger.Error("email.Notification.DailyMatch failed", zap.Error(err))
+		l.Logger.Error("email.DailyMatch failed", zap.Error(err))
 	}
 }

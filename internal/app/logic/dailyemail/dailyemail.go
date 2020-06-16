@@ -48,7 +48,7 @@ func createEmailWorker(entity *types.Entity) func() {
 			return
 		}
 
-		email.Notification.DailyMatch(&email.DailyMatchNotification{
+		email.DailyMatch(&email.DailyMatchNotification{
 			Entity:      entity,
 			MatchedTags: matchedTags,
 		})

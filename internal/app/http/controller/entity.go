@@ -281,7 +281,7 @@ func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
-		go email.Notification.TradeContact(&email.TradeContactEmail{
+		go email.TradeContact(&email.TradeContactEmail{
 			Receiver:      ReceiverEntity.Name,
 			ReceiverEmail: ReceiverEntity.Email,
 			ReplyToName:   SenderEntity.Name,

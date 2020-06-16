@@ -148,7 +148,7 @@ func (handler *adminUserHandler) requestPasswordReset() func(http.ResponseWriter
 			token = uid.String()
 		}
 
-		go email.Notification.AdminPasswordReset(&email.AdminPasswordResetEmail{
+		go email.AdminPasswordReset(&email.AdminPasswordResetEmail{
 			Receiver:      user.Name,
 			ReceiverEmail: req.Email,
 			Token:         token,
