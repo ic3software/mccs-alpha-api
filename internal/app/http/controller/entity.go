@@ -281,12 +281,13 @@ func (handler *entityHandler) sendEmailToEntity() func(http.ResponseWriter, *htt
 			return
 		}
 
-		err = email.SendContactEntity(ReceiverEntity.Name, ReceiverEntity.Email, SenderEntity.Name, SenderEntity.Email, req.Body)
-		if err != nil {
-			l.Logger.Error("[Error] EntityHandler.sendEmailToEntity failed:", zap.Error(err))
-			api.Respond(w, r, http.StatusInternalServerError, err)
-			return
-		}
+		go email.TradeContact(&email.TradeContactEmail{
+			Receiver:      ReceiverEntity.Name,
+			ReceiverEmail: ReceiverEntity.Email,
+			ReplyToName:   SenderEntity.Name,
+			ReplyToEmail:  SenderEntity.Email,
+			Body:          req.Body,
+		})
 
 		if viper.GetString("env") == "development" {
 			type data struct {

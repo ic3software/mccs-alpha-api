@@ -65,3 +65,16 @@ jwt:
 sendgrid:
   key: xxx
   sender_email: xxx
+  template_id:
+    welcome_message: xxx
+    daily_match_notification: xxx
+    trade_contact: xxx
+    transfer_initiated: xxx
+    transfer_accepted: xxx
+    transfer_rejected: xxx
+    transfer_cancelled: xxx
+    transfer_cancelled_by_system: xxx
+    user_password_reset: xxx
+    admin_password_reset: xxx
+    signup_notification: xxx
+    non_zero_balance_notification: xxx

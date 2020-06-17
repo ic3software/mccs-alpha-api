@@ -48,10 +48,10 @@ func createEmailWorker(entity *types.Entity) func() {
 			return
 		}
 
-		err = email.SendDailyEmailList(entity, matchedTags, entity.LastNotificationSentDate)
-		if err != nil {
-			l.Logger.Error("dailyemail failed", zap.Error(err))
-		}
+		email.DailyMatch(&email.DailyMatchNotification{
+			Entity:      entity,
+			MatchedTags: matchedTags,
+		})
 
 		err = logic.Entity.UpdateLastNotificationSentDate(entity.ID)
 		if err != nil {

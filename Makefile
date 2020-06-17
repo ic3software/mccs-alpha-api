@@ -29,7 +29,3 @@ seed:
 es-restore:
 	@echo "=============restoring es data============="
 	go run cmd/es-restore/main.go -config="seed"
-
-pg-setup:
-	@echo "=============setup pg accounts============="
-	go run cmd/pg-setup/main.go -config="seed"
