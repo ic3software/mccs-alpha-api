@@ -286,8 +286,8 @@ type AdminEntityRespond struct {
 	Offers                             []string `json:"offers,omitempty"`
 	Wants                              []string `json:"wants,omitempty"`
 	Categories                         []string `json:"categories,omitempty"`
+	ReceiveDailyMatchNotificationEmail bool     `json:"receiveDailyMatchNotificationEmail"`
 	ShowTagsMatchedSinceLastLogin      bool     `json:"showTagsMatchedSinceLastLogin"`
-	ReceiveDailyMatchNotificationEmail bool     `json:"ReceiveDailyMatchNotificationEmail"`
 }
 
 func NewAdminUserRespond(user *User) *AdminUserRespond {
@@ -631,7 +631,7 @@ func NewAdminDeleteEntityRespond(entity *Entity) *AdminDeleteEntityRespond {
 	return &AdminDeleteEntityRespond{
 		ID:               entity.ID.Hex(),
 		AccountNumber:    entity.AccountNumber,
-		EntityName:       entity.Name,
+		Name:             entity.Name,
 		Email:            entity.Email,
 		Telephone:        entity.Telephone,
 		IncType:          entity.IncType,
@@ -654,7 +654,7 @@ func NewAdminDeleteEntityRespond(entity *Entity) *AdminDeleteEntityRespond {
 type AdminDeleteEntityRespond struct {
 	ID               string   `json:"id"`
 	AccountNumber    string   `json:"accountNumber"`
-	EntityName       string   `json:"entityName"`
+	Name             string   `json:"name"`
 	Email            string   `json:"email,omitempty"`
 	Telephone        string   `json:"telephone"`
 	IncType          string   `json:"incType"`
