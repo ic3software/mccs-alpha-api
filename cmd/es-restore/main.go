@@ -65,7 +65,7 @@ func restoreEntities() {
 		}
 
 		// Add the entity to elastic search.
-		uRecord := types.EntityESRecord{
+		record := types.EntityESRecord{
 			ID:     entity.ID.Hex(),
 			Name:   entity.Name,
 			Email:  entity.Email,
@@ -87,7 +87,7 @@ func restoreEntities() {
 		_, err = es.Client().Index().
 			Index("entities").
 			Id(entity.ID.Hex()).
-			BodyJson(uRecord).
+			BodyJson(record).
 			Do(context.Background())
 		if err != nil {
 			l.Logger.Fatal("[ERROR] restoring entities failed:", zap.Error(err))
@@ -123,7 +123,7 @@ func restoreUsers() {
 			l.Logger.Fatal("[ERROR] restoring users failed:", zap.Error(err))
 			return
 		}
-		uRecord := types.UserESRecord{
+		record := types.UserESRecord{
 			UserID:    user.ID.Hex(),
 			FirstName: user.FirstName,
 			LastName:  user.LastName,
@@ -132,7 +132,7 @@ func restoreUsers() {
 		_, err = es.Client().Index().
 			Index("users").
 			Id(user.ID.Hex()).
-			BodyJson(uRecord).
+			BodyJson(record).
 			Do(context.Background())
 		if err != nil {
 			l.Logger.Fatal("[ERROR] restoring users failed:", zap.Error(err))
@@ -167,7 +167,7 @@ func restoreTags() {
 			l.Logger.Fatal("[ERROR] restoring tags failed:", zap.Error(err))
 			return
 		}
-		uRecord := types.TagESRecord{
+		record := types.TagESRecord{
 			TagID:        tag.ID.Hex(),
 			Name:         tag.Name,
 			OfferAddedAt: tag.OfferAddedAt,
@@ -176,7 +176,7 @@ func restoreTags() {
 		_, err = es.Client().Index().
 			Index("tags").
 			Id(tag.ID.Hex()).
-			BodyJson(uRecord).
+			BodyJson(record).
 			Do(context.Background())
 		if err != nil {
 			l.Logger.Fatal("[ERROR] restoring tags failed:", zap.Error(err))
