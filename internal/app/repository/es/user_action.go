@@ -19,7 +19,7 @@ type userAction struct {
 
 func (es *userAction) Register(client *elastic.Client) {
 	es.c = client
-	es.index = "useractions"
+	es.index = "user_actions"
 }
 
 func (es *userAction) Create(ua *types.UserAction) error {
