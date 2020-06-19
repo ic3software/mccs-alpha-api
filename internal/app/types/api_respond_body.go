@@ -109,6 +109,8 @@ type EntityRespond struct {
 	Categories                         []string `json:"categories"`
 }
 
+// GET /entities
+
 func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favoriteEntities []primitive.ObjectID) *SearchEntityRespond {
 	email := ""
 	if util.IsTradingAccepted(entity.Status) && util.IsTradingAccepted(queryingEntityStatus) {
@@ -137,8 +139,6 @@ func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favorit
 		IsFavorite:       util.ContainID(favoriteEntities, entity.ID.Hex()),
 	}
 }
-
-// GET /entities
 
 type SearchEntityRespond struct {
 	ID               string   `json:"id"`
