@@ -36,77 +36,77 @@ type UserRespond struct {
 
 func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
 	return &EntityRespond{
-		ID:               entity.ID.Hex(),
-		AccountNumber:    entity.AccountNumber,
-		Name:             entity.Name,
-		Email:            entity.Email,
-		Telephone:        entity.Telephone,
-		IncType:          entity.IncType,
-		CompanyNumber:    entity.CompanyNumber,
-		Website:          entity.Website,
-		DeclaredTurnover: entity.DeclaredTurnover,
-		Description:      entity.Description,
-		Address:          entity.Address,
-		City:             entity.City,
-		Region:           entity.Region,
-		PostalCode:       entity.PostalCode,
-		Country:          entity.Country,
-		Status:           entity.Status,
-		Offers:           TagFieldToNames(entity.Offers),
-		Wants:            TagFieldToNames(entity.Wants),
-		// flags
-		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
+		ID:                                 entity.ID.Hex(),
+		AccountNumber:                      entity.AccountNumber,
+		Name:                               entity.Name,
+		Email:                              entity.Email,
+		Telephone:                          entity.Telephone,
+		IncType:                            entity.IncType,
+		CompanyNumber:                      entity.CompanyNumber,
+		Website:                            entity.Website,
+		DeclaredTurnover:                   entity.DeclaredTurnover,
+		Description:                        entity.Description,
+		Address:                            entity.Address,
+		City:                               entity.City,
+		Region:                             entity.Region,
+		PostalCode:                         entity.PostalCode,
+		Country:                            entity.Country,
+		Status:                             entity.Status,
 		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowTagsMatchedSinceLastLogin),
+		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
+		Offers:                             TagFieldToNames(entity.Offers),
+		Wants:                              TagFieldToNames(entity.Wants),
+		Categories:                         entity.Categories,
 	}
 }
 
 func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
 	return &EntityRespond{
-		ID:               entity.ID.Hex(),
-		AccountNumber:    entity.AccountNumber,
-		Name:             entity.Name,
-		Telephone:        entity.Telephone,
-		IncType:          entity.IncType,
-		CompanyNumber:    entity.CompanyNumber,
-		Website:          entity.Website,
-		DeclaredTurnover: entity.DeclaredTurnover,
-		Description:      entity.Description,
-		Address:          entity.Address,
-		City:             entity.City,
-		Region:           entity.Region,
-		PostalCode:       entity.PostalCode,
-		Country:          entity.Country,
-		Status:           entity.Status,
-		Offers:           TagFieldToNames(entity.Offers),
-		Wants:            TagFieldToNames(entity.Wants),
-		// flags
-		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
+		ID:                                 entity.ID.Hex(),
+		AccountNumber:                      entity.AccountNumber,
+		Name:                               entity.Name,
+		Telephone:                          entity.Telephone,
+		IncType:                            entity.IncType,
+		CompanyNumber:                      entity.CompanyNumber,
+		Website:                            entity.Website,
+		DeclaredTurnover:                   entity.DeclaredTurnover,
+		Description:                        entity.Description,
+		Address:                            entity.Address,
+		City:                               entity.City,
+		Region:                             entity.Region,
+		PostalCode:                         entity.PostalCode,
+		Country:                            entity.Country,
+		Status:                             entity.Status,
 		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowTagsMatchedSinceLastLogin),
+		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
+		Offers:                             TagFieldToNames(entity.Offers),
+		Wants:                              TagFieldToNames(entity.Wants),
+		Categories:                         entity.Categories,
 	}
 }
 
 type EntityRespond struct {
-	ID               string   `json:"id"`
-	AccountNumber    string   `json:"accountNumber"`
-	Name             string   `json:"name"`
-	Email            string   `json:"email,omitempty"`
-	Telephone        string   `json:"telephone"`
-	IncType          string   `json:"incType"`
-	CompanyNumber    string   `json:"companyNumber"`
-	Website          string   `json:"website"`
-	DeclaredTurnover *int     `json:"declaredTurnover"`
-	Description      string   `json:"description"`
-	Address          string   `json:"address"`
-	City             string   `json:"city"`
-	Region           string   `json:"region"`
-	PostalCode       string   `json:"postalCode"`
-	Country          string   `json:"country"`
-	Status           string   `json:"status"`
-	Offers           []string `json:"offers"`
-	Wants            []string `json:"wants"`
-	// flags
-	ReceiveDailyMatchNotificationEmail bool `json:"receiveDailyMatchNotificationEmail"`
-	ShowTagsMatchedSinceLastLogin      bool `json:"showTagsMatchedSinceLastLogin"`
+	ID                                 string   `json:"id"`
+	AccountNumber                      string   `json:"accountNumber"`
+	Name                               string   `json:"name"`
+	Email                              string   `json:"email,omitempty"`
+	Telephone                          string   `json:"telephone"`
+	IncType                            string   `json:"incType"`
+	CompanyNumber                      string   `json:"companyNumber"`
+	Website                            string   `json:"website"`
+	DeclaredTurnover                   *int     `json:"declaredTurnover"`
+	Description                        string   `json:"description"`
+	Address                            string   `json:"address"`
+	City                               string   `json:"city"`
+	Region                             string   `json:"region"`
+	PostalCode                         string   `json:"postalCode"`
+	Country                            string   `json:"country"`
+	Status                             string   `json:"status"`
+	ShowTagsMatchedSinceLastLogin      bool     `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyMatchNotificationEmail bool     `json:"receiveDailyMatchNotificationEmail"`
+	Offers                             []string `json:"offers"`
+	Wants                              []string `json:"wants"`
+	Categories                         []string `json:"categories"`
 }
 
 func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favoriteEntities []primitive.ObjectID) *SearchEntityRespond {
@@ -133,6 +133,7 @@ func NewSearchEntityRespond(entity *Entity, queryingEntityStatus string, favorit
 		Status:           entity.Status,
 		Offers:           TagFieldToNames(entity.Offers),
 		Wants:            TagFieldToNames(entity.Wants),
+		Categories:       entity.Categories,
 		IsFavorite:       util.ContainID(favoriteEntities, entity.ID.Hex()),
 	}
 }
@@ -158,6 +159,7 @@ type SearchEntityRespond struct {
 	Status           string   `json:"status"`
 	Offers           []string `json:"offers"`
 	Wants            []string `json:"wants"`
+	Categories       []string `json:"categories"`
 	IsFavorite       bool     `json:"isFavorite"`
 }
 
