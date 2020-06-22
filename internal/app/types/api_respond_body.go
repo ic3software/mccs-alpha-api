@@ -631,48 +631,52 @@ type AdminUpdateEntityRespond struct {
 
 func NewAdminDeleteEntityRespond(entity *Entity) *AdminDeleteEntityRespond {
 	return &AdminDeleteEntityRespond{
-		ID:               entity.ID.Hex(),
-		AccountNumber:    entity.AccountNumber,
-		Name:             entity.Name,
-		Email:            entity.Email,
-		Telephone:        entity.Telephone,
-		IncType:          entity.IncType,
-		CompanyNumber:    entity.CompanyNumber,
-		Website:          entity.Website,
-		DeclaredTurnover: entity.DeclaredTurnover,
-		Description:      entity.Description,
-		Address:          entity.Address,
-		City:             entity.City,
-		Region:           entity.Region,
-		PostalCode:       entity.PostalCode,
-		Country:          entity.Country,
-		Status:           entity.Status,
-		Offers:           TagFieldToNames(entity.Offers),
-		Wants:            TagFieldToNames(entity.Wants),
-		Categories:       entity.Categories,
+		ID:                                 entity.ID.Hex(),
+		AccountNumber:                      entity.AccountNumber,
+		Name:                               entity.Name,
+		Email:                              entity.Email,
+		Telephone:                          entity.Telephone,
+		IncType:                            entity.IncType,
+		CompanyNumber:                      entity.CompanyNumber,
+		Website:                            entity.Website,
+		DeclaredTurnover:                   entity.DeclaredTurnover,
+		Description:                        entity.Description,
+		Address:                            entity.Address,
+		City:                               entity.City,
+		Region:                             entity.Region,
+		PostalCode:                         entity.PostalCode,
+		Country:                            entity.Country,
+		Status:                             entity.Status,
+		Offers:                             TagFieldToNames(entity.Offers),
+		Wants:                              TagFieldToNames(entity.Wants),
+		Categories:                         entity.Categories,
+		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
+		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowTagsMatchedSinceLastLogin),
 	}
 }
 
 type AdminDeleteEntityRespond struct {
-	ID               string   `json:"id"`
-	AccountNumber    string   `json:"accountNumber"`
-	Name             string   `json:"name"`
-	Email            string   `json:"email,omitempty"`
-	Telephone        string   `json:"telephone"`
-	IncType          string   `json:"incType"`
-	CompanyNumber    string   `json:"companyNumber"`
-	Website          string   `json:"website"`
-	DeclaredTurnover *int     `json:"declaredTurnover"`
-	Description      string   `json:"description"`
-	Address          string   `json:"address"`
-	City             string   `json:"city"`
-	Region           string   `json:"region"`
-	PostalCode       string   `json:"postalCode"`
-	Country          string   `json:"country"`
-	Status           string   `json:"status"`
-	Offers           []string `json:"offers,omitempty"`
-	Wants            []string `json:"wants,omitempty"`
-	Categories       []string `json:"categories,omitempty"`
+	ID                                 string   `json:"id"`
+	AccountNumber                      string   `json:"accountNumber"`
+	Name                               string   `json:"name"`
+	Email                              string   `json:"email,omitempty"`
+	Telephone                          string   `json:"telephone"`
+	IncType                            string   `json:"incType"`
+	CompanyNumber                      string   `json:"companyNumber"`
+	Website                            string   `json:"website"`
+	DeclaredTurnover                   *int     `json:"declaredTurnover"`
+	Description                        string   `json:"description"`
+	Address                            string   `json:"address"`
+	City                               string   `json:"city"`
+	Region                             string   `json:"region"`
+	PostalCode                         string   `json:"postalCode"`
+	Country                            string   `json:"country"`
+	Status                             string   `json:"status"`
+	Offers                             []string `json:"offers,omitempty"`
+	Wants                              []string `json:"wants,omitempty"`
+	Categories                         []string `json:"categories,omitempty"`
+	ReceiveDailyMatchNotificationEmail bool     `json:"receiveDailyMatchNotificationEmail"`
+	ShowTagsMatchedSinceLastLogin      bool     `json:"showTagsMatchedSinceLastLogin"`
 }
 
 // admin/transfer
