@@ -531,7 +531,7 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 
 		res, err := EntityHandler.NewEntityRespond(updated)
 		if err != nil {
-			l.Logger.Error("[Error] UserHandler.listUserEntities failed:", zap.Error(err))
+			l.Logger.Error("[Error] UserHandler.updateUserEntity failed:", zap.Error(err))
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
