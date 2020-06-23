@@ -469,13 +469,6 @@ func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.R
 	type respond struct {
 		Data []*types.EntityRespond `json:"data"`
 	}
-	toData := func(entities []*types.Entity) []*types.EntityRespond {
-		result := []*types.EntityRespond{}
-		for _, entity := range entities {
-			result = append(result, types.NewEntityRespondWithEmail(entity))
-		}
-		return result
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := primitive.ObjectIDFromHex(r.Header.Get("userID"))
 		entities, err := logic.User.FindEntities(userID)
@@ -484,7 +477,18 @@ func (handler *userHandler) listUserEntities() func(http.ResponseWriter, *http.R
 			api.Respond(w, r, http.StatusBadRequest, err)
 			return
 		}
-		api.Respond(w, r, http.StatusOK, respond{Data: toData(entities)})
+
+		data := []*types.EntityRespond{}
+		for _, entity := range entities {
+			res, err := EntityHandler.NewEntityRespond(entity)
+			if err != nil {
+				l.Logger.Error("[Error] UserHandler.listUserEntities failed:", zap.Error(err))
+				api.Respond(w, r, http.StatusBadRequest, err)
+				return
+			}
+			data = append(data, res)
+		}
+		api.Respond(w, r, http.StatusOK, respond{Data: data})
 	}
 }
 
@@ -525,7 +529,13 @@ func (handler *userHandler) updateUserEntity() func(http.ResponseWriter, *http.R
 
 		go logic.UserAction.ModifyEntity(r.Header.Get("userID"), req.OriginEntity, updated)
 
-		api.Respond(w, r, http.StatusOK, respond{Data: types.NewEntityRespondWithEmail(updated)})
+		res, err := EntityHandler.NewEntityRespond(updated)
+		if err != nil {
+			l.Logger.Error("[Error] UserHandler.listUserEntities failed:", zap.Error(err))
+			api.Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+		api.Respond(w, r, http.StatusOK, respond{Data: res})
 	}
 }
 

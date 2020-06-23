@@ -242,7 +242,7 @@ func (t *journal) FindByIDs(transferIDs []string) ([]*types.Journal, error) {
 
 // GET /admin/entities/{entityID}
 
-func (t *journal) AdminGetPendingTransfers(accountNumber string) ([]*types.AdminTransferRespond, error) {
+func (t *journal) GetPending(accountNumber string) ([]*types.Journal, error) {
 	var journals []*types.Journal
 
 	searchSQL := `
@@ -259,5 +259,5 @@ func (t *journal) AdminGetPendingTransfers(accountNumber string) ([]*types.Admin
 		return nil, err
 	}
 
-	return types.NewJournalsToAdminTransfersRespond(journals), nil
+	return journals, nil
 }

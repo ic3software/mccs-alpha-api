@@ -158,6 +158,16 @@ func (t *transfer) Cancel(transferID string, reason string) (*types.Journal, err
 	return canceled, nil
 }
 
+// GET /user/entities
+
+func (t *transfer) GetPendingTransfers(accountNumber string) ([]*types.TransferRespond, error) {
+	journals, err := pg.Journal.GetPending(accountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return types.NewJournalsToTransfersRespond(journals, accountNumber), nil
+}
+
 // GET /admin/transfers/{transferID}
 
 func (t *transfer) AdminGetTransfer(transferID string) (*types.Journal, error) {
@@ -207,9 +217,9 @@ func (t *transfer) AdminSearch(req *types.AdminSearchTransferReq) (*types.AdminS
 // GET /admin/entities/{entityID}
 
 func (t *transfer) AdminGetPendingTransfers(accountNumber string) ([]*types.AdminTransferRespond, error) {
-	transfers, err := pg.Journal.AdminGetPendingTransfers(accountNumber)
+	journals, err := pg.Journal.GetPending(accountNumber)
 	if err != nil {
 		return nil, err
 	}
-	return transfers, nil
+	return types.NewJournalsToAdminTransfersRespond(journals), nil
 }

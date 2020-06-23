@@ -34,7 +34,12 @@ type UserRespond struct {
 
 // GET /user/entities
 
-func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
+func NewEntityRespond(
+	entity *Entity,
+	account *Account,
+	balanceLimit *BalanceLimit,
+	pendingTransfers []*TransferRespond,
+) *EntityRespond {
 	return &EntityRespond{
 		ID:                                 entity.ID.Hex(),
 		AccountNumber:                      entity.AccountNumber,
@@ -57,56 +62,39 @@ func NewEntityRespondWithEmail(entity *Entity) *EntityRespond {
 		Offers:                             TagFieldToNames(entity.Offers),
 		Wants:                              TagFieldToNames(entity.Wants),
 		Categories:                         entity.Categories,
-	}
-}
-
-func NewEntityRespondWithoutEmail(entity *Entity) *EntityRespond {
-	return &EntityRespond{
-		ID:                                 entity.ID.Hex(),
-		AccountNumber:                      entity.AccountNumber,
-		Name:                               entity.Name,
-		Telephone:                          entity.Telephone,
-		IncType:                            entity.IncType,
-		CompanyNumber:                      entity.CompanyNumber,
-		Website:                            entity.Website,
-		DeclaredTurnover:                   entity.DeclaredTurnover,
-		Description:                        entity.Description,
-		Address:                            entity.Address,
-		City:                               entity.City,
-		Region:                             entity.Region,
-		PostalCode:                         entity.PostalCode,
-		Country:                            entity.Country,
-		Status:                             entity.Status,
-		ShowTagsMatchedSinceLastLogin:      util.ToBool(entity.ShowTagsMatchedSinceLastLogin),
-		ReceiveDailyMatchNotificationEmail: util.ToBool(entity.ReceiveDailyMatchNotificationEmail),
-		Offers:                             TagFieldToNames(entity.Offers),
-		Wants:                              TagFieldToNames(entity.Wants),
-		Categories:                         entity.Categories,
+		Balance:                            account.Balance,
+		MaxNegativeBalance:                 balanceLimit.MaxNegBal,
+		MaxPositiveBalance:                 balanceLimit.MaxPosBal,
+		PendingTransfers:                   pendingTransfers,
 	}
 }
 
 type EntityRespond struct {
-	ID                                 string   `json:"id"`
-	AccountNumber                      string   `json:"accountNumber"`
-	Name                               string   `json:"name"`
-	Email                              string   `json:"email,omitempty"`
-	Telephone                          string   `json:"telephone"`
-	IncType                            string   `json:"incType"`
-	CompanyNumber                      string   `json:"companyNumber"`
-	Website                            string   `json:"website"`
-	DeclaredTurnover                   *int     `json:"declaredTurnover"`
-	Description                        string   `json:"description"`
-	Address                            string   `json:"address"`
-	City                               string   `json:"city"`
-	Region                             string   `json:"region"`
-	PostalCode                         string   `json:"postalCode"`
-	Country                            string   `json:"country"`
-	Status                             string   `json:"status"`
-	ShowTagsMatchedSinceLastLogin      bool     `json:"showTagsMatchedSinceLastLogin"`
-	ReceiveDailyMatchNotificationEmail bool     `json:"receiveDailyMatchNotificationEmail"`
-	Offers                             []string `json:"offers"`
-	Wants                              []string `json:"wants"`
-	Categories                         []string `json:"categories"`
+	ID                                 string             `json:"id"`
+	AccountNumber                      string             `json:"accountNumber"`
+	Name                               string             `json:"name"`
+	Email                              string             `json:"email,omitempty"`
+	Telephone                          string             `json:"telephone"`
+	IncType                            string             `json:"incType"`
+	CompanyNumber                      string             `json:"companyNumber"`
+	Website                            string             `json:"website"`
+	DeclaredTurnover                   *int               `json:"declaredTurnover"`
+	Description                        string             `json:"description"`
+	Address                            string             `json:"address"`
+	City                               string             `json:"city"`
+	Region                             string             `json:"region"`
+	PostalCode                         string             `json:"postalCode"`
+	Country                            string             `json:"country"`
+	Status                             string             `json:"status"`
+	ShowTagsMatchedSinceLastLogin      bool               `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyMatchNotificationEmail bool               `json:"receiveDailyMatchNotificationEmail"`
+	Offers                             []string           `json:"offers"`
+	Wants                              []string           `json:"wants"`
+	Categories                         []string           `json:"categories"`
+	Balance                            float64            `json:"balance"`
+	MaxPositiveBalance                 float64            `json:"maxPositiveBalance"`
+	MaxNegativeBalance                 float64            `json:"maxNegativeBalance"`
+	PendingTransfers                   []*TransferRespond `json:"pendingTransfers"`
 }
 
 // GET /entities

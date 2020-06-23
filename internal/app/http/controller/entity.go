@@ -53,6 +53,25 @@ func (handler *entityHandler) RegisterRoutes(
 	})
 }
 
+// GET /user/entities
+// PATCH /user/entities/{entityID}
+
+func (handler *entityHandler) NewEntityRespond(entity *types.Entity) (*types.EntityRespond, error) {
+	account, err := logic.Account.FindByAccountNumber(entity.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	balanceLimit, err := logic.BalanceLimit.FindByAccountNumber(entity.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	pendingTransfers, err := logic.Transfer.GetPendingTransfers(entity.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	return types.NewEntityRespond(entity, account, balanceLimit, pendingTransfers), nil
+}
+
 func (handler *entityHandler) FindByID(entityID string) (*types.Entity, error) {
 	objID, err := primitive.ObjectIDFromHex(entityID)
 	if err != nil {
