@@ -127,7 +127,7 @@ func (_ *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, er
 		return nil, err
 	}
 	if !zeroBalance {
-		return nil, errors.New("This entity cannot be deleted because it has a non-zero balance.")
+		return nil, errors.New("Cannot delete an entity with a non-zero balance.")
 	}
 
 	err = es.Entity.Delete(id.Hex())
