@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"errors"
 	"time"
 
 	"github.com/ic3network/mccs-alpha-api/internal/app/repository/es"
@@ -117,7 +118,19 @@ func (_ *entity) AdminFindOneAndUpdate(req *types.AdminUpdateEntityReq) (*types.
 // DELETE /admin/entities/{entityID}
 
 func (_ *entity) AdminFindOneAndDelete(id primitive.ObjectID) (*types.Entity, error) {
-	err := es.Entity.Delete(id.Hex())
+	entity, err := mongo.Entity.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	zeroBalance, err := Account.IsZeroBalance(entity.AccountNumber)
+	if err != nil {
+		return nil, err
+	}
+	if !zeroBalance {
+		return nil, errors.New("This entity cannot be deleted because it has a non-zero balance.")
+	}
+
+	err = es.Entity.Delete(id.Hex())
 	if err != nil {
 		return nil, err
 	}
