@@ -728,16 +728,17 @@ type AdminSearchTransferRespond struct {
 
 func NewJournalToAdminTransferRespond(j *Journal) *AdminTransferRespond {
 	res := &AdminTransferRespond{
-		TransferID:        j.TransferID,
-		FromAccountNumber: j.FromAccountNumber,
-		FromEntityName:    j.FromEntityName,
-		ToAccountNumber:   j.ToAccountNumber,
-		ToEntityName:      j.ToEntityName,
-		Amount:            j.Amount,
-		Description:       j.Description,
-		Status:            j.Status,
-		Type:              j.Type,
-		CreatedAt:         &j.CreatedAt,
+		TransferID:         j.TransferID,
+		FromAccountNumber:  j.FromAccountNumber,
+		FromEntityName:     j.FromEntityName,
+		ToAccountNumber:    j.ToAccountNumber,
+		ToEntityName:       j.ToEntityName,
+		Amount:             j.Amount,
+		Description:        j.Description,
+		Type:               j.Type,
+		Status:             j.Status,
+		CancellationReason: j.CancellationReason,
+		CreatedAt:          &j.CreatedAt,
 	}
 	if j.Status == constant.Transfer.Completed {
 		res.CompletedAt = &j.UpdatedAt
