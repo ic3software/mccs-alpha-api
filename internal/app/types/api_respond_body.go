@@ -182,11 +182,12 @@ func NewJournalsToTransfersRespond(journals []*Journal, queryingAccountNumber st
 
 	for _, j := range journals {
 		t := &TransferRespond{
-			TransferID:  j.TransferID,
-			Description: j.Description,
-			Amount:      j.Amount,
-			CreatedAt:   &j.CreatedAt,
-			Status:      j.Status,
+			TransferID:         j.TransferID,
+			Description:        j.Description,
+			Amount:             j.Amount,
+			CreatedAt:          &j.CreatedAt,
+			Status:             j.Status,
+			CancellationReason: j.CancellationReason,
 		}
 		if j.InitiatedBy == queryingAccountNumber {
 			t.IsInitiator = true
