@@ -673,17 +673,18 @@ type AdminDeleteEntityRespond struct {
 // admin/transfer
 
 type AdminTransferRespond struct {
-	TransferID        string     `json:"id"`
-	FromAccountNumber string     `json:"fromAccountNumber"`
-	FromEntityName    string     `json:"fromEntityName"`
-	ToAccountNumber   string     `json:"toAccountNumber"`
-	ToEntityName      string     `json:"toEntityName"`
-	Amount            float64    `json:"amount"`
-	Description       string     `json:"description"`
-	Status            string     `json:"status"`
-	Type              string     `json:"type,omitempty"`
-	CreatedAt         *time.Time `json:"dateProposed,omitempty"`
-	CompletedAt       *time.Time `json:"dateCompleted,omitempty"`
+	TransferID         string     `json:"id"`
+	FromAccountNumber  string     `json:"fromAccountNumber"`
+	FromEntityName     string     `json:"fromEntityName"`
+	ToAccountNumber    string     `json:"toAccountNumber"`
+	ToEntityName       string     `json:"toEntityName"`
+	Amount             float64    `json:"amount"`
+	Description        string     `json:"description"`
+	Status             string     `json:"status"`
+	Type               string     `json:"type,omitempty"`
+	CancellationReason string     `json:"cancellationReason,omitempty"`
+	CreatedAt          *time.Time `json:"dateProposed,omitempty"`
+	CompletedAt        *time.Time `json:"dateCompleted,omitempty"`
 }
 
 // GET /admin/transfer
@@ -694,16 +695,17 @@ func NewJournalsToAdminTransfersRespond(journals []*Journal) []*AdminTransferRes
 
 	for _, j := range journals {
 		t := &AdminTransferRespond{
-			TransferID:        j.TransferID,
-			FromAccountNumber: j.FromAccountNumber,
-			FromEntityName:    j.FromEntityName,
-			ToAccountNumber:   j.ToAccountNumber,
-			ToEntityName:      j.ToEntityName,
-			Amount:            j.Amount,
-			Description:       j.Description,
-			Type:              j.Type,
-			Status:            j.Status,
-			CreatedAt:         &j.CreatedAt,
+			TransferID:         j.TransferID,
+			FromAccountNumber:  j.FromAccountNumber,
+			FromEntityName:     j.FromEntityName,
+			ToAccountNumber:    j.ToAccountNumber,
+			ToEntityName:       j.ToEntityName,
+			Amount:             j.Amount,
+			Description:        j.Description,
+			Type:               j.Type,
+			Status:             j.Status,
+			CancellationReason: j.CancellationReason,
+			CreatedAt:          &j.CreatedAt,
 		}
 		if j.Status == constant.Transfer.Completed {
 			t.CompletedAt = &j.UpdatedAt
