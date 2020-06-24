@@ -182,11 +182,12 @@ func NewJournalsToTransfersRespond(journals []*Journal, queryingAccountNumber st
 
 	for _, j := range journals {
 		t := &TransferRespond{
-			TransferID:  j.TransferID,
-			Description: j.Description,
-			Amount:      j.Amount,
-			CreatedAt:   &j.CreatedAt,
-			Status:      j.Status,
+			TransferID:         j.TransferID,
+			Description:        j.Description,
+			Amount:             j.Amount,
+			CreatedAt:          &j.CreatedAt,
+			Status:             j.Status,
+			CancellationReason: j.CancellationReason,
 		}
 		if j.InitiatedBy == queryingAccountNumber {
 			t.IsInitiator = true
@@ -276,8 +277,8 @@ type AdminEntityRespond struct {
 	Offers                             []string `json:"offers,omitempty"`
 	Wants                              []string `json:"wants,omitempty"`
 	Categories                         []string `json:"categories,omitempty"`
-	ReceiveDailyMatchNotificationEmail bool     `json:"receiveDailyMatchNotificationEmail"`
 	ShowTagsMatchedSinceLastLogin      bool     `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyMatchNotificationEmail bool     `json:"receiveDailyMatchNotificationEmail"`
 }
 
 func NewAdminUserRespond(user *User) *AdminUserRespond {
@@ -672,17 +673,18 @@ type AdminDeleteEntityRespond struct {
 // admin/transfer
 
 type AdminTransferRespond struct {
-	TransferID        string     `json:"id"`
-	FromAccountNumber string     `json:"fromAccountNumber"`
-	FromEntityName    string     `json:"fromEntityName"`
-	ToAccountNumber   string     `json:"toAccountNumber"`
-	ToEntityName      string     `json:"toEntityName"`
-	Amount            float64    `json:"amount"`
-	Description       string     `json:"description"`
-	Status            string     `json:"status"`
-	Type              string     `json:"type,omitempty"`
-	CreatedAt         *time.Time `json:"dateProposed,omitempty"`
-	CompletedAt       *time.Time `json:"dateCompleted,omitempty"`
+	TransferID         string     `json:"id"`
+	FromAccountNumber  string     `json:"fromAccountNumber"`
+	FromEntityName     string     `json:"fromEntityName"`
+	ToAccountNumber    string     `json:"toAccountNumber"`
+	ToEntityName       string     `json:"toEntityName"`
+	Amount             float64    `json:"amount"`
+	Description        string     `json:"description"`
+	Type               string     `json:"type,omitempty"`
+	Status             string     `json:"status"`
+	CancellationReason string     `json:"cancellationReason,omitempty"`
+	CreatedAt          *time.Time `json:"dateProposed,omitempty"`
+	CompletedAt        *time.Time `json:"dateCompleted,omitempty"`
 }
 
 // GET /admin/transfer
@@ -693,16 +695,17 @@ func NewJournalsToAdminTransfersRespond(journals []*Journal) []*AdminTransferRes
 
 	for _, j := range journals {
 		t := &AdminTransferRespond{
-			TransferID:        j.TransferID,
-			FromAccountNumber: j.FromAccountNumber,
-			FromEntityName:    j.FromEntityName,
-			ToAccountNumber:   j.ToAccountNumber,
-			ToEntityName:      j.ToEntityName,
-			Amount:            j.Amount,
-			Description:       j.Description,
-			Type:              j.Type,
-			Status:            j.Status,
-			CreatedAt:         &j.CreatedAt,
+			TransferID:         j.TransferID,
+			FromAccountNumber:  j.FromAccountNumber,
+			FromEntityName:     j.FromEntityName,
+			ToAccountNumber:    j.ToAccountNumber,
+			ToEntityName:       j.ToEntityName,
+			Amount:             j.Amount,
+			Description:        j.Description,
+			Type:               j.Type,
+			Status:             j.Status,
+			CancellationReason: j.CancellationReason,
+			CreatedAt:          &j.CreatedAt,
 		}
 		if j.Status == constant.Transfer.Completed {
 			t.CompletedAt = &j.UpdatedAt
@@ -725,16 +728,17 @@ type AdminSearchTransferRespond struct {
 
 func NewJournalToAdminTransferRespond(j *Journal) *AdminTransferRespond {
 	res := &AdminTransferRespond{
-		TransferID:        j.TransferID,
-		FromAccountNumber: j.FromAccountNumber,
-		FromEntityName:    j.FromEntityName,
-		ToAccountNumber:   j.ToAccountNumber,
-		ToEntityName:      j.ToEntityName,
-		Amount:            j.Amount,
-		Description:       j.Description,
-		Status:            j.Status,
-		Type:              j.Type,
-		CreatedAt:         &j.CreatedAt,
+		TransferID:         j.TransferID,
+		FromAccountNumber:  j.FromAccountNumber,
+		FromEntityName:     j.FromEntityName,
+		ToAccountNumber:    j.ToAccountNumber,
+		ToEntityName:       j.ToEntityName,
+		Amount:             j.Amount,
+		Description:        j.Description,
+		Type:               j.Type,
+		Status:             j.Status,
+		CancellationReason: j.CancellationReason,
+		CreatedAt:          &j.CreatedAt,
 	}
 	if j.Status == constant.Transfer.Completed {
 		res.CompletedAt = &j.UpdatedAt
