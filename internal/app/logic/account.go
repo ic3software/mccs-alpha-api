@@ -25,6 +25,14 @@ func (a *account) FindByAccountNumber(accountNumber string) (*types.Account, err
 	return account, nil
 }
 
+func (a *account) IsZeroBalance(accountNumber string) (bool, error) {
+	account, err := a.FindByAccountNumber(accountNumber)
+	if err != nil {
+		return false, err
+	}
+	return account.Balance == 0.0, nil
+}
+
 // GET /balance
 
 func (a *account) FindByEntityID(entityID string) (*types.Account, error) {
