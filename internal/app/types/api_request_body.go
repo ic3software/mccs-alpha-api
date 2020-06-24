@@ -336,8 +336,8 @@ func NewAddToFavoriteReq(r *http.Request) (*AddToFavoriteReq, []error) {
 }
 
 type AddToFavoriteReq struct {
-	AddToEntityID    string `json:"add_to_entity_id"`
-	FavoriteEntityID string `json:"favorite_entity_id"`
+	AddToEntityID    string `json:"addToEntityID"`
+	FavoriteEntityID string `json:"favoriteEntityID"`
 	Favorite         *bool  `json:"favorite"`
 }
 
@@ -346,11 +346,11 @@ func (req *AddToFavoriteReq) validate() []error {
 
 	_, err := primitive.ObjectIDFromHex(req.AddToEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("add_to_entity_id is incorrect."))
+		errs = append(errs, errors.New("addToEntityID is incorrect."))
 	}
 	_, err = primitive.ObjectIDFromHex(req.FavoriteEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("favorite_entity_id is incorrect."))
+		errs = append(errs, errors.New("favoriteEntityID is incorrect."))
 	}
 	if req.Favorite == nil {
 		errs = append(errs, errors.New("Favorite must be specified."))
@@ -420,8 +420,8 @@ func NewEmailReq(r *http.Request) (*EmailReq, []error) {
 }
 
 type EmailReq struct {
-	SenderEntityID   string `json:"sender_entity_id"`
-	ReceiverEntityID string `json:"receiver_entity_id"`
+	SenderEntityID   string `json:"senderEntityID"`
+	ReceiverEntityID string `json:"receiverEntityID"`
 	Body             string `json:"body"`
 }
 
@@ -430,11 +430,11 @@ func (req *EmailReq) validate() []error {
 
 	_, err := primitive.ObjectIDFromHex(req.SenderEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("sender_entity_id is incorrect."))
+		errs = append(errs, errors.New("senderEntityID is incorrect."))
 	}
 	_, err = primitive.ObjectIDFromHex(req.ReceiverEntityID)
 	if err != nil {
-		errs = append(errs, errors.New("receiver_entity_id is incorrect."))
+		errs = append(errs, errors.New("receiverEntityID is incorrect."))
 	}
 	if len(req.Body) == 0 {
 		errs = append(errs, errors.New("Email body is empty."))
