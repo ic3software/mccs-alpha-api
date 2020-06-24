@@ -277,8 +277,8 @@ type AdminEntityRespond struct {
 	Offers                             []string `json:"offers,omitempty"`
 	Wants                              []string `json:"wants,omitempty"`
 	Categories                         []string `json:"categories,omitempty"`
-	ReceiveDailyMatchNotificationEmail bool     `json:"receiveDailyMatchNotificationEmail"`
 	ShowTagsMatchedSinceLastLogin      bool     `json:"showTagsMatchedSinceLastLogin"`
+	ReceiveDailyMatchNotificationEmail bool     `json:"receiveDailyMatchNotificationEmail"`
 }
 
 func NewAdminUserRespond(user *User) *AdminUserRespond {
