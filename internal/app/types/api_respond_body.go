@@ -680,8 +680,8 @@ type AdminTransferRespond struct {
 	ToEntityName       string     `json:"toEntityName"`
 	Amount             float64    `json:"amount"`
 	Description        string     `json:"description"`
-	Status             string     `json:"status"`
 	Type               string     `json:"type,omitempty"`
+	Status             string     `json:"status"`
 	CancellationReason string     `json:"cancellationReason,omitempty"`
 	CreatedAt          *time.Time `json:"dateProposed,omitempty"`
 	CompletedAt        *time.Time `json:"dateCompleted,omitempty"`
