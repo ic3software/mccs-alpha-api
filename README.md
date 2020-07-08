@@ -1,9 +1,5 @@
 # MCCS Alpha API
 
-**🚧 This is a work in progress 🚧**
-
-See our development [roadmap](https://github.com/ic3network/mccs#roadmap).
-
 ## Overview
 
 The MCCS Alpha API is a prototype API that exposes all of the functionality described in the [MCCS overview of functionality](https://github.com/ic3network/mccs/blob/master/alpha-functionality.md).
@@ -16,7 +12,7 @@ We are making this code public to show our commitment to free and open source so
 
 ## Main Functions
 
-There are four main functions that the MCCS API provides:
+There are four main functions that the MCCS API provides to its users:
 
 1. **Manage accounts** - create and modify user accounts and their related entity details
 2. **Find entities** - search for and view entities based on what they sell and need
@@ -27,11 +23,11 @@ See the detailed description of these main functions in the [MCCS overview of fu
 
 ## Draft API Documentation
 
-**🚧 Work in Progress 🚧**
+🚧 The API documentation is a work in progress and is subject to change until an initial version is published. 🚧
 
-### [User API](https://documenter.getpostman.com/view/10168004/SWTD7wqB?version=latest)
+### [User API](https://app.swaggerhub.com/apis-docs/ic3network/mccs-alpha-user-api/1)
 
-### [Admin API](https://documenter.getpostman.com/view/10168004/SzYYyy7e?version=latest)
+### [Admin API](https://app.swaggerhub.com/apis-docs/ic3network/mccs-alpha-admin-api/1)
 
 ## How to Start
 
@@ -56,7 +52,7 @@ Basic requirements: Go version 1.13+, Docker and Docker Compose ([see all requir
     ```
     make seed
     ```
-1. [Make API calls](#draft-api-documentation) - 🚧 Our API documentation is also a work in progress and is subject to change until an initial version is published 🚧
+1. [Make API calls](#draft-api-documentation)
 
 ## Requirements
 
