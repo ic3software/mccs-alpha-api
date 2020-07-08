@@ -1,0 +1,1858 @@
+openapi: 3.0.0
+info:
+  title: MCCS Alpha User API
+  description: |
+    An initial, UNPUBLISHED version of the MCCS User API. Breaking changes are likely to follow.
+    
+    ## Introduction
+
+    The MCCS Alpha User API v1 exposes all of the end user functionality currently available in the [alpha version of the MCCS API](https://github.com/ic3network/mccs-alpha-api).
+
+    By providing an API, developers who want to create their own front-end user interface for MCCS will have significant flexibility to implement it in whatever way they choose. This means developers can present MCCS in any language, setup their own signup flow, optimize it for whatever devices their users prefer, develop a mobile app, integrate other services such as chat, etc.
+
+    Importantly, an API enables developers to integrate MCCS functionality directly into their own apps (e.g., import transfer data into an accounting application, instruct mutual credit transfers from an e-wallet application, interact with MCCS data via a chat bot, etc.).
+
+    ## Background
+
+    To understand how the MCCS Alpha API works, please read the following design documents:
+
+    - [MCCS Alpha Data Model](https://github.com/ic3network/mccs/blob/master/alpha-data-model.md)
+    - [MCCS Alpha Functionality](https://github.com/ic3network/mccs/blob/master/alpha-functionality.md)
+
+    ## Test Server
+
+    A test server (mccs-alpha-api.ic3.dev) is provided below to enable you to try out the API. Data on the test server will be erased from time to time, and we take no responsibility for the data posted there. This is a publicly-accessible server, so please do not post personal details; only use test data.
+
+    ## License
+  license:
+    name: MIT License
+    url: https://github.com/ic3network/mccs-alpha-api/blob/dev/LICENSE
+  version: '1'
+servers:
+  - url: https://mccs-alpha-api.ic3.dev/api/v1
+tags:
+  - name: Manage Account
+    description: Create and manage a user and its linked entity
+  - name: Find Entities
+    description: Search and filter entities
+  - name: Transfer Credits
+    description: Initiate and authorize mutual credit transfers
+  - name: Review Transfer Activity
+    description: View pending and completed mutual credit transfers
+paths:
+  /signup:
+    post:
+      tags:
+        - Manage Account
+      summary: Create a new account - a user resource and associated entity resource
+      description: |
+        Individual users can create an account in MCCS by providing an email address, creating a password and adding some other details about themselves and their "business". A "business" need not be a formally established business; it could simply be a list of their skills that they are willing to offer to other participants in the network, or another type of entity such as an association, not-for-profit, NGO, etc.
+
+        We use the term **entity** to generically identify businesses, non-profits, NGOs, sole proprietorships, limited companies, etc.
+
+        The `POST /signup` API call creates a user resource and an entity (e.g., a business) resource and links the two together. The user resource references its associated entity, and the entity resource references its associated user. These two related resources make up what is referred to as an account.
+
+        An account can be created with only a unique email address and a password, enabling a new user to get started quickly. The `userID` and `entityID` are returned in the response body, along with a [JSON Web Token](https://jwt.io) to authorize the user of the account for further API calls related to the user and entity resources just created.
+        
+        All other details (entity name, user first/last names, goods/services offered or wanted, etc.) are optional and can be added later. The decision about customer data requirements for signup can be determined by developers implementing a front end to the API, since they will be working with the organizations implementing MCCS. If other information is collected during the initial registration process, these extra details can be passed immediately in this `POST /signup` API endpoint or later using the `PATCH /user` and/or `PATCH /user/entities/{entityID}` API endpoints.
+        
+        The current (v1) implementation of the API has a one-to-one relationship between the user and the entity. This will be changed to a many-to-many relationship in a future implementation.
+      requestBody:
+        description: Signup request body
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: '#/components/schemas/SignupRequiredFields'
+              - $ref: '#/components/schemas/SignupAllFields'
+            examples:
+              requiredFields:
+                value:
+                  userEmail: jdoe@dev.null
+                  password: 1TrulySecurePassword!!
+              allFields:
+                value:
+                  userEmail: jdoe@dev.null
+                  password: 1TrulySecurePassword!!
+                  firstName: Jane
+                  lastName: Doe
+                  userPhone: "+442010203040"
+                  entityEmail: nwcltd@dev.null
+                  entityName: New World Consulting Limited
+                  incType: ltd
+                  companyNumber: A12345
+                  entityPhone: "+442090807060"
+                  website: https://neworco.null
+                  declaredTurnover: 20000
+                  description: "We show you how good things can be and what you need to do to make them happen."
+                  address: "123 Yellow Brick Road"
+                  city: "London"
+                  region: "Greater London"
+                  postalCode: "UK1 2ENG"
+                  country: "England"
+                  showTagsMatchedSinceLastLogin: true
+                  receiveDailyMatchNotificationEmail: true
+                  offers:
+                    - consulting
+                    - system-design
+                  wants:
+                    - it-services
+                    - accounting
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      userID:
+                        type: string
+                      entityID:
+                        type: string
+                      token: 
+                        type: string
+              example:
+                data:
+                  userID: "5eec78f4a880b7c235f66e80"
+                  entityID: "5eec78f4a880b7c235f66e7c"
+                  token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI2NDIxNjQsInVzZXJJRCI6IjVlZWM3OGY0YTg4MGI3YzIzNWY2NmU4MCIsImFkbWluIjpmYWxzZX0.WhPMfV9S-xgOHcuMT_K-fBhR_K6MpXiJ15GYn4Jz7im1dvhwnV2bEnwuWeFUockl45StxguvIOA5qJ-_3xA14CuP0wJbZa3hVH4jnYXonHlCyHDB8w67RLN9IMFGnSEshhh4D3RjQVpEpBm7jLhQcHKOSQIqUU_RfPkiNxpUkDI6t1RW_-rhY4UsTTuxnC5SOeajzOgiDFM4NwJfjebys8xDGTqYoi4dpCJZEtD_U_X9BuEOovRRJo0TY6m76XxUB9J5U_Hfjm7k_A3aLv3WgDScRv_k-LSsOvviGk1A2ct0nQ2RaVY1udA-76rv1xbvSd26Xds2XtrPb_SzUL-J8A"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+  /login:
+    post:
+      tags:
+        - Manage Account
+      summary: Login and receive an authorization token
+      description: |
+        A user will need to authenticate with an email/password combination which, if successful, will result in a JSON Web Token (JWT) being passed to the user to use with each API request that requires authorization.
+
+        The JWT will expire after 24 hours, or as soon as the user calls the `/logout` API.
+      requestBody:
+        $ref: '#/components/requestBodies/loginUser'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+              example:
+                data:
+                  token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI5ODU0MzcsInVzZXJJRCI6IjVlZjFiNWQ5NTA2ODQ3ZWE5MTRkYjA2NiIsImFkbWluIjpmYWxzZX0.E3YJWpUN0h2LS3IfE2niYclTnhKUGXDay7SR_VeVzaq4a_lZPs2w4yxFUWbbeAcPeMgtcd3bEoX6PtDhW3hjJ8XVbqmkJQRmh3uw5ULfgzkIzrQw3twaG8TO6ARM4UvKJWz2Wqb6czd5SesJmM2htIuY3DBJ_u4r9x3hshM5_0kHalfEZtQvae0KrJ2_eBjPmFOdON62QungzStkjTKTfqsvystwFSdfOwAltg0Nri1Z6q-E9AZMTnAxzKNqjp4Ja3hX1IoZXPiV8F0-yl1PhrKI_YzP57pOt84T72_WK3z1_hofHAOwby5-2qvtoKWSmxqzKsIYUYeG89W7h4TvBQ"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500:
+          $ref: '#/components/responses/ServerError'
+  /logout:
+    post:
+      tags:
+        - Manage Account
+      summary: Logout and expire the authorization token
+      description: Logging out will immediately expire the JWT currently associated to the user's account.
+      responses:
+        200:
+          description: OK
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /password-reset:
+    post:
+      tags:
+        - Manage Account
+      summary: Request a password reset token
+      description: When a password is lost by the user, a new one can be requested by providing the email address associated with the user's account. A password reset token will then be sent to that email address.
+      requestBody:
+        $ref: '#/components/requestBodies/resetPassword'
+      responses:
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/BadRequest'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+  /password-reset/{token}:
+    post:
+      tags:
+        - Manage Account
+      summary: Reset a password
+      description: The new password can be set by providing it along with the password reset token that was received at the user's email address.
+      parameters:
+        - $ref: '#/components/parameters/token'
+      requestBody:
+        $ref: '#/components/requestBodies/updatePassword'
+      responses:
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/BadRequest'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+  /password-change:
+    post:
+      tags:
+        - Manage Account
+      summary: Change the password
+      description: A logged-in user can change the password by sending the new password along with the JWT.
+      requestBody:
+        $ref: '#/components/requestBodies/updatePassword'
+      responses:
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /user:
+    get:
+      tags:
+        - Manage Account
+      summary: View a user's own details
+      description: Logged-in users can request their details as recorded in the MCCS database.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+              example:
+                data:
+                  id: 5eec78f4a880b7c235f66e80
+                  email: jdoe@dev.null
+                  firstName: Jane
+                  lastName: Doe
+                  telephone: "+442010203040"
+                  lastLoginIP: 192.168.12.34
+                  lastLoginDate: "2020-06-19T23:59:59.999Z"
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+    patch:
+      tags:
+        - Manage Account
+      summary: Modify a user's own details
+      description: |
+        Users can change their details in MCCS' database, except for the `email` field which can only be changed by an administrator.
+        
+        The `id`, `lastLoginIP` and `lastLoginDate` fields are system-generated and therefore are not changeable by either users or administrators.
+      requestBody:
+        $ref: '#/components/requestBodies/updateUser'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+              example:
+                data:
+                  id: 5eec78f4a880b7c235f66e80
+                  email: jdoe@dev.null
+                  firstName: Jane K.
+                  lastName: Doer
+                  telephone: "+442012345678"
+                  lastLoginIP: 192.168.12.34
+                  lastLoginDate: "2020-06-19T23:59:59.999Z"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /user/entities:
+    get:
+      tags:
+        - Manage Account
+      summary: View an entity's details
+      description: Users can request the details of their linked entity as recorded in the MCCS database.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Entity'
+              example:
+                data: 
+                  - id: 5eec78f4a880b7c235f66e7c
+                    accountNumber: "6838115832533278"
+                    name: New World Consulting Limited
+                    email: nwcltd@dev.null
+                    telephone: "+442090807060"
+                    incType: ltd
+                    companyNumber: A12345
+                    website: https://neworco.null
+                    declaredTurnover: 20000
+                    description: "We show you how good things can be and what you need to do to make them happen."
+                    address: "123 Yellow Brick Road"
+                    city: "London"
+                    region: "Greater London"
+                    postalCode: "UK1 2ENG"
+                    country: "England"
+                    status: "pending"
+                    showTagsMatchedSinceLastLogin: true
+                    receiveDailyMatchNotificationEmail: true
+                    offers:
+                      - consulting
+                      - system-design
+                    wants:
+                      - it-services
+                      - accounting
+                    categories:
+                      - consulting
+                    balance: 0
+                    maxPositiveBalance: 500
+                    maxNegativeBalance: 0
+                    pendingTransfers:
+                      - id: 1dimEdDxOJYjDeaP6HEy4cIhLdD
+                        transfer: in
+                        isInitiator: false
+                        accountNumber: "5211115451222517"
+                        entityName: "Hipster Brews"
+                        amount: 157.80
+                        description: "Payment of inv. 1234"
+                        status: transferInitiated
+                        dateProposed: "2020-06-23T12:42:57.786628Z"
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /user/entities/{entityID}:
+    patch:
+      tags:
+        - Manage Account
+      summary: Modify an entity's details
+      description: |
+        Users can change their entity's details in the MCCS database, except for the `status` field which can only be changed by an administrator. The `id` and `accountNumber` fields are system-generated and therefore are not changeable by either users or administrators.
+
+        Changes to the `offers` and `wants` array fields must include all relevant tags because they will overwrite the arrays already stored in the database.
+
+        The `email` for an entity is separate from the linked user's email, although the user email address is set for the entity's email as well when the account is first created, but only if an entity email is not specified when creating an account at the `POST /signup` endpoint. The entity email, which receives notifications, can be changed by the user.
+      parameters:
+        - $ref: '#/components/parameters/entityID'
+      requestBody:
+        $ref: '#/components/requestBodies/updateEntity'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Entity'
+              example:
+                data:
+                  id: 5eec78f4a880b7c235f66e7c
+                  accountNumber: "6838115832533278"
+                  name: New World Pizza PLC
+                  email: nwpplc@dev.null
+                  telephone: "+442098765432"
+                  incType: plc
+                  companyNumber: B67890
+                  website: https://nwpizza.null
+                  declaredTurnover: 10000
+                  description: "We show you how good things can taste and where you need to go to eat them!"
+                  address: "456 Yellow Brick Road"
+                  city: "London"
+                  region: "Greater London"
+                  postalCode: "UK1 2ENG"
+                  country: "England"
+                  status: "pending"
+                  showTagsMatchedSinceLastLogin: false
+                  receiveDailyMatchNotificationEmail: false
+                  offers:
+                    - pizza
+                    - wine
+                  wants:
+                    - flour
+                    - mozarella
+                    - tomato
+                  categories:
+                    - consulting
+                  balance: 0
+                  maxPositiveBalance: 500
+                  maxNegativeBalance: 0
+                  pendingTransfers:
+                    - id: 1dimEdDxOJYjDeaP6HEy4cIhLdD
+                      transfer: in
+                      isInitiator: false
+                      accountNumber: "5211115451222517"
+                      entityName: "Hipster Brews"
+                      amount: 157.80
+                      description: "Payment of inv. 1234"
+                      status: transferInitiated
+                      dateProposed: "2020-06-23T12:42:57.786628Z"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /categories:
+    get:
+      tags:
+        - Find Entities
+      summary: Get a full or partial list of entity categories
+      description: |
+        The directory of entities is split up into categories that are manually assigned to each entity by an administrator. The entire list or just a subset of it by first letter(s) (`prefix`) and/or partial match (`fragment`) can be requested.
+        
+        Searching for prefix "t" or "tr" returns all categories that begin with "t" or "tr" (e.g., "Teas" & "Transport" for "t", or only "Transport" for "tr").
+        
+        Searching for fragment "tr" returns all categories that have  "tr" anywhere in their name, including the beginning (e.g., "Transport" & "Carpentry").
+      parameters:
+        - name: prefix
+          in: query
+          schema:
+            type: string
+          description: first letter of a category
+          example:
+            c
+        - name: fragment
+          in: query
+          schema:
+            type: string
+          description: partial match of word/characters
+          example:
+            sport
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+                    example:
+                      data:
+                        id: 5e86ee4ec3a20c3113aa9e2d
+                        name: a-new-category
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+              examples: 
+                fullList:
+                  value:
+                    data:
+                      - id: 5ef1b5ccd35791b2dc384425
+                        name: agriculture
+                      - id: 5ef1b5ccd35791b2dc384426
+                        name: cafes
+                      - id: 5ef1b5ccd35791b2dc384427
+                        name: cleaning-services
+                      - id: 5ef1b5ccd35791b2dc384428
+                        name: professional-services
+                      - id: 5ef1b5ccd35791b2dc384429
+                        name: restaurant
+                      - id: 5ef1b5ccd35791b2dc384430
+                        name: restaurant-supplies
+                      - id: 5ef1b5ccd35791b2dc384431
+                        name: sports-equipment
+                      - id: 5ef1b5ccd35791b2dc384432
+                        name: transport
+                    meta:
+                      numberOfResults: 8
+                      totalPages: 1
+                withPrefixC:
+                  value:
+                    data:
+                      - id: 5ef1b5ccd35791b2dc384426
+                        name: cafes
+                      - id: 5ef1b5ccd35791b2dc384427
+                        name: cleaning-services
+                    meta:
+                      numberOfResults: 2
+                      totalPages: 1
+                withFragmentSport:
+                  value:
+                    data:
+                      - id: 5ef1b5ccd35791b2dc384431
+                        name: sports-equipment
+                      - id: 5ef1b5ccd35791b2dc384432
+                        name: transport
+                    meta:
+                      numberOfResults: 2
+                      totalPages: 1
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+  /tags:
+    get:
+      tags:
+        - Find Entities
+      summary: Get a full or partial list of tags used for offers and wants
+      description: |
+        Tags are words or short phrases that describe the goods or services an entity can provide (`offers`) to other entities or needs (`wants`) from other entities, in order to facilitate trades with them. For example, a Chinese restaurant might use offer tags such as "restaurant", "chinese", "take-out", "dim-sum", "delivery" to describe its service.
+        
+        Up to 10 offer tags and 10 want tags can be specified per entity. A list of tags that are fuzzy, partial or exact matches to the input (`fragment`) provided can be requested. If no fragment is provided all tags are returned.
+      parameters:
+        - name: fragment
+          in: query
+          schema:
+            type: string
+          description: partial match of word/characters
+          example:
+            be
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tag'
+                    example:
+                      data:
+                        id: 5e86ee4ec3a20c3113aa9ccb5
+                        name: a-new-tag
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+              examples: 
+                fullList:
+                  value:
+                    data:
+                      - id: 5ef1b5ccd35791b2dc384410
+                        name: art-supplies
+                      - id: 5ef1b5ccd35791b2dc384411
+                        name: catering
+                      - id: 5ef1b5ccd35791b2dc384412
+                        name: computer-repair
+                      - id: 5ef1b5ccd35791b2dc384413
+                        name: dog-sitting
+                      - id: 5ef1b5ccd35791b2dc384414
+                        name: micro-brewed-beer
+                      - id: 5ef1b5ccd35791b2dc384415
+                        name: organic-vegetables
+                      - id: 5ef1b5ccd35791b2dc384416
+                        name: piano-tuning
+                      - id: 5ef1b5ccd35791b2dc384417
+                        name: pizza
+                      - id: 5ef1b5ccd35791b2dc384418
+                        name: van-rental
+                      - id: 5ef1b5ccd35791b2dc384419
+                        name: well-being
+                    meta:
+                      numberOfResults: 10
+                      totalPages: 1
+                withFragmentBe:
+                  value:
+                    data:
+                      - id: 5ef1b5ccd35791b2dc384414
+                        name: micro-brewed-beer
+                      - id: 5ef1b5ccd35791b2dc384419
+                        name: well-being
+                    meta:
+                      numberOfResults: 2
+                      totalPages: 1
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+  /entities:
+    get:
+      tags:
+        - Find Entities
+      summary: Get a list of entities
+      description: |
+        Entities can be searched based on (1) their offers and wants tags, (2) the category they are listed under, (3) the date the offers and wants tags were added to their profile, (4) their entity name, and/or (5) an entity's selection of favorites.
+      
+        If the request does not contain a JWT along with a `querying_entity_id` specified, the search for favorites functionality will not work (e.g., all results will show the `isFavorite` flag as false).
+
+        If a `querying_entity_id` is specified and both the requesting entity and the entity returned in the search are `tradingAccepted` status, the email address of the searched entity will also be included.
+      parameters:
+        - $ref: '#/components/parameters/offers'
+        - $ref: '#/components/parameters/wants'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/taggedSince'
+        - $ref: '#/components/parameters/entityName'
+        - $ref: '#/components/parameters/favoritesOnly'
+        - $ref: '#/components/parameters/queryingEntityID'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Entity'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+              examples:
+                withoutAuth:
+                  value:
+                    data:
+                      - id: 5eec78f4a880b7c235f66e7c
+                        accountNumber: "6838115832533278"
+                        name: New World Pizza PLC
+                        telephone: "+442098765432"
+                        incType: plc
+                        companyNumber: B67890
+                        website: https://nwpizza.null
+                        declaredTurnover: 10000
+                        description: "We show you how good things can taste and where you need to go to eat them!"
+                        address: "456 Yellow Brick Road"
+                        city: "London"
+                        region: "Greater London"
+                        postalCode: "UK1 2ENG"
+                        country: "England"
+                        status: "pending"
+                        showTagsMatchedSinceLastLogin: false
+                        receiveDailyMatchNotificationEmail: false
+                        offers:
+                          - pizza
+                          - wine
+                        wants:
+                          - flour
+                          - mozarella
+                          - tomato
+                        categories:
+                          - restaurant
+                        isFavorite: false
+                    meta:
+                      numberOfResults: 1
+                      totalPages: 1
+                withAuth:
+                  value:
+                    data:
+                      - id: 5eec78f4a880b7c235f66e7c
+                        accountNumber: "6838115832533278"
+                        name: New World Pizza PLC
+                        telephone: "+442098765432"
+                        incType: plc
+                        companyNumber: B67890
+                        website: https://nwpizza.null
+                        declaredTurnover: 10000
+                        description: "We show you how good things can taste and where you need to go to eat them!"
+                        address: "456 Yellow Brick Road"
+                        city: "London"
+                        region: "Greater London"
+                        postalCode: "UK1 2ENG"
+                        country: "England"
+                        status: "pending"
+                        showTagsMatchedSinceLastLogin: false
+                        receiveDailyMatchNotificationEmail: false
+                        offers:
+                          - pizza
+                          - wine
+                        wants:
+                          - flour
+                          - mozarella
+                          - tomato
+                        categories:
+                          - restaurant
+                        isFavorite: true
+                    meta:
+                      numberOfResults: 1
+                      totalPages: 1
+                withAuthTradingAccepted:
+                  value:
+                    data:
+                      - id: 5eec78f4a880b7c235f66e7c
+                        accountNumber: "6838115832533278"
+                        name: New World Pizza PLC
+                        email: nwpplc@dev.null
+                        telephone: "+442098765432"
+                        incType: plc
+                        companyNumber: B67890
+                        website: https://nwpizza.null
+                        declaredTurnover: 10000
+                        description: "We show you how good things can taste and where you need to go to eat them!"
+                        address: "456 Yellow Brick Road"
+                        city: "London"
+                        region: "Greater London"
+                        postalCode: "UK1 2ENG"
+                        country: "England"
+                        status: "pending"
+                        showTagsMatchedSinceLastLogin: false
+                        receiveDailyMatchNotificationEmail: false
+                        offers:
+                          - pizza
+                          - wine
+                        wants:
+                          - flour
+                          - mozarella
+                          - tomato
+                        categories:
+                          - restaurant
+                        isFavorite: true
+                    meta:
+                      numberOfResults: 1
+                      totalPages: 1
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        # Allow optional Authorizations: https://github.com/OAI/OpenAPI-Specification/issues/14
+        - {}
+        - jwt: []
+  /entities/{entityID}:
+    get:
+      tags:
+        - Find Entities
+      summary: Get a single entity
+      description: Returns a single entity's details using its ID. Requests can be made without a JWT from an authenticated user (see `GET /entities` above for more information).
+      parameters:
+        - $ref: '#/components/parameters/entityID'
+        - $ref: '#/components/parameters/queryingEntityID'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Entity'
+              examples:
+                withoutAuth:
+                  value:
+                    data: 
+                      id: 5eec78f4a880b7c235f66e7c
+                      accountNumber: "6838115832533278"
+                      name: New World Pizza PLC
+                      telephone: "+442098765432"
+                      incType: plc
+                      companyNumber: B67890
+                      website: https://nwpizza.null
+                      declaredTurnover: 10000
+                      description: "We show you how good things can taste and where you need to go to eat them!"
+                      address: "456 Yellow Brick Road"
+                      city: "London"
+                      region: "Greater London"
+                      postalCode: "UK1 2ENG"
+                      country: "England"
+                      status: "pending"
+                      showTagsMatchedSinceLastLogin: false
+                      receiveDailyMatchNotificationEmail: false
+                      offers:
+                        - pizza
+                        - wine
+                      wants:
+                        - flour
+                        - mozarella
+                        - tomato
+                      categories:
+                        - restaurant
+                      isFavorite: false
+                withAuth:
+                  value:
+                    data: 
+                      id: 5eec78f4a880b7c235f66e7c
+                      accountNumber: "6838115832533278"
+                      name: New World Pizza PLC
+                      telephone: "+442098765432"
+                      incType: plc
+                      companyNumber: B67890
+                      website: https://nwpizza.null
+                      declaredTurnover: 10000
+                      description: "We show you how good things can taste and where you need to go to eat them!"
+                      address: "456 Yellow Brick Road"
+                      city: "London"
+                      region: "Greater London"
+                      postalCode: "UK1 2ENG"
+                      country: "England"
+                      status: "pending"
+                      showTagsMatchedSinceLastLogin: false
+                      receiveDailyMatchNotificationEmail: false
+                      offers:
+                        - pizza
+                        - wine
+                      wants:
+                        - flour
+                        - mozarella
+                        - tomato
+                      categories:
+                        - restaurant
+                      isFavorite: true
+                withAuthTradingAccepted:
+                  value:
+                    data: 
+                      id: 5eec78f4a880b7c235f66e7c
+                      accountNumber: "6838115832533278"
+                      name: New World Pizza PLC
+                      email: nwpplc@dev.null
+                      telephone: "+442098765432"
+                      incType: plc
+                      companyNumber: B67890
+                      website: https://nwpizza.null
+                      declaredTurnover: 10000
+                      description: "We show you how good things can taste and where you need to go to eat them!"
+                      address: "456 Yellow Brick Road"
+                      city: "London"
+                      region: "Greater London"
+                      postalCode: "UK1 2ENG"
+                      country: "England"
+                      status: "pending"
+                      showTagsMatchedSinceLastLogin: false
+                      receiveDailyMatchNotificationEmail: false
+                      offers:
+                        - pizza
+                        - wine
+                      wants:
+                        - flour
+                        - mozarella
+                        - tomato
+                      categories:
+                        - restaurant
+                      isFavorite: true
+        400:
+          $ref: '#/components/responses/BadRequest'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        # Allow optional Authorizations: https://github.com/OAI/OpenAPI-Specification/issues/14
+        - {}
+        - jwt: []
+  /favorites:
+    post:
+      tags:
+        - Find Entities
+      summary: Create and manage a list of favorite entities
+      description: A user can toggle any entity as a favorite, which makes it easy to retrieve using the `favorites_only` search parameter described above (see `GET /entities`).
+      requestBody:
+        $ref: '#/components/requestBodies/setFavorite'
+      responses:
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /send-email:
+    post:
+      tags:
+        - Find Entities
+      summary: Send a message to an entity
+      description: |
+        A user can send a message by email to an entity without seeing the email address of the receiving entity. This enables the receiving entity to keep its email private until the entity operator decides to reply to the sender and continue the conversation by email.
+
+        Entities with status `accepted`, `tradingPending`, `tradingAccepted` and `tradingRejected` can send an email to other entities with these same 4 statuses.
+
+        Entities with status `pending` or `rejected` cannot send an email to any other entity. They also cannot receive emails because there is no way to find their ID since they do not show up in search results because of their `pending`/`rejected` status.
+      requestBody:
+        $ref: '#/components/requestBodies/sendEmail'
+      responses:
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /transfers:
+    post:
+      tags:
+        - Transfer Credits
+      summary: Initiate a transfer
+      description: |
+        A user can initiate a transfer out of or into the account of its entity, which must then be approved or rejected by the user operating the receiving entity, whose account will be credited or debited accordingly. Both entities must have `tradingAccepted` status in order to set up a transfer between them.
+
+        If the `transfer` parameter is set to `out`, the initiator will create a transfer that will debit funds from the initiator's entity's account. If `transfer` is `in`, the initiator will create a transfer that results in funds being credited to the initiator's entity's account. Either way, the transfer must be approved by the receiver (see `PATCH /transfers/{transferID}`) in order for the inbound or outbound transfer to move to or from the receiver's entity's account.
+      requestBody:
+        $ref: '#/components/requestBodies/initiateTransfer'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TransferInitiated'
+              example:
+                id: 1ZceiVuQyGqeUYlC6UIKgEnaBkD
+                from: "7132460355005184"
+                to: "0382855564717143"
+                amount: 177.5
+                description: Payment of your invoice number 12345
+                status: transferInitiated
+                dateProposed: "2020-05-05T14:09:17.446965528Z"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+    get:
+      tags:
+        - Review Transfer Activity
+      summary: Get a list of transfers
+      description: |
+        A user can request a list of mutual credit transfers for the account of the entity. Transfers can be filtered by `status` (`all`, `initiated`, `completed` or `cancelled`).
+
+        The `querying_entity_id` is the ID of the entity whose account the information is being requested for. The user requesting must be associated with that entity or no information will be returned.
+      parameters:
+        - $ref: '#/components/parameters/transferStatus'
+        - $ref: '#/components/parameters/queryingEntityIDRequired'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TransferView'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+              examples:
+                completed:
+                  value:
+                    data:
+                      - id: 1UZ7G7qJrIlwpVK9iSPXgx0A2xN
+                        transfer: out
+                        isInitiator: true
+                        accountNumber: "1234567887654321"
+                        entityName: Rhynyx
+                        amount: 1.1,
+                        description: Payment of invoice number 12345
+                        status: transferCompleted
+                        dateProposed: "2019-12-25T12:12:12.123Z"
+                        dateCompleted: "2019-12-26T13:13:13.456Z"
+                    meta:
+                      numberOfResults: 1
+                      totalPages: 1
+                initiated:
+                  value:
+                    data:
+                      - id: 1UZ7G7qJrIlwpVK9iSPXgx0A2xN
+                        transfer: out
+                        isInitiator: true
+                        accountNumber: "1234567887654321"
+                        entityName: Rhynyx
+                        amount: 1.2,
+                        description: Payment of invoice number 12345
+                        status: transferInitiated
+                        dateProposed: "2019-12-25T12:11:11.456Z"
+                    meta:
+                      numberOfResults: 1
+                      totalPages: 1
+                cancelled:
+                  value:
+                    data:
+                      - id: 1UZ7G7qJrIlwpVK9iSPXgx0A2xN
+                        transfer: out
+                        isInitiator: true
+                        accountNumber: "1234567887654321"
+                        entityName: Rhynyx
+                        amount: 1.3,
+                        description: Payment of invoice number 12345
+                        status: transferCancelled
+                        cancellationReason: Wrong amount, I will send a corrected request
+                        dateProposed: "2019-12-25T12:11:11.456Z"
+                    meta:
+                      numberOfResults: 1
+                      totalPages: 1
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /transfers/{transferID}:
+    patch:
+      tags:
+        - Transfer Credits
+      summary: Confirm or cancel a transfer
+      description: |
+        The receiver can either `accept` or `reject` the transfer by specifying it in the action parameter.
+
+        The initiator of the transfer can `cancel` the transfer before the receiver has accepted or rejected it.
+
+        If a transfer is rejected or cancelled, a `cancellationReason` can be provided so that the other party understands why the initiator or receiver cancelled or rejected the transfer.      
+      parameters:
+        - $ref: '#/components/parameters/transferID'
+      requestBody:
+        $ref: '#/components/requestBodies/confirmOrCancelTransfer'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TransferView'
+              examples:
+                acceptResponse:
+                  value:
+                    id: "1UZ7G7qJrIlwpVK9iSPXgx0A2xN"
+                    transfer: out
+                    isInitiator: true
+                    accountNumber: "1234567887654321"
+                    entityName: Rhynyx
+                    amount: 1.1,
+                    description: Payment of invoice number 12345
+                    status: transferCompleted
+                    dateProposed: "2019-12-25T12:12:12.123Z"
+                    dateCompleted: "2019-12-26T13:13:13.456Z"
+                rejectResponse:
+                  value:
+                    id: "1UZ7G7qJrIlwpVK9iSPXgx0A2xN"
+                    transfer: out
+                    isInitiator: true
+                    accountNumber: "1234567887654321"
+                    entityName: Rhynyx
+                    amount: 1.1,
+                    description: Payment of invoice number 12345
+                    status: transferCancelled
+                    cancellationReason: some reason for rejecting
+                    dateProposed: "2019-12-25T12:12:12.123Z"
+                cancelResponse:
+                  value:
+                    id: "1UZ7G7qJrIlwpVK9iSPXgx0A2xN"
+                    transfer: out
+                    isInitiator: true
+                    accountNumber: "1234567887654321"
+                    entityName: Rhynyx
+                    amount: 1.1,
+                    description: Payment of invoice number 12345
+                    status: transferCancelled
+                    cancellationReason: some reason for cancelling
+                    dateProposed: "2019-12-25T12:12:12.123Z"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /balance:
+    get:
+      tags:
+        - Review Transfer Activity
+      summary: Get the account balance
+      description: The current balance for the account of the entity is returned from this request. Currently there is only one credit unit ("currency") implemented in MCCS, but multiple units may be supported in the future.
+      parameters:
+        - $ref: '#/components/parameters/queryingEntityIDRequired'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Balance'
+              example:
+                data:
+                  - unit: ocn-uk
+                    balance: -1.23
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+components:
+  schemas:
+    SignupRequiredFields:
+      type: object
+      title: SignupRequiredFields
+      required:
+        - userEmail
+        - password
+      properties:
+        userEmail:
+          type: string
+        password:
+          type: string
+    SignupAllFields:
+      type: object
+      title: SignupAllFields
+      required:
+        - userEmail
+        - password
+      properties:
+        userEmail:
+          type: string
+        password:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        userPhone:
+          type: string
+        entityEmail:
+          type: string
+        entityName:
+          type: string
+        incType:
+          type: string
+          enum:
+            - plc
+            - ltd
+            - guar
+            - unltd
+            - llp
+            - cic
+            - ips
+            - sole
+        companyNumber:
+          type: string
+        entityPhone:
+          type: string
+        website:
+          type: string
+        declaredTurnover:
+          type: integer
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        showTagsMatchedSinceLastLogin:
+          type: boolean
+        receiveDailyMatchNotificationEmail:
+          type: boolean
+        offers:
+          type: array
+          items:
+            type: string
+        wants:
+          type: array
+          items:
+            type: string
+    User:
+      type: object
+      title: User
+      description: An individual and unique user of MCCS
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        telephone:
+          type: string
+        lastLoginDate:
+          type: string
+        lastLoginIP:
+          type: string
+    Entity:
+      type: object
+      title: Entity
+      description: An entity object representing a business, non-profit, etc.
+      properties:
+        id:
+          type: string
+        accountNumber:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        telephone:
+          type: string
+        incType:
+          type: string
+        companyNumber:
+          type: string
+        website:
+          type: string
+        declaredTurnover:
+          type: integer
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - accepted
+            - rejected
+            - tradingPending
+            - tradingAccepted
+            - tradingRejected
+        showTagsMatchedSinceLastLogin:
+          type: boolean
+        receiveDailyMatchNotificationEmail:
+          type: boolean
+        offers:
+          type: array
+          items:
+            type: string
+        wants:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        isFavorite:
+          type: boolean
+        balance:
+          type: number
+        maxPositiveBalance:
+          type: integer
+        maxNegativeBalance:
+          type: integer
+        pendingTransfers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransferView'
+    Category:
+      type: object
+      title: Category
+      description: A category object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Tag:
+      type: object
+      title: Tag
+      description: A tag object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    TransferInitiated:
+      type: object
+      title: TransferInitiated
+      description: An object, shown only to the initiator of a transfer immediately after creation, representing the confirmation of an initiated transfer of mutual credits from one entity's account to another
+      properties:
+        id:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        amount:
+          type: number
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+            - transferInitiated
+        dateProposed:
+          type: string
+    TransferView:
+      type: object
+      title: TransferView
+      description: An object representing an initiated/completed/cancelled transfer of mutuals credits from one entity to another
+      properties:
+        id:
+          type: string
+        transfer:
+          type: string
+          enum:
+            - in
+            - out
+        isInitiator:
+          type: boolean
+        accountNumber:
+          type: string
+        entityName:
+          type: string
+        amount:
+          type: number
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+            - transferInitiated
+            - transferCompleted
+            - transferCancelled
+        cancellationReason:
+          type: string
+        dateProposed:
+          type: string
+        dateCompleted:
+          type: string
+    Balance:
+      type: object
+      title: Balance
+      description: The total amount of mutual credits recorded for the entity based on its transfer activity
+      properties:
+        unit:
+          type: string
+        balance:
+          type: number
+    Error:
+      type: object
+      title: Error
+      description: An error object
+      properties:
+        message:
+          type: string
+    Meta:
+      type: object
+      properties:
+        numberOfResults:
+          type: integer
+        totalPages:
+          type: integer
+  parameters:
+    token:
+      name: token
+      description: The password reset token.
+      in: path
+      required: true
+      schema:
+        type: string
+    offers:
+      name: offers
+      description: A list of goods/services offered by an entity
+      in: query
+      schema:
+          type: string
+      example: pizza,pasta
+    wants:
+      name: wants
+      description: A list of good/services wanted by an entity
+      in: query
+      schema:
+          type: string
+      example: vegetables
+    category:
+      name: category
+      description: A list of entities by category can be retrieved in the search functionality
+      in: query
+      schema:
+        type: string
+        example: restaurant
+    taggedSince:
+      name: tagged_since
+      description: Get a list of entities that have had specified offers or wants tags added since a specific date and time
+      in: query
+      schema:
+        type: string
+        example: "2019-12-25T12:12:12.001Z"
+    entityName:
+      name: name
+      description: A full or partial name of an entity can be searched
+      in: query
+      schema:
+        type: string
+        example: Alice's Restau
+    favoritesOnly:
+      name: favorites_only
+      description: Show Favorites Only
+      in: query
+      schema:
+        type: boolean
+        default: false
+    queryingEntityID:
+      name: querying_entity_id
+      description: The entity ID to which the filter is applied (requires user to be logged in)
+      in: query
+      schema:
+        type: string
+        example: 5e561916ca06e1c8596eee9e
+    queryingEntityIDRequired:
+      name: querying_entity_id
+      description: The entity ID to which the account is linked
+      in: query
+      required: true
+      schema:
+        type: string
+        example: 5e561916ca06e1c8596eee9e
+    entityID:
+      name: entityID
+      description: The unique entity ID
+      in: path
+      required: true
+      schema:
+        type: string
+        example: 5eec78f4a880b7c235f66e7c
+    transferID:
+      name: transferID
+      description: The unique transfer ID
+      in: path
+      required: true
+      schema:
+        type: string
+        example: 1UZ7G7qJrIlwpVK9iSPXgx0A2xN
+    transferStatus:
+      name: status
+      description: The status of the transfer
+      in: query
+      required: true
+      schema:
+        type: string
+        enum:
+          - all
+          - initiated
+          - completed
+          - cancelled
+    page:
+      name: page
+      description: The page number
+      in: query
+      schema:
+          type: integer
+          default: 1
+    pageSize:
+      name: page_size
+      description: The number of results per page
+      in: query
+      schema:
+        type: integer
+        default: 10
+        minimum: 1
+        maximum: 100
+  requestBodies:
+    loginUser:
+      description: A JSON object containing an email address and a password
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              email:
+                type: string
+              password:
+                type: string
+          example:
+            email: jdoe@dev.null
+            password: 1TrulySecurePassword!!
+    resetPassword:
+      description: A JSON object containing an email address
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+            properties:
+              email:
+                type: string
+          example:
+            email: jdoe@dev.null
+    updatePassword:
+      description: A JSON object containing a password
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - password
+            properties:
+              password:
+                type: string
+          example:
+            password: 1EvenM00rTrulySecurePassword!@?!
+    updateUser:
+      description: The user fields a user wants to update
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              firstName:
+                type: string
+              lastName:
+                type: string
+              telephone:
+                type: string
+          example:
+            firstName: Jane K.
+            lastName: Doer
+            telephone: "+442012345678"
+    updateEntity:
+      description: The entity fields a user wants to update
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+              telephone:
+                type: string
+              incType:
+                type: string
+              companyNumber:
+                type: string
+              website:
+                type: string
+              declaredTurnover:
+                type: integer
+              description:
+                type: string
+              address:
+                type: string
+              city:
+                type: string
+              region:
+                type: string
+              postalCode:
+                type: string
+              country:
+                type: string
+              showTagsMatchedSinceLastLogin:
+                type: boolean
+              receiveDailyMatchNotificationEmail:
+                type: boolean
+              offers:
+                type: array
+                items:
+                  type: string
+              wants:
+                type: array
+                items:
+                  type: string
+          example:
+            name: New World Pizza PLC
+            email: nwpplc@dev.null
+            telephone: "+442098765432"
+            incType: plc
+            companyNumber: B67890
+            website: https://nwpizza.null
+            declaredTurnover: 10000
+            description: "We show you how good things can taste and where you need to go to eat them!"
+            address: "456 Yellow Brick Road"
+            city: "London"
+            region: "Greater London"
+            postalCode: "UK1 2ENG"
+            country: "England"
+            showTagsMatchedSinceLastLogin: false
+            receiveDailyMatchNotificationEmail: false
+            offers:
+              - pizza
+              - wine
+            wants:
+              - flour
+              - mozarella
+              - tomato
+    setFavorite:
+      description: Set or unset a favorite entity
+      required: true
+      content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - addToEntityID
+                - favoriteEntityID
+                -  isFavorite
+              properties:
+                addToEntityID: 
+                  type: string
+                favoriteEntityID: 
+                  type: string
+                isFavorite:
+                  type: boolean
+            example:
+              addToEntityID: 5de8dea0bdb7911205c0a6d7
+              favoriteEntityID: 5e53e2e34b7e2bd4030e72ce
+              isFavorite: true
+    sendEmail:
+      description: Send an email to an entity
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - senderEntityID
+              - receiverEntityID
+              - body
+            properties:
+              senderEntityID:
+                type: string
+              receiverEntityID:
+                type: string
+              body:
+                type: string
+          example:
+            senderEntityID: 5de8dea0bdb7911205c0a6d7
+            receiverEntityID: 5de8dea0bdb7911205c48d42
+            body: This is the email message body.
+    initiateTransfer:
+      description: Initiate a transfer to/from entity's account from/to another entity
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              transfer:
+                type: string
+                enum:
+                  - in
+                  - out
+              initiator:
+                type: string
+              receiver:
+                type: string
+              amount:
+                type: number
+              description:
+                type: string
+          example:
+            transfer: out
+            initiator: "7132460355005184"
+            receiver: "1234567887654321"
+            amount: 1.1
+            description: Payment of invoice number 12345
+    confirmOrCancelTransfer:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - action
+            properties:
+              action:
+                type: string
+                enum:
+                  - accept
+                  - reject
+                  - cancel
+              cancellationReason:
+                type: string
+          examples:
+            accept:
+              value:
+                action: accept
+            reject:
+              value:
+                action: reject
+                cancellationReason: some reason for rejecting
+            cancel:
+              value:
+                action: cancel
+                cancellationReason: some reason for cancelling
+  responses:
+    BadRequest:
+      description: The request is missing a required parameter.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+          example:
+            errors:
+              - message: <named> parameter is missing.
+    Unauthorized:
+      description: There was an issue with the authentication data for the request.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+          example:
+            errors:
+              - message: Could not authenticate you.
+    Forbidden:
+      description: User does not have permission to access the resource.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+          example:
+            errors:
+              - message: Permission denied.
+    TooManyRequests:
+      description: The request limit for this resource has been reached for the current rate limit window.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+          example:
+            errors:
+              - message: Rate limit exceeded.
+    ServerError:
+      description: An unknown internal error occurred.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+          example:
+            errors:
+              - message: Internal server error triggered.
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

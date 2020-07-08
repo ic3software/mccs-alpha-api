@@ -1,0 +1,1982 @@
+openapi: 3.0.0
+info:
+  title: MCCS Alpha Admin API
+  description: |
+    An initial, UNPUBLISHED version of the MCCS Admin API. Breaking changes are likely to follow.
+
+    ## Introduction 
+
+    The MCCS Alpha Admin API v1 exposes all of the admin user functionality currently available in the [alpha version of the MCCS API](https://github.com/ic3network/mccs-alpha-api).
+
+    By providing an API, developers who want to create their own front-end user interface for MCCS will have significant flexibility to implement it in whatever way they choose. This means developers can present MCCS in any language, setup their own signup flow, optimize it for whatever devices their users prefer, develop a mobile app, integrate other services such as chat, etc.
+
+    Importantly, an API enables developers to integrate MCCS functionality directly into their own apps (e.g., import transfer data into an accounting application, instruct mutual credit transfers from an e-wallet application, interact with MCCS data via a chat bot, etc.).
+
+    ## Background
+
+    To understand how the MCCS Alpha API works, please read the following design documents:
+
+    - [MCCS Alpha Data Model](https://github.com/ic3network/mccs/blob/master/alpha-data-model.md)
+    - [MCCS Alpha Functionality](https://github.com/ic3network/mccs/blob/master/alpha-functionality.md)
+
+    ## Test Server
+
+    A test server (mccs-alpha-api.ic3.dev) is provided below to enable you to try out the API. Data on the test server will be erased from time to time, and we take no responsibility for the data posted there. This is a publicly-accessible server, so please do not post personal details; only use test data.
+
+    ## License
+  license:
+    name: MIT License
+    url: https://github.com/ic3network/mccs-alpha-api/blob/dev/LICENSE
+  version: '1'
+servers:
+  - url: https://mccs-alpha-api.ic3.dev/api/v1
+tags:
+  - name: Manage Account
+    description: Manage an admin's account
+  - name: Manage Categories and Tags
+    description: Manage the list of categories and user-generated tags
+  - name: Manage Users
+    description: View, search and manage user details
+  - name: Manage Entities
+    description: View, search and manage entity details, set credit limits, etc.
+  - name: Manage Transfers
+    description: View entity-to-entity mutual credit transfers and create transfers on behalf of entities
+  - name: Review Logs
+    description: View and search user and admin activity logs
+paths:
+  /admin/login:
+    post:
+      tags:
+        - Manage Account
+      summary: Login and receive an authorization token
+      description: |
+        An admin will need to authenticate with an email/password combination which, if successful, will result in a JSON Web Token (JWT) being passed to the admin to use with all subsequent Admin API requests.
+
+        The JWT will expire after 24 hours, or as soon as the admin successfully calls the `/admin/logout` endpoint.
+      requestBody:
+        $ref: '#/components/requestBodies/emailAndPassword'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      lastLoginDate:
+                        type: string
+                      lastLoginIP:
+                        type: string
+              example:
+                data:
+                  token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI5ODU2MTMsInVzZXJJRCI6IjVlZjFiNWQ5NTA2ODQ3ZWE5MTRkYjA2NiIsImFkbWluIjpmYWxzZX0.qut7qdW-qvlh_aerQm_lriOHUr2fnfVgkDRUpkA_rzIvsgwzJCSdGSIrxIEPnpMs7O15xdWk98wAwuh6gkaQ5UvqCCrk-LiPN03ev-I-XiN51xezQWPPwoouKmA2LQQ6wm4hpmxIAjdj_XPB8Qh-3C9TELHRl54rzvesrpmAALJZm8He14D2U6jdn7ZkW9LjdCB2o3zbn8VQQm8BDH4OR7po7gBpgZJJ1gkkoJoSZELYlgAyGDvq6xYoxMmTgDbRJGP311RxSXW_Kr9uSI4LJkaITOALstBsjMp6Mzs-cEOm8lUkmpPYd5N0x9mffrv3srTqDTmr43u7n3mXkRT5Qg"
+                  lastLoginDate: "2020-04-02T07:34:13.559Z"
+                  lastLoginIP: "192.168.1.1"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500:
+          $ref: '#/components/responses/ServerError'
+  /admin/logout:
+    post:
+      tags:
+        - Manage Account
+      summary: Logout and expire the authorization token
+      description: Logging out will immediately expire the JWT currently associated with the admin's account.
+      responses:
+        200:
+          description: OK
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500:
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /admin/password-reset:
+    post:
+      tags:
+        - Manage Account
+      summary: Request a password reset token
+      description: When a password is lost by the admin, a new one can be requested by providing the email address associated with the admin's account. A password reset token will then be sent to that email address.
+      requestBody:
+        $ref: '#/components/requestBodies/resetPassword'
+      responses:
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/BadRequest'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+  /admin/password-reset/{token}:
+    post:
+      tags:
+        - Manage Account
+      summary: Reset a password
+      description: The new password can be set by providing it along with the password reset token that was received at the admin's email address.
+      parameters:
+        - $ref: '#/components/parameters/token'
+      requestBody:
+        $ref: '#/components/requestBodies/updatePassword'
+      responses:
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/BadRequest'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+  /admin/password-change:
+    post:
+      tags:
+        - Manage Account
+      summary: Change the password
+      description: A logged-in admin can change the password by sending the new password along with the JWT.
+      requestBody:
+        $ref: '#/components/requestBodies/updatePassword'
+      responses:
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /admin/categories:
+    # get:
+      # See `GET /categories` in the MCCS Alpha User API v1
+    post:
+      tags:
+        - Manage Categories and Tags
+      summary: Add a new category
+      description: |
+        An admin can add new categories to organize entities into a curated list.
+
+        New categories can be created by an admin simply by posting the new name to this endpoint.
+
+        Category names are sanitized, meaning that whitespace is trimmed, numbers and special characters are removed, and spaces are converted into dashes. For example, `"  ! ! ! A 1 Unique Category ! ! !  "` is converted into `"a-unique-category"`.
+      requestBody:
+        $ref: '#/components/requestBodies/manageCategory'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Category'
+              example:
+                data:
+                  id: 5e86ee4ec3a20c3113aa9e2d
+                  name: a-new-category
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /admin/categories/{categoryID}:
+    patch:
+      tags:
+        - Manage Categories and Tags
+      summary: Change name of category
+      description: |
+        A category name can be changed by specifying its ID along with the new name. As with newly-created categories, the changed name will also be sanitized (e.g., `"   THE  Changed   CATEGORY!  "` becomes `"the-changed-category"`).
+
+        All entity records with the previous category name will be updated automatically to reflect the new category name.
+      parameters:
+        - $ref: '#/components/parameters/categoryID'
+      requestBody:
+        $ref: '#/components/requestBodies/manageCategory'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Category'
+              example:
+                data:
+                  id: 5e86e93963ee31617463d739
+                  name: a-changed-category
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+    delete:
+      tags:
+        - Manage Categories and Tags
+      summary: Delete category
+      description: An admin can remove a category. All entity records with the removed category will reflect the removal of that category.
+      parameters:
+        - $ref: '#/components/parameters/categoryID'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Category'
+              example:
+                data:
+                  id: 5e86e93963ee31617463d739
+                  name: the-removed-category
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /admin/tags:
+    # get:
+      # See `GET /tags` in the MCCS Alpha User API v1
+    post:
+      tags:
+        - Manage Categories and Tags
+      summary: Add a new tag
+      description: |
+        An admin can add new tags to apply to the offers and wants arrays of entities. New tags can be created by posting the new name to this endpoint.
+
+        Tag names are sanitized, meaning that whitespace is trimmed, numbers and special characters are removed, and spaces are converted into dashes. For example, `"  ! ! ! A 1 Unique Tag ! ! !  "` is converted into `"a-unique-tag"`.
+      requestBody:
+        $ref: '#/components/requestBodies/manageTag'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Tag'
+              example:
+                data:
+                  id: 5e86ee4ec3a20c3113ab6ad2
+                  name: a-new-tag
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /admin/tags/{tagID}:
+    patch:
+      tags:
+        - Manage Categories and Tags
+      summary: Change name of tag
+      description: |
+        A tag name can be changed by specifying its ID along with the new name. As with newly-created tag, the changed name will also be sanitized (e.g., `"   THE  Changed   TAG!  "` becomes `"the-changed-tag"`).
+
+        All entity records with the previous tag name will be updated automatically to reflect the new tag name.
+      parameters:
+        - $ref: '#/components/parameters/tagID'
+      requestBody:
+        $ref: '#/components/requestBodies/manageTag'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Tag'
+              example:
+                data:
+                  id: 5e86e93963ee316174643a3c
+                  name: a-changed-tag
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+    delete:
+      tags:
+        - Manage Categories and Tags
+      summary: Delete tag
+      description: An admin can remove a tag. All entity records with the removed tag will reflect the removal of that tag.
+      parameters:
+        - $ref: '#/components/parameters/tagID'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Tag'
+              example:
+                data:
+                  id: 5e86e93963ee316174643a2f
+                  name: the-removed-tag
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /admin/users:
+    get:
+      tags:
+        - Manage Users
+      summary: Search and view users
+      description: Admins can search and view users and their details.
+      parameters:
+        - $ref: '#/components/parameters/lastName'
+        - $ref: '#/components/parameters/userEmail'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserWithEntity'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+              example:
+                data:
+                  - id: 5ef06ff63f540b3aaf04a9e0
+                    email: jdoe@dev.null
+                    firstName: Jane K.
+                    lastName: Doer
+                    telephone: "+442012345678"
+                    lastLoginIP: "192.168.1.1"
+                    lastLoginDate: "2020-06-21T12:11:09Z"
+                    entities:
+                    - id: 5ed7641d5a5135e226005aa8
+                      accountNumber: "7337657615120777"
+                      name: New World Pizza PLC
+                      email: nwpizza@dev.null
+                      telephone: "+442098765432"
+                      incType: plc
+                      companyNumber: B67890
+                      website: https://nwpizza.null
+                      declaredTurnover: 10000
+                      description: "We show you how good things can taste and where you need to go to eat them!"
+                      address: 456 Yellow Brick Road
+                      city: London
+                      region: Greater London
+                      postalCode: UK1 2ENG
+                      country: England
+                      status: tradingAccepted
+                      offers:
+                        - craft-beers
+                        - beer
+                        - pizza
+                      wants:
+                        - organic-flour
+                        - organic-vegetables
+                      categories:
+                        - brewery
+                        - restaurant
+                      showTagsMatchedSinceLastLogin: true
+                      receiveDailyMatchNotificationEmail: true
+                meta:
+                  numberOfResults: 1
+                  totalPages: 1
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /admin/users/{userID}:
+    get:
+      tags:
+        - Manage Users
+      summary: View a user
+      description: Admins can view a specific user and its details.
+      parameters:
+        - $ref: '#/components/parameters/userID'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserWithEntity'
+              example:
+                data:
+                  id: 5ed7641d5a5135e226005aa9
+                  email: jdoe@dev.null
+                  firstName: Jane K.
+                  lastName: Doer
+                  telephone: "+442012345678"
+                  lastLoginIP: "192.168.1.1"
+                  lastLoginDate: "2020-06-21T12:11:09Z"
+                  entities:
+                  - id: 5ed7641d5a5135e226005aa8
+                    accountNumber: "7337657615120777"
+                    name: New World Pizza PLC
+                    email: nwpizza@dev.null
+                    telephone: "+442098765432"
+                    incType: plc
+                    companyNumber: B67890
+                    website: https://nwpizza.null
+                    declaredTurnover: 10000
+                    description: "We show you how good things can taste and where you need to go to eat them!"
+                    address: 456 Yellow Brick Road
+                    city: London
+                    region: Greater London
+                    postalCode: UK1 2ENG
+                    country: England
+                    status: tradingAccepted
+                    offers:
+                      - pizza
+                      - wine
+                    wants:
+                      - flour
+                      - tomato
+                      - mozzarella
+                    categories:
+                      - restaurant
+                    showTagsMatchedSinceLastLogin: true
+                    receiveDailyMatchNotificationEmail: true
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+    patch:
+      tags:
+        - Manage Users
+      summary: Update a user
+      description: Admins can update a specific user's details.
+      parameters:
+        - $ref: '#/components/parameters/userID'
+      requestBody:
+        $ref: '#/components/requestBodies/updateUser'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserWithEntity'
+              example:
+                data:
+                  id: 5ed7641d5a5135e226005aa9
+                  email: jdoe@dev.null
+                  firstName: Jane K.
+                  lastName: Doer
+                  telephone: "+442012345678"
+                  lastLoginIP: "192.168.1.1"
+                  lastLoginDate: "2020-06-21T12:11:09Z"
+                  entities:
+                  - id: 5ed7641d5a5135e226005aa8
+                    accountNumber: "7337657615120777"
+                    name: New World Pizza PLC
+                    email: nwpizza@dev.null
+                    telephone: "+442098765432"
+                    incType: plc
+                    companyNumber: B67890
+                    website: https://nwpizza.null
+                    declaredTurnover: 10000
+                    description: "We show you how good things can taste and where you need to go to eat them!"
+                    address: 456 Yellow Brick Road
+                    city: London
+                    region: Greater London
+                    postalCode: UK1 2ENG
+                    country: England
+                    status: tradingAccepted
+                    offers:
+                      - pizza
+                      - wine
+                    wants:
+                      - flour
+                      - tomato
+                      - mozzarella
+                    categories:
+                      - restaurant
+                    showTagsMatchedSinceLastLogin: true
+                    receiveDailyMatchNotificationEmail: true
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+    delete:
+      tags:
+        - Manage Users
+      summary: Delete a user
+      description: Admins can delete a user.
+      parameters:
+        - $ref: '#/components/parameters/userID'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+              example:
+                data:
+                  id: 5ed7641d5a5135e226005aa9
+                  email: jdoe@dev.null
+                  firstName: Jane K.
+                  lastName: Doer
+                  telephone: "+442012345678"
+                  lastLoginIP: "192.168.1.1"
+                  lastLoginDate: "2020-06-21T12:11:09Z"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /admin/entities:
+    get:
+      tags:
+        - Manage Entities
+      summary: Search and view entities
+      description: Admins can search and view entities and their details.
+      parameters:
+        - $ref: '#/components/parameters/offers'
+        - $ref: '#/components/parameters/wants'
+        - $ref: '#/components/parameters/taggedSince'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/entityName'
+        - $ref: '#/components/parameters/entityEmail'
+        - $ref: '#/components/parameters/accountNumber'
+        - $ref: '#/components/parameters/status'
+        - $ref: '#/components/parameters/city'
+        - $ref: '#/components/parameters/region'
+        - $ref: '#/components/parameters/country'
+        - $ref: '#/components/parameters/balance'
+        - $ref: '#/components/parameters/maxPosBal'
+        - $ref: '#/components/parameters/maxNegBal'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EntityWithUser'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+              example:
+                data:
+                  - id: 5ed7641d5a5135e226005aa8
+                    accountNumber: "7337657615120777"
+                    name: New World Pizza PLC
+                    email: nwpizza@dev.null
+                    telephone: "+442098765432"
+                    incType: plc
+                    companyNumber: B67890
+                    website: https://nwpizza.null
+                    declaredTurnover: 10000
+                    description: "We show you how good things can taste and where you need to go to eat them!"
+                    address: 456 Yellow Brick Road
+                    city: London
+                    region: Greater London
+                    postalCode: UK1 2ENG
+                    country: England
+                    status: tradingAccepted
+                    offers:
+                      - pizza
+                      - wine
+                    wants:
+                      - flour
+                      - tomato
+                      - mozzarella
+                    categories:
+                      - restaurant
+                    showTagsMatchedSinceLastLogin: true
+                    receiveDailyMatchNotificationEmail: true
+                    balance: 0
+                    maxPositiveBalance: 20
+                    maxNegativeBalance: 10
+                    users:
+                        - id: 5ed7641d5a5135e226005aa9
+                          email: jdoe@dev.null
+                          firstName: Jane K.
+                          lastName: Doer
+                          telephone: "+442012345678"
+                          lastLoginIP: "192.168.1.1"
+                          lastLoginDate: "2020-06-21T12:11:09Z"
+                meta:
+                    numberOfResults: 1
+                    totalPages: 1
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /admin/entities/{entityID}:
+    get:
+      tags:
+        - Manage Entities
+      summary: View an entity
+      description: Admins can view a specific entity and its details.
+      parameters:
+        - $ref: '#/components/parameters/entityID'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/EntityWithUser'
+              example:
+                data:
+                  id: 5ed7641d5a5135e226005aa8
+                  accountNumber: "7337657615120777"
+                  name: New World Pizza PLC
+                  email: nwpizza@dev.null
+                  telephone: "+442098765432"
+                  incType: plc
+                  companyNumber: B67890
+                  website: https://nwpizza.null
+                  declaredTurnover: 10000
+                  description: "We show you how good things can taste and where you need to go to eat them!"
+                  address: 456 Yellow Brick Road
+                  city: London
+                  region: Greater London
+                  postalCode: UK1 2ENG
+                  country: England
+                  status: tradingAccepted
+                  offers:
+                    - pizza
+                    - wine
+                  wants:
+                    - flour
+                    - tomato
+                    - mozzarella
+                  categories:
+                    - restaurant
+                  showTagsMatchedSinceLastLogin: true
+                  receiveDailyMatchNotificationEmail: true
+                  balance: 0
+                  maxPositiveBalance: 20
+                  maxNegativeBalance: 10
+                  pendingTransfers: []
+                  users:
+                      - id: 5ed7641d5a5135e226005aa9
+                        email: jdoe@dev.null
+                        firstName: Jane K.
+                        lastName: Doer
+                        telephone: "+442012345678"
+                        lastLoginIP: "192.168.1.1"
+                        lastLoginDate: "2020-06-21T12:11:09Z"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+    patch:
+      tags:
+        - Manage Entities
+      summary: Update an entity
+      description: Admins can update a specific entity's details.
+      parameters:
+        - $ref: '#/components/parameters/entityID'
+      requestBody:
+        $ref: '#/components/requestBodies/updateEntity'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/EntityWithUser'
+              example:
+                data:
+                  id: 5ed7641d5a5135e226005aa8
+                  accountNumber: "7337657615120777"
+                  name: New World Pizza PLC
+                  email: nwpizza@dev.null
+                  telephone: "+442098765432"
+                  incType: plc
+                  companyNumber: B67890
+                  website: https://nwpizza.null
+                  declaredTurnover: 10000
+                  description: "We show you how good things can taste and where you need to go to eat them!"
+                  address: 456 Yellow Brick Road
+                  city: London
+                  region: Greater London
+                  postalCode: UK1 2ENG
+                  country: England
+                  status: tradingAccepted
+                  offers: 
+                      - craft-beers
+                      - beer
+                      - pizza
+                  wants:
+                      - organic-flour
+                      - organic-vegetables
+                  categories:
+                      - brewery
+                      - restaurant
+                  showTagsMatchedSinceLastLogin: true
+                  receiveDailyMatchNotificationEmail: true
+                  maxPositiveBalance: 20
+                  maxNegativeBalance: 10
+                  users:
+                      - id: 5ed7641d5a5135e226005aa9
+                        email: jdoe@dev.null
+                        firstName: Jane K.
+                        lastName: Doer
+                        telephone: "+442012345678"
+                        lastLoginIP: "192.168.1.1"
+                        lastLoginDate: "2020-06-21T12:11:09Z"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: [] 
+    delete:
+      tags:
+        - Manage Entities
+      summary: Delete an entity
+      description: Admins can delete a entity.
+      parameters:
+        - $ref: '#/components/parameters/entityID'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Entity'
+              example:
+                data:
+                  id: 5ed7641d5a5135e226005aa8
+                  accountNumber: "7337657615120777"
+                  name: New World Pizza PLC
+                  email: nwpizza@dev.null
+                  telephone: "+442098765432"
+                  incType: plc
+                  companyNumber: B67890
+                  website: https://nwpizza.null
+                  declaredTurnover: 10000
+                  description: "We show you how good things can taste and where you need to go to eat them!"
+                  address: 456 Yellow Brick Road
+                  city: London
+                  region: Greater London
+                  postalCode: UK1 2ENG
+                  country: England
+                  status: tradingAccepted
+                  offers:
+                    - pizza
+                    - wine
+                  wants:
+                    - flour
+                    - tomato
+                    - mozzarella
+                  categories:
+                    - restaurant
+                  showTagsMatchedSinceLastLogin: true
+                  receiveDailyMatchNotificationEmail: true
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+      security:
+        - jwt: []
+  /admin/transfers:
+    post:
+      tags:
+        - Manage Transfers
+      summary: Make a transfer
+      description: An admin can make a MC transfer on behalf of users.
+      requestBody:
+        $ref: '#/components/requestBodies/createTransfer'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TransferCompleted'
+              example:
+                data:
+                  id: 1dUcBb4GSrwGi8wsFih27f2391o
+                  fromAccountNumber: "2338171888854062"
+                  fromEntityName: Betty's Baked Goods
+                  toAccountNumber: "1637023403508535"
+                  toEntityName: Farmer Freddy's Veg
+                  amount: 1.1
+                  description: Payment of invoice number 12345
+                  type: adminTransfer
+                  status: transferCompleted
+                  dateProposed: "2020-06-18T12:22:57.633372Z"
+                  dateCompleted: "2020-06-18T12:22:57.633753Z"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+    get:
+      tags:
+        - Manage Transfers
+      summary: Get a list of transfers
+      description: An admin can get a list of transfers.
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/transferStatus'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transfer'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+              examples:
+                completed:
+                  value:
+                    data:
+                      - id: 1dUcBb4GSrwGi8wsFih27f2391o
+                        fromAccountNumber: "2338171888854062"
+                        fromEntityName: Betty's Baked Goods
+                        toAccountNumber: "1637023403508535"
+                        toEntityName: Farmer Freddy's Veg
+                        amount: 1.1
+                        description: Payment of invoice number 12345
+                        type: adminTransfer
+                        status: transferCompleted
+                        dateProposed: "2020-06-18T12:22:57.633372Z"
+                        dateCompleted: "2020-06-18T12:22:57.633753Z"
+                    meta:
+                        numberOfResults: 1
+                        totalPages: 1
+                initiated:
+                  value:
+                    data:
+                      - id: 1dUcBb4GSrwGi8wsFih27f2391o
+                        fromAccountNumber: "2338171888854062"
+                        fromEntityName: Betty's Baked Goods
+                        toAccountNumber: "1637023403508535"
+                        toEntityName: Farmer Freddy's Veg
+                        amount: 1.1
+                        description: Payment of invoice number 12345
+                        type: transfer
+                        status: transferInitiated
+                        dateProposed: "2020-06-18T12:22:57.633372Z"
+                    meta:
+                        numberOfResults: 1
+                        totalPages: 1
+                cancelledOrRejected:
+                  value:
+                    data:
+                      - id: 1dUcBb4GSrwGi8wsFih27f2391o
+                        fromAccountNumber: "2338171888854062"
+                        fromEntityName: Betty's Baked Goods
+                        toAccountNumber: "1637023403508535"
+                        toEntityName: Farmer Freddy's Veg
+                        amount: 1.1
+                        description: Payment of invoice number 12345
+                        type: transfer
+                        status: transferCancelled
+                        cancellationReason: Some reason for cancelling or rejecting
+                        dateProposed: "2020-06-18T12:22:57.633372Z"
+                    meta:
+                        numberOfResults: 1
+                        totalPages: 1
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+  /admin/transfers/{transferID}:
+    get:
+      tags:
+        - Manage Transfers
+      summary: Get a specific transfer
+      description: An admin can retrieve a specific transfer by its ID.
+      parameters:
+        - $ref: '#/components/parameters/transferID'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transfer'
+              examples:
+                completed:
+                  value:
+                    data:
+                      id: 1dUcBb4GSrwGi8wsFih27f2391o
+                      fromAccountNumber: "2338171888854062"
+                      fromEntityName: Betty's Baked Goods
+                      toAccountNumber: "1637023403508535"
+                      toEntityName: Farmer Freddy's Veg
+                      amount: 1.1
+                      description: Payment of invoice number 12345
+                      type: adminTransfer
+                      status: transferCompleted
+                      dateProposed: "2020-06-18T12:22:57.633372Z"
+                      dateCompleted: "2020-06-18T12:22:57.633753Z"
+                initiated:
+                  value:
+                    data:
+                      id: 1dUcBb4GSrwGi8wsFih27f2391o
+                      fromAccountNumber: "2338171888854062"
+                      fromEntityName: Betty's Baked Goods
+                      toAccountNumber: "1637023403508535"
+                      toEntityName: Farmer Freddy's Veg
+                      amount: 1.1
+                      description: Payment of invoice number 12345
+                      type: transfer
+                      status: transferInitiated
+                      dateProposed: "2020-06-18T12:22:57.633372Z"
+                cancelledOrRejected:
+                  value:
+                    data:
+                      id: 1dUcBb4GSrwGi8wsFih27f2391o
+                      fromAccountNumber: "2338171888854062"
+                      fromEntityName: Betty's Baked Goods
+                      toAccountNumber: "1637023403508535"
+                      toEntityName: Farmer Freddy's Veg
+                      amount: 1.1
+                      description: Payment of invoice number 12345
+                      type: transfer
+                      status: transferCancelled
+                      cancellationReason: Some reason for cancelling or rejecting
+                      dateProposed: "2020-06-18T12:22:57.633372Z"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+  /admin/logs:
+    get:
+      tags:
+        - Review Logs
+      summary: Review activity logs
+      description: Admins can view the logs of user and admin activity in MCCS.
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/logEmail'
+        - $ref: '#/components/parameters/logCategory'
+        - $ref: '#/components/parameters/action'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LogEntry'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+              example:
+                data:
+                  - userID: 5eeb5c20e4dbf983854b662c
+                    email: api-test-admin3@dev.null
+                    action: admin login successful
+                    detail: "api-test-admin3@dev.null - 172.20.0.1"
+                    category: admin
+                    createdAt: "2020-02-18T12:22:14.666Z"
+                meta:
+                  numberOfResults: 1
+                  totalPages: 1
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/PermissionDenied'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500: 
+          $ref: '#/components/responses/ServerError'
+components:
+  schemas:
+    Category:
+      type: object
+      title: Category
+      description: A category object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Tag:
+      type: object
+      title: Tag
+      description: A tag object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    User:
+      type: object
+      title: User
+      description: An individual and unique user of MCCS
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        telephone:
+          type: string
+        lastLoginIP:
+          type: string
+        lastLoginDate:
+          type: string
+    UserWithEntity:
+      type: object
+      title: UserWithEntity
+      description: An individual and unique user of MCCS
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        telephone:
+          type: string
+        lastLoginIP:
+          type: string
+        lastLoginDate:
+          type: string
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Entity'
+    Entity:
+      type: object
+      title: Entity
+      description: An entity object representing a business, non-profit, etc.
+      properties:
+        id:
+          type: string
+        accountNumber:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        telephone:
+          type: string
+        incType:
+          type: string
+        companyNumber:
+          type: string
+        website:
+          type: string
+        declaredTurnover:
+          type: integer
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - accepted
+            - rejected
+            - tradingPending
+            - tradingAccepted
+            - tradingRejected
+        offers:
+          type: array
+          items:
+            type: string
+        wants:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        showTagsMatchedSinceLastLogin:
+          type: boolean
+        receiveDailyMatchNotificationEmail:
+          type: boolean
+        balance:
+          type: number
+        maxPositiveBalance:
+          type: integer
+        maxNegativeBalance:
+          type: integer
+        pendingTransfers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransferPending'
+    EntityWithUser:
+      type: object
+      title: EntityWithUser
+      description: An entity object representing a business, non-profit, etc.
+      properties:
+        id:
+          type: string
+        accountNumber:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        telephone:
+          type: string
+        incType:
+          type: string
+        companyNumber:
+          type: string
+        website:
+          type: string
+        declaredTurnover:
+          type: integer
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - accepted
+            - rejected
+            - tradingPending
+            - tradingAccepted
+            - tradingRejected
+        offers:
+          type: array
+          items:
+            type: string
+        wants:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        showTagsMatchedSinceLastLogin:
+          type: boolean
+        receiveDailyMatchNotificationEmail:
+          type: boolean
+        balance:
+          type: number
+        maxPositiveBalance:
+          type: integer
+        maxNegativeBalance:
+          type: integer
+        pendingTransfers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransferPending'
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    TransferPending:
+      type: object
+      title: TransferPending
+      description: A pending transfer object
+      properties:
+        id:
+          type: string
+        fromAccountNumber:
+          type: string
+        fromEntityName:
+          type: string
+        toAccountNumber:
+          type: string
+        toEntityName:
+          type: string
+        amount:
+          type: number
+        description:
+          type: string
+        status:
+          type: string
+        type:
+          type: string
+        dateProposed:
+          type: string
+    Transfer:
+      type: object
+      title: Transfer
+      description: A transfer object
+      properties:
+        id:
+          type: string
+        fromAccountNumber:
+          type: string
+        fromEntityName:
+          type: string
+        toAccountNumber:
+          type: string
+        toEntityName:
+          type: string
+        amount:
+          type: number
+        description:
+          type: string
+        type:
+          type: string
+          enum:
+            - transfer
+            - adminTransfer
+        status:
+          type: string
+          enum:
+            - transferInitiated
+            - transferCompleted
+            - transferCancelled
+        cancellationReason:
+          type: string
+        dateProposed:
+          type: string
+        dateCompleted:
+          type: string
+    TransferCompleted:
+      type: object
+      title: TransferCompleted
+      description: A completed transfer object
+      properties:
+        id:
+          type: string
+        fromAccountNumber:
+          type: string
+        fromEntityName:
+          type: string
+        toAccountNumber:
+          type: string
+        toEntityName:
+          type: string
+        amount:
+          type: number
+        description:
+          type: string
+        type:
+          type: string
+          enum:
+            - adminTransfer
+        status:
+          type: string
+          enum:
+            - transferCompleted
+        dateProposed:
+          type: string
+        dateCompleted:
+          type: string
+    LogEntry:
+      type: object
+      title: LogEntry
+      description: A log entry object
+      properties:
+        userID:
+          type: string
+        email:
+          type: string
+        action:
+          type: string
+        detail:
+          type: string
+        category:
+          type: string
+        createdAt:
+          type: string
+    Meta:
+      type: object
+      title: Meta
+      description: A meta object
+      properties:
+        numberOfResults:
+          type: integer
+        totalPages:
+          type: integer
+    Error:
+      type: object
+      title: Error
+      description: An error object
+      properties:
+        message:
+          type: string
+  parameters:
+    token:
+      name: token
+      in: path
+      description: The password reset token.
+      required: true
+      schema:
+        type: string
+    tagID:
+      name: tagID
+      in: path
+      description: The ID of the tag
+      required: true
+      schema:
+        type: string
+    categoryID:
+      name: categoryID
+      in: path
+      description: The ID of the category.
+      required: true
+      schema:
+        type: string
+    userID:
+      name: userID
+      in: path
+      description: The ID of the user
+      required: true
+      schema:
+        type: string
+    lastName:
+      name: last_name
+      description: Last name of user
+      in: query
+      schema:
+        type: string
+      example: Doe
+    userEmail:
+      name: email
+      description: User's email address
+      in: query
+      schema:
+        type: string
+      example: jdoe@dev.null
+    entityEmail:
+      name: email
+      description: Entity's email address
+      in: query
+      schema:
+        type: string
+      example: nwpizza@dev.null
+    entityID:
+      name: entityID
+      in: path
+      description: The ID of the entity
+      required: true
+      schema:
+        type: string
+    offers:
+      name: offers
+      description: A list of goods/services offered by an entity
+      in: query
+      schema:
+          type: string
+      example: pizza
+    wants:
+      name: wants
+      description: A list of good/services wanted by an entity
+      in: query
+      schema:
+          type: string
+      example: tomato
+    taggedSince:
+      name: tagged_since
+      description: Date after which offers and wants tags were added
+      in:  query
+      schema:
+        type: string
+      example: "2020-02-16T08:39:10.250Z"
+    category:
+      name: category
+      description: Category assigned by admin
+      in: query
+      schema:
+        type: string
+      example: restaurant
+    entityName:
+      name: name
+      description: Name of the entity
+      in: query
+      schema:
+        type: string
+      example: New World Pizza
+    accountNumber:
+      name: account_number
+      description: Account number of the entity
+      in: query
+      schema:
+        type: string
+      example: "1234567887654321"
+    status:
+      name: status
+      description: Status of the entity
+      in: query
+      schema:
+        type: string
+        enum:
+          - pending
+          - accepted
+          - rejected
+          - tradingPending
+          - tradingAccepted
+          - tradingRejected
+    city:
+      name: city
+      description: City of entity's location
+      in: query
+      schema:
+        type: string
+      example: London
+    region:
+      name: region
+      description: Region of entity's location
+      in: query
+      schema:
+        type: string
+      example: Greater London
+    country:
+      name: country
+      description: Country of entity's location
+      in: query
+      schema:
+        type: string
+      example: England
+    balance:
+      name: balance
+      description: Account balance of the entity that is greater than or equal to (>=) input amount
+      in: query
+      schema:
+        type: number
+    maxPosBal:
+      name: max_pos_bal
+      description: Maximum positive balance possible for the entity (return entities >= the input amount)
+      in: query
+      schema:
+        type: integer
+    maxNegBal:
+      name: max_neg_bal
+      description: Maximum negative balance possible for the entity (return entities >= the input amount)
+      in: query
+      schema:
+        type: integer
+    transferStatus:
+      name: status
+      description: Status of the transfer
+      in: query
+      schema:
+        type: string
+        enum:
+          - initiated
+          - completed
+          - cancelled
+    transferID:
+      name: transferID
+      in: path
+      description: The ID of the transfer
+      required: true
+      schema:
+        type: string
+    logEmail:
+      name: email
+      description: Admin's or user's email address
+      in: query
+      schema:
+        type: string
+      example: admin1@dev.null
+    logCategory:
+      name: category
+      description: Type of user who performed an action
+      in: query
+      schema:
+        type: string
+      example: admin
+    action:
+      name: action
+      description: Type of user or admin action
+      in: query
+      schema:
+        type: string
+      example: login
+    page:
+      name: page
+      description: The page number
+      in: query
+      schema:
+          type: integer
+          default: 1
+    pageSize:
+      name: page_size
+      description: The number of results per page
+      in: query
+      schema:
+        type: integer
+        default: 10
+        minimum: 1
+        maximum: 100
+  requestBodies:
+    emailAndPassword:
+      description: A JSON object containing an email address and password
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              email:
+                type: string
+              password:
+                type: string
+          example:
+            email: admin@dev.null
+            password: 1TrulySecurePassword!!
+    resetPassword:
+      description: A JSON object containing an email address
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+            properties:
+              email:
+                type: string
+          example:
+            email: admin@dev.null
+    updatePassword:
+      description: A JSON object containing a password
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - password
+            properties:
+              password:
+                type: string
+          example:
+            password: 1EvenM00rTrulySecurePassword!@?!
+    manageCategory:
+      description: A JSON object containing a category name
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+          example:
+            name: some-category
+    manageTag:
+      description: A JSON object containing a tag name
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+          example:
+            name: some-tag
+    updateUser:
+      description: The user fields an admin wants to update
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              firstName:
+                type: string
+              lastName:
+                type: string
+              telephone:
+                type: string
+              email:
+                type: string
+          example:
+            firstName: Jane K.
+            lastName: Doer
+            telephone: "+442012345678"
+            email: jdoe@dev.null
+    updateEntity:
+      description: The entity fields a user wants to update
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+              telephone:
+                type: string
+              incType:
+                type: string
+              companyNumber:
+                type: string
+              website:
+                type: string
+              declaredTurnover:
+                type: integer
+              description:
+                type: string
+              address:
+                type: string
+              city:
+                type: string
+              region:
+                type: string
+              postalCode:
+                type: string
+              country:
+                type: string
+              status:
+                type: string
+                enum:
+                  - pending
+                  - accepted
+                  - rejected
+                  - tradingPending
+                  - tradingAccepted
+                  - tradingRejected
+              offers:
+                type: array
+                items:
+                  type: string
+              wants:
+                type: array
+                items:
+                  type: string
+              categories:
+                type: array
+                items:
+                  type: string
+              showTagsMatchedSinceLastLogin:
+                type: boolean
+              receiveDailyMatchNotificationEmail:
+                type:  boolean
+              maxPositiveBalance:
+                type: integer
+              maxNegativeBalance:
+                type: integer
+          example:
+            name: New World Pizza PLC
+            email: nwpizza@dev.null
+            telephone: "+442098765432"
+            incType: plc
+            companyNumber: "B67890"
+            website: https://nwpizza.null
+            declaredTurnover: 10000
+            description: "We show you how good things can taste and where you need to go to eat them!"
+            address: 456 Yellow Brick Road
+            city: London
+            region: Greater London
+            postalCode: UK1 2ENG
+            country: England
+            status: tradingAccepted
+            offers: 
+                - pizza
+                - wine
+            wants:
+                - flour
+                - tomato
+                -  mozzarella
+            categories:
+                - restaurant
+            showTagsMatchedSinceLastLogin: true
+            receiveDailyMatchNotificationEmail: true
+            maxPositiveBalance: 20
+            maxNegativeBalance: 10
+    createTransfer:
+      description: The fields needed to create a MC transfer on behalf of users by an admin
+      required: true
+      content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - payer
+                - payee
+                - amount
+              properties:
+                payer:
+                  type: string
+                payee:
+                  type: string
+                amount:
+                  type: number
+                description:
+                  type: string
+            example:
+              payer: "2338171888854062"
+              payee: "1637023403508535"
+              amount: 1.1
+              description: Payment of invoice number 12345
+  responses:
+    BadRequest:
+      description: The request is missing the <named> parameter in the request.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+          example:
+            errors:
+              - message: <named> parameter is missing.
+    Unauthorized:
+      description: There was an issue with the authentication data for the request.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+          example:
+            errors:
+              - message: Could not authenticate you.
+    PermissionDenied:
+      description: Request was made by user without required permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+          example:
+            errors:
+              - message: Permission denied.
+    TooManyRequests:
+      description: The request limit for this resource has been reached for the current rate limit window.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+          example:
+            errors:
+              - message: Rate limit exceeded.
+    ServerError:
+      description: An unknown internal error occurred.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+          example:
+            errors:
+              - message: Internal server error triggered.
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
