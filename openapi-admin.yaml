@@ -2,8 +2,6 @@ openapi: 3.0.0
 info:
   title: MCCS Alpha Admin API
   description: |
-    An initial, UNPUBLISHED version of the MCCS Admin API. Breaking changes are likely to follow.
-
     ## Introduction 
 
     The MCCS Alpha Admin API v1 exposes all of the admin user functionality currently available in the [alpha version of the MCCS API](https://github.com/ic3network/mccs-alpha-api).
@@ -21,7 +19,7 @@ info:
 
     ## Test Server
 
-    A test server (mccs-alpha-api.ic3.dev) is provided below to enable you to try out the API. Data on the test server will be erased from time to time, and we take no responsibility for the data posted there. This is a publicly-accessible server, so please do not post personal details; only use test data.
+    These API docs assume you are running the API server on your local machine using Docker & Docker Compose. See the [How to Start](https://github.com/ic3network/mccs-alpha-api#how-to-start) instructions in the project's GitHub repo for more details.
 
     ## License
   license:
@@ -29,7 +27,7 @@ info:
     url: https://github.com/ic3network/mccs-alpha-api/blob/dev/LICENSE
   version: '1'
 servers:
-  - url: https://mccs-alpha-api.ic3.dev/api/v1
+  - url: http://localhost:8080/api/v1
 tags:
   - name: Manage Account
     description: Manage an admin's account
