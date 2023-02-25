@@ -30,6 +30,6 @@ require (
 	go.mongodb.org/mongo-driver v1.2.1
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200109152110-61a87790db17
-	golang.org/x/sys v0.0.0-20191026070338-33540a1f6037 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	gopkg.in/oleiade/reflections.v1 v1.0.0
 )
