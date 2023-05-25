@@ -23,9 +23,9 @@ See the detailed description of these main functions in the [MCCS overview of fu
 
 ## API Documentation
 
-### [User API](https://app.swaggerhub.com/apis-docs/ic3network/mccs-alpha-user-api/1)
+### [User API](https://app.swaggerhub.com/apis-docs/ic3software/mccs-alpha-user-api/1)
 
-### [Admin API](https://app.swaggerhub.com/apis-docs/ic3network/mccs-alpha-admin-api/1)
+### [Admin API](https://app.swaggerhub.com/apis-docs/ic3software/mccs-alpha-admin-api/1)
 
 ## How to Start
 
