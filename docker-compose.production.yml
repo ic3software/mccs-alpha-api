@@ -1,5 +1,7 @@
 version: '3'
+
 services:
+  # Web Service
   web:
     container_name: mccs
     build:
@@ -18,9 +20,9 @@ services:
     depends_on:
       - postgres
       - mongo
-      - redis
       - es01
 
+  # PostgreSQL Service
   postgres:
     container_name: postgres
     image: postgres:11.4
@@ -33,6 +35,7 @@ services:
     volumes:
       - postgresql:/var/lib/postgresql/data
 
+  # MongoDB Service
   mongo:
     container_name: mongo
     image: mongo:4.0.10
@@ -43,19 +46,27 @@ services:
       - mongodb:/data/db
       - restore:/data/restore
 
+  # Elasticsearch Service
   es01:
     container_name: es01
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.5
     restart: always
     environment:
       - node.name=es01
-      - cluster.initial_master_nodes=es01
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      # single-node discovery type.
+      - discovery.type=single-node
+      # JVM memory: initial and max set to 512MB.
     ports:
       - 9200:9200
     volumes:
       - esdata01:/usr/share/elasticsearch/data
+    healthcheck:
+        test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+        interval: 30s
+        timeout: 30s
+        retries: 3
 
+  # Kibana Service
   kibana:
     container_name: kibana
     image: docker.elastic.co/kibana/kibana:7.1.1
@@ -67,6 +78,7 @@ services:
     depends_on:
       - es01
 
+# Persistent Volumes
 volumes:
   mongodb:
     driver: local
