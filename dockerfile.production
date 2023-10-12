@@ -1,25 +1,38 @@
-FROM golang:1.13 as builder
+# Use the official Golang image as the build environment.
+FROM golang:1.19.5-alpine AS builder
 
+# Set the working directory within the Docker image.
 WORKDIR /temp
 
-COPY go.mod .
-COPY go.sum .
+# Copy go.mod and go.sum to the /temp directory in the image.
+COPY go.mod go.sum ./
 
-RUN go get -v -t -d ./...
+# Download the dependencies listed in go.mod.
+RUN go mod download
 
+# Copy the rest of the application code to the /temp directory.
 COPY . .
 
-######## Start a new stage from scratch #######
+# Start a new build stage. This stage begins with a minimal Alpine Linux image.
 FROM alpine:latest
-RUN apk --no-cache --update upgrade && apk --no-cache add ca-certificates
 
+# Upgrade all the software in the Alpine Linux image, then
+# install the ca-certificates package. This package is necessary
+# if your application makes HTTPS requests.
+RUN apk --no-cache --update upgrade && \
+    apk --no-cache add ca-certificates
+
+# Set the working directory to /app.
 WORKDIR /app
 
 COPY --from=builder /temp .
 COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
+# Expose port 8080. This is the port that your application will use.
 EXPOSE 8080
 
-# Run the executable
+# Specify the command to run when the Docker container starts.
 ENTRYPOINT ["./mccs", "-config=production"]
+
+# CMD is optional; it provides defaults for an executing container.
 CMD []
