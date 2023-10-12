@@ -8,7 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-redis/redis v6.15.8+incompatible
 	github.com/gofrs/uuid v3.2.0+incompatible
-	github.com/gorilla/handlers v1.4.2
+	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.7.3
 	github.com/jinzhu/gorm v1.9.16
 	github.com/jinzhu/now v1.1.1
@@ -26,6 +26,7 @@ require (
 
 require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
