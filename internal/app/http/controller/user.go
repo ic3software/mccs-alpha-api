@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/gofrs/uuid/v5"
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
@@ -15,6 +15,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/ic3network/mccs-alpha-api/util/cookie"
+	"github.com/ic3network/mccs-alpha-api/util/jwt"
 	"github.com/ic3network/mccs-alpha-api/util/l"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -141,7 +142,7 @@ func (handler *userHandler) login() func(http.ResponseWriter, *http.Request) {
 
 		go logic.UserAction.Login(user, util.IPAddress(r))
 
-		token, err := util.GenerateToken(user.ID.Hex(), false)
+		token, err := jwt.NewJWTManager().Generate(user.ID.Hex(), false)
 
 		api.Respond(w, r, http.StatusOK, respond{Data: respondData(loginInfo, token)})
 	}
@@ -219,7 +220,7 @@ func (handler *userHandler) signup() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		token, err := util.GenerateToken(createdUser.ID.Hex(), false)
+		token, err := jwt.NewJWTManager().Generate(createdUser.ID.Hex(), false)
 		if err != nil {
 			l.Logger.Error("[ERROR] UserHandler.signup failed", zap.Error(err))
 			api.Respond(w, r, http.StatusInternalServerError, err)
