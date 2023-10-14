@@ -14,7 +14,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/robfig/cron v1.2.0
-	github.com/segmentio/ksuid v1.0.2
+	github.com/segmentio/ksuid v1.0.4
 	github.com/sendgrid/sendgrid-go v3.5.0+incompatible
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/viper v1.17.0
