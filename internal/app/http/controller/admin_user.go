@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/gofrs/uuid/v5"
 	"github.com/gorilla/mux"
 	"github.com/ic3network/mccs-alpha-api/internal/app/api"
 	"github.com/ic3network/mccs-alpha-api/internal/app/logic"
@@ -15,6 +15,7 @@ import (
 	"github.com/ic3network/mccs-alpha-api/internal/pkg/email"
 	"github.com/ic3network/mccs-alpha-api/util"
 	"github.com/ic3network/mccs-alpha-api/util/cookie"
+	"github.com/ic3network/mccs-alpha-api/util/jwt"
 	"github.com/ic3network/mccs-alpha-api/util/l"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -89,7 +90,7 @@ func (handler *adminUserHandler) login() func(http.ResponseWriter, *http.Request
 			l.Logger.Error("[Error] AdminUser.UpdateLoginInfo failed:", zap.Error(err))
 		}
 
-		token, err := util.GenerateToken(user.ID.Hex(), true)
+		token, err := jwt.NewJWTManager().Generate(user.ID.Hex(), true)
 
 		go logic.UserAction.AdminLogin(user, util.IPAddress(r))
 
