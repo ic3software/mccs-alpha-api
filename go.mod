@@ -15,7 +15,7 @@ require (
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/robfig/cron v1.2.0
 	github.com/segmentio/ksuid v1.0.2
-	github.com/sendgrid/sendgrid-go v3.5.0+incompatible
+	github.com/sendgrid/sendgrid-go v3.13.0+incompatible
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
