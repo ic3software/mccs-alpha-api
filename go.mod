@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/ShiraazMoollatjie/goluhn v0.0.0-20200114194008-196cda0245b9
 	github.com/fsnotify/fsnotify v1.6.0
-	github.com/go-redis/redis v6.15.8+incompatible
+	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/gorilla/handlers v1.5.1
