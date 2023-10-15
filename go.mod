@@ -5,16 +5,16 @@ go 1.19
 require (
 	github.com/ShiraazMoollatjie/goluhn v0.0.0-20200114194008-196cda0245b9
 	github.com/fsnotify/fsnotify v1.6.0
-	github.com/go-redis/redis v6.15.8+incompatible
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/gorilla/handlers v1.5.1
-	github.com/gorilla/mux v1.7.3
+	github.com/gorilla/mux v1.8.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/jinzhu/now v1.1.5
 	github.com/olivere/elastic/v7 v7.0.32
+	github.com/redis/go-redis/v9 v9.2.1
 	github.com/robfig/cron v1.2.0
-	github.com/segmentio/ksuid v1.0.2
+	github.com/segmentio/ksuid v1.0.4
 	github.com/sendgrid/sendgrid-go v3.5.0+incompatible
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/viper v1.17.0
@@ -26,7 +26,9 @@ require (
 )
 
 require (
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
@@ -40,8 +42,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/oleiade/reflections v1.0.0 // indirect
-	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/onsi/gomega v1.28.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
