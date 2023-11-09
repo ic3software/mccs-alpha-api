@@ -6,7 +6,7 @@ require (
 	github.com/ShiraazMoollatjie/goluhn v0.0.0-20200114194008-196cda0245b9
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gofrs/uuid/v5 v5.0.0
-	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/golang-jwt/jwt/v5 v5.1.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/jinzhu/gorm v1.9.16
