@@ -15,7 +15,7 @@ require (
 	github.com/redis/go-redis/v9 v9.3.0
 	github.com/robfig/cron v1.2.0
 	github.com/segmentio/ksuid v1.0.4
-	github.com/sendgrid/sendgrid-go v3.5.0+incompatible
+	github.com/sendgrid/sendgrid-go v3.14.0+incompatible
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
