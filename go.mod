@@ -19,7 +19,7 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
-	go.mongodb.org/mongo-driver v1.13.1
+	go.mongodb.org/mongo-driver v1.14.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.18.0
 	gopkg.in/oleiade/reflections.v1 v1.0.0
